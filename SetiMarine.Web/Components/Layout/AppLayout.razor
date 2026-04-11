@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar-logo">Seti<b>Marine</b></div>
+        <nav class="sidebar-nav">
+            <NavLink href="/dashboard">Dashboard</NavLink>
+            <NavLink href="/mapa">Mapa da Marina</NavLink>
+            <NavLink href="/movimentacoes">Movimentações</NavLink>
+            <NavLink href="/embarcacoes">Embarcações</NavLink>
+            <NavLink href="/clientes">Clientes</NavLink>
+            <NavLink href="/vagas">Vagas</NavLink>
+            <NavLink href="/servicos">Serviços</NavLink>
+            <NavLink href="/usuarios">Usuários</NavLink>
+            <NavLink href="/relatorios">Relatórios</NavLink>
+        </nav>
+        <div class="sidebar-footer">
+            <NavLink href="/perfil">Meu perfil</NavLink>
+        </div>
+    </aside>
+    <main class="app-content">@Body</main>
+</div>

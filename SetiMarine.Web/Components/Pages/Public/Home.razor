@@ -1,0 +1,343 @@
+@page "/"
+@layout EmptyLayout
+@inject NavigationManager Nav
+@inject IDbContextFactory<AppDbContext> DbFactory
+@using SetiMarine.Infrastructure.Data
+@using SetiMarine.Domain.Entities
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>SetiMarine — Gestão de Marinas em Tempo Real</PageTitle>
+
+<div class="sm-site">
+
+  <nav class="sm-nav">
+    <div class="sm-logo">
+      <div class="sm-logo-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#29b6f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="22"/>
+          <path d="M5 15l7 7 7-7"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </div>
+      <span class="sm-logo-name">Seti<b>Marine</b></span>
+    </div>
+    <div class="sm-nav-r">
+      <div class="sm-lang-sel">
+        <button class="sm-lang-btn" @onclick="ToggleLang">
+          <img class="sm-flag" src="@FlagUrl" alt="@CurrentLang" />
+          <span>@LangLabel</span>
+          <span class="sm-chev @(LangOpen ? "open" : "")">▾</span>
+        </button>
+        @if (LangOpen)
+        {
+          <div class="sm-lang-drop">
+            <div class="sm-lang-opt @(CurrentLang=="pt" ? "active" : "")" @onclick="@(() => SetLang("pt"))">
+              <img class="sm-flag" src="/images/flags/br.png" alt="BR" /> Português
+            </div>
+            <div class="sm-lang-opt @(CurrentLang=="en" ? "active" : "")" @onclick="@(() => SetLang("en"))">
+              <img class="sm-flag" src="/images/flags/us.png" alt="US" /> English
+            </div>
+            <div class="sm-lang-opt @(CurrentLang=="es" ? "active" : "")" @onclick="@(() => SetLang("es"))">
+              <img class="sm-flag" src="/images/flags/es.png" alt="ES" /> Español
+            </div>
+          </div>
+        }
+      </div>
+      <button class="sm-btn-login" @onclick="@(() => Nav.NavigateTo("/login"))">@T("nav.login")</button>
+      <button class="sm-btn-reg"   @onclick="@(() => Nav.NavigateTo("/cadastro"))">@T("nav.signup")</button>
+    </div>
+  </nav>
+
+  <section class="sm-hero">
+    <div class="sm-hero-bg"></div>
+    <div class="sm-hero-grid"></div>
+    <div class="sm-hero-glow"></div>
+    <div class="sm-chip"><span class="sm-dot"></span> @T("hero.badge")</div>
+    <h1 class="sm-h1">@T("hero.h1.pre") <span class="sm-accent sm-ul">@T("hero.h1.accent")</span></h1>
+    <p class="sm-sub">@T("hero.sub")</p>
+    <div class="sm-hero-btns">
+      <button class="sm-cta"   @onclick="@(() => Nav.NavigateTo("/cadastro"))">@T("hero.cta")</button>
+      <button class="sm-ghost">@T("hero.demo")</button>
+    </div>
+    <div class="sm-boats">
+      <img class="sm-boat sm-boat-l" src="/images/boats/boat-small.jpg" alt="Embarcacao" />
+      <img class="sm-boat sm-boat-m" src="/images/boats/boat-main.jpg"  alt="Lancha" />
+      <img class="sm-boat sm-boat-r" src="/images/boats/boat-sail.jpg"  alt="Veleiro" />
+      <div class="sm-wave-strip">
+        <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" fill="#b3e5fc" opacity=".5"/>
+          <path d="M0,40 C180,15 360,55 540,40 C720,25 900,55 1080,40 C1260,25 1380,45 1440,40 L1440,60 L0,60 Z" fill="#29b6f6" opacity=".25"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <div class="sm-stats">
+    <div class="sm-stat"><div class="sm-stat-n">100%</div><div class="sm-stat-l">Tempo real</div></div>
+    <div class="sm-stat"><div class="sm-stat-n">PT/EN/ES</div><div class="sm-stat-l">Multilíngue</div></div>
+    <div class="sm-stat"><div class="sm-stat-n">WhatsApp</div><div class="sm-stat-l">Integrado</div></div>
+    <div class="sm-stat"><div class="sm-stat-n">PWA</div><div class="sm-stat-l">App do cliente</div></div>
+  </div>
+
+  <section class="sm-map-section">
+    <div class="sm-sec-eye">@T("map.eye")</div>
+    <h2 class="sm-sec-h">@T("map.title")</h2>
+    <p class="sm-sec-p">@T("map.sub")</p>
+    <div class="sm-map-demo">
+      <div class="sm-map-legend">
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-free"></div> @T("status.free")</div>
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-occ"></div> @T("status.occupied")</div>
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-mov"></div> @T("status.moving")</div>
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-maint"></div> @T("status.maint")</div>
+      </div>
+      <div class="sm-map-zone-label">@T("zone.water")</div>
+      <div class="sm-map-grid">
+        @foreach (var row in WaterRows)
+        {
+          <div class="sm-map-row">
+            <span class="sm-row-lbl">@row.Label</span>
+            @foreach (var slip in row.Slips)
+            {
+              <div class="sm-slip sm-slip-@slip.Status" title="@slip.Code @(slip.Boat != null ? "· " + slip.Boat : "")">
+                @if (slip.Boat != null)
+                {
+                  <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-slip-boat" />
+                }
+                else
+                {
+                  <span class="sm-slip-code">@slip.Code</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <div class="sm-map-zone-label sm-zone-dry">@T("zone.dry")</div>
+      <div class="sm-map-grid">
+        @foreach (var row in DryRows)
+        {
+          <div class="sm-map-row">
+            <span class="sm-row-lbl">@row.Label</span>
+            @foreach (var slip in row.Slips)
+            {
+              <div class="sm-slip sm-slip-@slip.Status" title="@slip.Code @(slip.Boat != null ? "· " + slip.Boat : "")">
+                @if (slip.Boat != null)
+                {
+                  <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-slip-boat" />
+                }
+                else
+                {
+                  <span class="sm-slip-code">@slip.Code</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="sm-plans">
+    <div class="sm-sec-eye" style="color:var(--mid)">@T("plans.eye")</div>
+    <h2 class="sm-sec-h" style="color:var(--navy)">@T("plans.title")</h2>
+    <p class="sm-sec-p" style="color:var(--muted)">@T("plans.sub")</p>
+    @if (CarregandoPlanos)
+    {
+      <div class="sm-plans-loading">Carregando planos...</div>
+    }
+    else if (!Planos.Any())
+    {
+      <div class="sm-plans-loading">Em breve — planos disponíveis aqui.</div>
+    }
+    else
+    {
+      <div class="sm-plans-grid">
+        @foreach (var plano in Planos)
+        {
+          <div class="sm-plan-card @(plano.Destaque ? "sm-plan-featured" : "")">
+            @if (plano.Destaque)
+            {
+              <div class="sm-plan-badge">@T("plan.popular")</div>
+            }
+            <div class="sm-plan-name">@plano.Nome</div>
+            <div class="sm-plan-price">
+              @if (plano.Valor > 0)
+              {
+                <span class="sm-price-val">R$ @plano.Valor.ToString("N0")</span><span class="sm-price-mo">/mês</span>
+              }
+              else
+              {
+                <span class="sm-price-consult">Sob consulta</span>
+              }
+            </div>
+            <ul class="sm-plan-list">
+              @if (plano.LimiteEmbarcacoes > 0)
+              { <li>Até @plano.LimiteEmbarcacoes embarcações</li> }
+              else
+              { <li>Embarcações ilimitadas</li> }
+              @if (plano.LimiteUsuarios > 0)
+              { <li>Até @plano.LimiteUsuarios usuários</li> }
+              else
+              { <li>Usuários ilimitados</li> }
+              @if (!string.IsNullOrEmpty(plano.Recursos))
+              {
+                @foreach (var rec in plano.Recursos.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                { <li>@rec</li> }
+              }
+            </ul>
+            <button class="sm-plan-btn @(plano.Destaque ? "sm-plan-btn-featured" : "")"
+                    @onclick="@(() => IrParaCadastro(plano))">
+              @(plano.Valor > 0 ? T("plan.cta") : "Falar com vendas")
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="sm-cta-sec">
+    <div class="sm-cta-bg"></div>
+    <h2>Pronto para modernizar sua marina?</h2>
+    <p>Sem taxa de adesão. Suporte em português. Configure em minutos.</p>
+    <div class="sm-cta-row">
+      <div class="sm-cta-card">
+        <h3>Nova marina</h3>
+        <p>Crie sua conta e comece hoje mesmo.</p>
+        <button class="sm-btn-wh" @onclick="@(() => Nav.NavigateTo("/cadastro"))">Criar conta grátis</button>
+      </div>
+      <div class="sm-cta-card">
+        <h3>Já tenho acesso</h3>
+        <p>Entre com seu usuário e senha.</p>
+        <button class="sm-btn-ol" @onclick="@(() => Nav.NavigateTo("/login"))">Entrar no sistema</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="sm-footer">
+    <span>© 2026 SetiMarine · SETICOM Tecnologia · Avaré – SP</span>
+    <div class="sm-f-links">
+      <a href="#">Termos</a>
+      <a href="#">Privacidade</a>
+      <a href="#">Contato</a>
+    </div>
+  </footer>
+
+</div>
+
+@code {
+    private List<Plano> Planos = new();
+    private bool CarregandoPlanos = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        Planos = await db.Planos
+            .Where(p => p.Ativo)
+            .OrderBy(p => p.Valor)
+            .ToListAsync();
+        CarregandoPlanos = false;
+    }
+
+    private void IrParaCadastro(Plano plano)
+    {
+        if (!string.IsNullOrEmpty(plano.LinkPagamento))
+            Nav.NavigateTo(plano.LinkPagamento, forceLoad: true);
+        else
+            Nav.NavigateTo("/cadastro");
+    }
+
+    private string CurrentLang = "pt";
+    private bool LangOpen = false;
+    private string FlagUrl    => CurrentLang switch { "en" => "/images/flags/us.png", "es" => "/images/flags/es.png", _ => "/images/flags/br.png" };
+    private string LangLabel  => CurrentLang switch { "en" => "English", "es" => "Español", _ => "Português" };
+
+    private void ToggleLang() => LangOpen = !LangOpen;
+    private void SetLang(string lang) { CurrentLang = lang; LangOpen = false; }
+
+    private string T(string key)
+    {
+        var d = _t.ContainsKey(CurrentLang) ? _t[CurrentLang] : _t["pt"];
+        return d.TryGetValue(key, out var v) ? v : key;
+    }
+
+    private readonly Dictionary<string, Dictionary<string, string>> _t = new()
+    {
+        ["pt"] = new() {
+            ["nav.login"]="Entrar", ["nav.signup"]="Criar conta",
+            ["hero.badge"]="Sistema SaaS náutico · Nível mundial",
+            ["hero.h1.pre"]="Gestão da sua marina", ["hero.h1.accent"]="em tempo real",
+            ["hero.sub"]="Painel Kanban, mapa visual de vagas, WhatsApp integrado e app para seus clientes — tudo em uma plataforma.",
+            ["hero.cta"]="Começar gratuitamente", ["hero.demo"]="Ver demonstração",
+            ["map.eye"]="Mapa visual", ["map.title"]="Visualize toda a marina",
+            ["map.sub"]="Clique em qualquer vaga para gerenciar — atualizado ao vivo",
+            ["status.free"]="Livre", ["status.occupied"]="Ocupada",
+            ["status.moving"]="Em movimentação", ["status.maint"]="Manutenção",
+            ["zone.water"]="Vagas na água", ["zone.dry"]="Seco (dry stack)",
+            ["plans.eye"]="Planos e preços", ["plans.title"]="Escolha seu plano",
+            ["plans.sub"]="Planos flexíveis para marinas de todos os tamanhos",
+            ["plan.cta"]="Assinar agora", ["plan.popular"]="Mais popular",
+        },
+        ["en"] = new() {
+            ["nav.login"]="Sign in", ["nav.signup"]="Create account",
+            ["hero.badge"]="Nautical SaaS · World-class platform",
+            ["hero.h1.pre"]="Manage your marina", ["hero.h1.accent"]="in real time",
+            ["hero.sub"]="Kanban board, visual berth map, WhatsApp integration and client app — all in one platform.",
+            ["hero.cta"]="Get started free", ["hero.demo"]="Watch demo",
+            ["map.eye"]="Visual map", ["map.title"]="See your entire marina",
+            ["map.sub"]="Click any berth to manage — live updates via SignalR",
+            ["status.free"]="Free", ["status.occupied"]="Occupied",
+            ["status.moving"]="In movement", ["status.maint"]="Maintenance",
+            ["zone.water"]="Wet berths", ["zone.dry"]="Dry stack",
+            ["plans.eye"]="Plans & pricing", ["plans.title"]="Choose your plan",
+            ["plans.sub"]="Flexible plans for marinas of all sizes",
+            ["plan.cta"]="Subscribe now", ["plan.popular"]="Most popular",
+        },
+        ["es"] = new() {
+            ["nav.login"]="Entrar", ["nav.signup"]="Crear cuenta",
+            ["hero.badge"]="SaaS náutico · Nivel mundial",
+            ["hero.h1.pre"]="Gestión de tu marina", ["hero.h1.accent"]="en tiempo real",
+            ["hero.sub"]="Panel Kanban, mapa visual de amarres, WhatsApp integrado y app para tus clientes — todo en una plataforma.",
+            ["hero.cta"]="Empezar gratis", ["hero.demo"]="Ver demo",
+            ["map.eye"]="Mapa visual", ["map.title"]="Visualiza toda la marina",
+            ["map.sub"]="Haz clic en cualquier amarre para gestionar",
+            ["status.free"]="Libre", ["status.occupied"]="Ocupado",
+            ["status.moving"]="En movimiento", ["status.maint"]="Mantenimiento",
+            ["zone.water"]="Amarres en agua", ["zone.dry"]="Almacenaje en seco",
+            ["plans.eye"]="Planes y precios", ["plans.title"]="Elige tu plan",
+            ["plans.sub"]="Planes flexibles para marinas de todos los tamaños",
+            ["plan.cta"]="Suscribirse", ["plan.popular"]="Más popular",
+        },
+    };
+
+    record SlipData(string Code, string Status, string? Boat = null, string? ImgFile = null);
+    record RowData(string Label, List<SlipData> Slips);
+
+    private List<RowData> WaterRows = new()
+    {
+        new("A", new(){
+            new("A1","occ","Boa Viagem","lancha-top.png"), new("A2","occ","Sereia","lancha-top.png"),
+            new("A3","free"), new("A4","free"),
+            new("A5","mov","Liberdade","lancha-top.png"), new("A6","free"),
+            new("A7","occ","Netuno","veleiro-top.png"), new("A8","free"),
+        }),
+        new("B", new(){
+            new("B1","free"), new("B2","occ","Mar Azul","lancha-top.png"),
+            new("B3","occ","Sol Nascente","lancha-top.png"), new("B4","maint"),
+            new("B5","free"), new("B6","occ","Vento Norte","veleiro-top.png"),
+            new("B7","free"), new("B8","free"),
+        }),
+    };
+
+    private List<RowData> DryRows = new()
+    {
+        new("S1", new(){
+            new("S1-1","occ","Aquarius","lancha-top.png"), new("S1-2","occ","Titan","lancha-top.png"),
+            new("S1-3","free"), new("S1-4","free"),
+            new("S1-5","occ","Atlantis","lancha-top.png"), new("S1-6","free"),
+        }),
+        new("S2", new(){
+            new("S2-1","free"), new("S2-2","mov","Poseidon","lancha-top.png"),
+            new("S2-3","occ","Brisa","veleiro-top.png"), new("S2-4","free"),
+            new("S2-5","free"), new("S2-6","occ","Orca","lancha-top.png"),
+        }),
+    };
+}
