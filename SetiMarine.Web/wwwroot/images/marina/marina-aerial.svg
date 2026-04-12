@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1565c0"/>
+      <stop offset="100%" stop-color="#0a3d8f"/>
+    </linearGradient>
+    <linearGradient id="pier" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#795548"/>
+      <stop offset="100%" stop-color="#5d4037"/>
+    </linearGradient>
+  </defs>
+  <!-- Mar -->
+  <rect width="1200" height="600" fill="url(#sea)"/>
+  <!-- Ondas sutis -->
+  <path d="M0,100 C100,90 200,110 300,100 C400,90 500,110 600,100 C700,90 800,110 900,100 C1000,90 1100,110 1200,100" stroke="#1976d2" stroke-width="1" fill="none" opacity="0.4"/>
+  <path d="M0,200 C150,188 300,212 450,200 C600,188 750,212 900,200 C1000,192 1100,208 1200,200" stroke="#1976d2" stroke-width="1" fill="none" opacity="0.3"/>
+  <path d="M0,350 C100,340 200,360 300,350 C400,340 500,360 600,350 C700,340 800,360 900,350 C1000,340 1100,360 1200,350" stroke="#1976d2" stroke-width="1" fill="none" opacity="0.3"/>
+  <!-- Píer principal horizontal -->
+  <rect x="0" y="270" width="1200" height="18" fill="url(#pier)" rx="2"/>
+  <!-- Píer vertical 1 -->
+  <rect x="150" y="120" width="14" height="155" fill="url(#pier)" rx="2"/>
+  <!-- Píer vertical 2 -->
+  <rect x="320" y="120" width="14" height="155" fill="url(#pier)" rx="2"/>
+  <!-- Píer vertical 3 -->
+  <rect x="490" y="120" width="14" height="155" fill="url(#pier)" rx="2"/>
+  <!-- Píer vertical 4 -->
+  <rect x="660" y="120" width="14" height="155" fill="url(#pier)" rx="2"/>
+  <!-- Píer vertical 5 -->
+  <rect x="830" y="120" width="14" height="155" fill="url(#pier)" rx="2"/>
+  <!-- Píer vertical 6 -->
+  <rect x="1000" y="120" width="14" height="155" fill="url(#pier)" rx="2"/>
+  <!-- Barcos na água (vista top simplificada) -->
+  <!-- Pontão 1 -->
+  <rect x="88" y="130" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="88" y="160" width="52" height="20" rx="8" fill="#29b6f6" opacity="0.9"/>
+  <rect x="88" y="190" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="88" y="220" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <rect x="88" y="250" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <!-- Pontão 2 -->
+  <rect x="258" y="130" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <rect x="258" y="160" width="52" height="20" rx="8" fill="#f59e0b" opacity="0.9"/>
+  <rect x="258" y="190" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="258" y="220" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="258" y="250" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <!-- Pontão 3 -->
+  <rect x="428" y="130" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="428" y="160" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="428" y="190" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <rect x="428" y="220" width="52" height="20" rx="8" fill="#ef4444" opacity="0.8"/>
+  <rect x="428" y="250" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <!-- Pontão 4 -->
+  <rect x="598" y="130" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="598" y="160" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <rect x="598" y="190" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="598" y="220" width="52" height="20" rx="8" fill="#f59e0b" opacity="0.9"/>
+  <rect x="598" y="250" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <!-- Pontão 5 -->
+  <rect x="768" y="130" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <rect x="768" y="160" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="768" y="190" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <rect x="768" y="220" width="52" height="20" rx="8" fill="rgba(41,182,246,0.3)" opacity="0.7"/>
+  <rect x="768" y="250" width="52" height="20" rx="8" fill="#1e88e5" opacity="0.9"/>
+  <!-- Área de terra (cais) -->
+  <rect x="0" y="288" width="1200" height="312" fill="#37474f" opacity="0.3"/>
+  <!-- Estruturas no cais -->
+  <rect x="50" y="310" width="120" height="80" rx="4" fill="#455a64" opacity="0.5"/>
+  <rect x="200" y="320" width="80" height="60" rx="4" fill="#455a64" opacity="0.4"/>
+  <rect x="500" y="300" width="200" height="100" rx="4" fill="#455a64" opacity="0.45"/>
+  <rect x="800" y="310" width="150" height="70" rx="4" fill="#455a64" opacity="0.4"/>
+  <!-- Barcos no seco -->
+  <rect x="55" y="380" width="60" height="22" rx="8" fill="#1565c0" opacity="0.7"/>
+  <rect x="130" y="380" width="60" height="22" rx="8" fill="#1976d2" opacity="0.7"/>
+  <rect x="205" y="380" width="60" height="22" rx="8" fill="rgba(41,182,246,0.4)"/>
+  <rect x="280" y="380" width="60" height="22" rx="8" fill="#1565c0" opacity="0.7"/>
+  <!-- Reflexos na água -->
+  <path d="M157,160 L157,270" stroke="#1e88e5" stroke-width="1" opacity="0.2"/>
+  <path d="M327,160 L327,270" stroke="#1e88e5" stroke-width="1" opacity="0.2"/>
+  <path d="M497,160 L497,270" stroke="#1e88e5" stroke-width="1" opacity="0.2"/>
+</svg>

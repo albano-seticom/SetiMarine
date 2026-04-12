@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <defs>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1565c0" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0a3d8f" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e88e5"/>
+      <stop offset="100%" stop-color="#0d47a1"/>
+    </linearGradient>
+    <linearGradient id="deck" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e3f2fd"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#29b6f6" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#0288d1" stop-opacity="0.5"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Água -->
+  <rect x="0" y="140" width="600" height="60" fill="url(#water)" rx="0"/>
+  <path d="M0,145 C60,138 120,152 180,145 C240,138 300,152 360,145 C420,138 480,152 540,145 C570,141 590,147 600,145 L600,200 L0,200 Z" fill="#1565c0" opacity="0.5"/>
+  <!-- Casco -->
+  <path d="M80,120 L520,120 L550,140 L50,140 Z" fill="url(#hull)" filter="url(#shadow)"/>
+  <path d="M50,140 L550,140 L540,150 L60,150 Z" fill="#0a3d8f"/>
+  <!-- Deck -->
+  <rect x="100" y="85" width="380" height="35" rx="4" fill="url(#deck)"/>
+  <!-- Cabine principal -->
+  <path d="M180,55 L380,55 L400,85 L160,85 Z" fill="#f5f5f5"/>
+  <rect x="185" y="58" width="185" height="27" rx="3" fill="#eceff1"/>
+  <!-- Janelas cabine -->
+  <rect x="200" y="62" width="35" height="18" rx="3" fill="url(#glass)"/>
+  <rect x="245" y="62" width="35" height="18" rx="3" fill="url(#glass)"/>
+  <rect x="290" y="62" width="35" height="18" rx="3" fill="url(#glass)"/>
+  <rect x="335" y="62" width="35" height="18" rx="3" fill="url(#glass)"/>
+  <!-- Antena/mastro -->
+  <line x1="290" y1="20" x2="290" y2="55" stroke="#90a4ae" stroke-width="2"/>
+  <line x1="270" y1="30" x2="310" y2="30" stroke="#90a4ae" stroke-width="1.5"/>
+  <!-- Radar -->
+  <circle cx="290" cy="22" r="5" fill="#607d8b"/>
+  <!-- Detalhe lateral casco -->
+  <path d="M100,120 L500,120 L520,130 L80,130 Z" fill="#1976d2" opacity="0.4"/>
+  <!-- Faixa decorativa -->
+  <line x1="100" y1="118" x2="500" y2="118" stroke="#29b6f6" stroke-width="2"/>
+  <!-- Espelho popa -->
+  <rect x="490" y="90" width="30" height="30" rx="2" fill="#1565c0"/>
+  <!-- Proa -->
+  <path d="M100,85 L100,120 L80,120 L90,100 Z" fill="#1976d2"/>
+  <!-- Reflexo na água -->
+  <path d="M150,152 C200,158 400,158 450,152" stroke="#29b6f6" stroke-width="1" opacity="0.4" fill="none"/>
+  <path d="M180,158 C220,163 380,163 420,158" stroke="#1e88e5" stroke-width="1" opacity="0.25" fill="none"/>
+</svg>

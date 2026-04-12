@@ -13,9 +13,9 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
-        o.LoginPath = "/login";
-        o.LogoutPath = "/logout";
-        o.ExpireTimeSpan = TimeSpan.FromHours(12);
+        o.LoginPath       = "/login";
+        o.LogoutPath      = "/logout";
+        o.ExpireTimeSpan  = TimeSpan.FromHours(12);
     });
 
 builder.Services.AddAuthorization();

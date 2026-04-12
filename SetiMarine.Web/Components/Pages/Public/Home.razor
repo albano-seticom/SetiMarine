@@ -1,4 +1,4 @@
-@page "/"
+﻿@page "/"
 @layout EmptyLayout
 @inject NavigationManager Nav
 @inject IDbContextFactory<AppDbContext> DbFactory
@@ -78,10 +78,9 @@
     <div class="sm-stat"><div class="sm-stat-n">PWA</div><div class="sm-stat-l">App do cliente</div></div>
   </div>
 
-  <!-- ── MAPA VISUAL ── -->
   <section class="sm-map-section">
     <div class="sm-sec-eye">@T("map.eye")</div>
-    <h2 class="sm-sec-h" style="color:#fff">@T("map.title")</h2>
+    <h2 class="sm-sec-h">@T("map.title")</h2>
     <p class="sm-sec-p">@T("map.sub")</p>
     <div class="sm-map-demo">
       <div class="sm-map-legend">
@@ -90,54 +89,45 @@
         <div class="sm-leg"><div class="sm-leg-dot sm-leg-mov"></div> @T("status.moving")</div>
         <div class="sm-leg"><div class="sm-leg-dot sm-leg-maint"></div> @T("status.maint")</div>
       </div>
-
-      <div class="sm-map-zone-title">@T("zone.water")</div>
-      <div class="sm-map-water-grid">
+      <div class="sm-map-zone-label">@T("zone.water")</div>
+      <div class="sm-map-grid">
         @foreach (var row in WaterRows)
         {
-          <div class="sm-pontoon">
-            <div class="sm-pontoon-label">Pontão @row.Label</div>
-            <div class="sm-pontoon-slots">
-              @foreach (var slip in row.Slips)
-              {
-                <div class="sm-slip sm-slip-@slip.Status" title="@slip.Code @(slip.Boat != null ? "· " + slip.Boat : "")">
-                  @if (slip.Boat != null)
-                  {
-                    <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-slip-boat" />
-                  }
-                  else
-                  {
-                    <div class="sm-slip-icon">
-                      <svg width="28" height="48" viewBox="0 0 28 48" fill="none">
-                        <ellipse cx="14" cy="24" rx="11" ry="20" fill="rgba(41,182,246,0.06)" stroke="rgba(41,182,246,0.15)" stroke-width="1"/>
-                      </svg>
-                    </div>
-                  }
+          <div class="sm-map-row">
+            <span class="sm-row-lbl">@row.Label</span>
+            @foreach (var slip in row.Slips)
+            {
+              <div class="sm-slip sm-slip-@slip.Status" title="@slip.Code @(slip.Boat != null ? "· " + slip.Boat : "")">
+                @if (slip.Boat != null)
+                {
+                  <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-slip-boat" />
+                }
+                else
+                {
                   <span class="sm-slip-code">@slip.Code</span>
-                </div>
-              }
-            </div>
+                }
+              </div>
+            }
           </div>
         }
       </div>
-
-      <div class="sm-map-zone-title sm-zone-dry">@T("zone.dry")</div>
-      <div class="sm-dry-grid">
+      <div class="sm-map-zone-label sm-zone-dry">@T("zone.dry")</div>
+      <div class="sm-map-grid">
         @foreach (var row in DryRows)
         {
-          <div class="sm-dry-sector">
-            <div class="sm-dry-sector-label">Setor @row.Label</div>
+          <div class="sm-map-row">
+            <span class="sm-row-lbl">@row.Label</span>
             @foreach (var slip in row.Slips)
             {
-              <div class="sm-dry-slot">
-                <div class="sm-dry-slot-indicator sm-dsi-@slip.Status">
-                  @if (slip.Boat != null)
-                  {
-                    <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-dry-boat-icon" />
-                  }
-                </div>
-                <span class="sm-dry-slot-name">@slip.Code</span>
-                <span class="sm-dry-slot-boat">@(slip.Boat ?? "livre")</span>
+              <div class="sm-slip sm-slip-@slip.Status" title="@slip.Code @(slip.Boat != null ? "· " + slip.Boat : "")">
+                @if (slip.Boat != null)
+                {
+                  <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-slip-boat" />
+                }
+                else
+                {
+                  <span class="sm-slip-code">@slip.Code</span>
+                }
               </div>
             }
           </div>
@@ -146,71 +136,62 @@
     </div>
   </section>
 
-  <!-- ── PLANOS ── -->
   <section class="sm-plans">
-    <div class="sm-plans-inner">
-      <div class="sm-sec-eye" style="color:#29b6f6">@T("plans.eye")</div>
-      <h2 class="sm-sec-h" style="color:#fff">@T("plans.title")</h2>
-      <p class="sm-sec-p" style="color:rgba(255,255,255,.5)">@T("plans.sub")</p>
-      @if (CarregandoPlanos)
-      {
-        <div class="sm-plans-loading">Carregando planos...</div>
-      }
-      else if (!Planos.Any())
-      {
-        <div class="sm-plans-loading">Em breve — planos disponíveis aqui.</div>
-      }
-      else
-      {
-        <div class="sm-plans-grid">
-          @foreach (var plano in Planos)
-          {
-            <div class="sm-plan-card @(plano.Destaque ? "sm-plan-featured" : "")">
-              @if (plano.Destaque)
+    <div class="sm-sec-eye" style="color:var(--mid)">@T("plans.eye")</div>
+    <h2 class="sm-sec-h" style="color:var(--navy)">@T("plans.title")</h2>
+    <p class="sm-sec-p" style="color:var(--muted)">@T("plans.sub")</p>
+    @if (CarregandoPlanos)
+    {
+      <div class="sm-plans-loading">Carregando planos...</div>
+    }
+    else if (!Planos.Any())
+    {
+      <div class="sm-plans-loading">Em breve — planos disponíveis aqui.</div>
+    }
+    else
+    {
+      <div class="sm-plans-grid">
+        @foreach (var plano in Planos)
+        {
+          <div class="sm-plan-card @(plano.Destaque ? "sm-plan-featured" : "")">
+            @if (plano.Destaque)
+            {
+              <div class="sm-plan-badge">@T("plan.popular")</div>
+            }
+            <div class="sm-plan-name">@plano.Nome</div>
+            <div class="sm-plan-price">
+              @if (plano.Valor > 0)
               {
-                <div class="sm-plan-badge">
-                  <span class="sm-plan-badge-dot"></span> @T("plan.popular")
-                </div>
+                <span class="sm-price-val">R$ @plano.Valor.ToString("N0")</span><span class="sm-price-mo">/mês</span>
               }
-              <div class="sm-plan-name">@plano.Nome</div>
-              <div class="sm-plan-price">
-                @if (plano.Valor > 0)
-                {
-                  <span class="sm-price-val">R$ @plano.Valor.ToString("N0")</span><span class="sm-price-mo">/mês</span>
-                }
-                else
-                {
-                  <span class="sm-price-consult">Sob consulta</span>
-                }
-              </div>
-              <div class="sm-plan-limits">
-                @if (plano.LimiteEmbarcacoes > 0)
-                { <span>Até @plano.LimiteEmbarcacoes embarcações</span> }
-                else
-                { <span>Embarcações ilimitadas</span> }
-                @if (plano.LimiteUsuarios > 0)
-                { <span>Até @plano.LimiteUsuarios usuários</span> }
-                else
-                { <span>Usuários ilimitados</span> }
-              </div>
+              else
+              {
+                <span class="sm-price-consult">Sob consulta</span>
+              }
+            </div>
+            <ul class="sm-plan-list">
+              @if (plano.LimiteEmbarcacoes > 0)
+              { <li>Até @plano.LimiteEmbarcacoes embarcações</li> }
+              else
+              { <li>Embarcações ilimitadas</li> }
+              @if (plano.LimiteUsuarios > 0)
+              { <li>Até @plano.LimiteUsuarios usuários</li> }
+              else
+              { <li>Usuários ilimitados</li> }
               @if (!string.IsNullOrEmpty(plano.Recursos))
               {
-                <ul class="sm-plan-list">
-                  @foreach (var rec in plano.Recursos.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                  {
-                    <li><span class="sm-plan-check">✓</span> @rec.Trim()</li>
-                  }
-                </ul>
+                @foreach (var rec in plano.Recursos.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                { <li>@rec</li> }
               }
-              <button class="sm-plan-btn @(plano.Destaque ? "sm-plan-btn-featured" : "")"
-                      @onclick="@(() => IrParaCadastro(plano))">
-                @(plano.Valor > 0 ? T("plan.cta") : "Falar com vendas")
-              </button>
-            </div>
-          }
-        </div>
-      }
-    </div>
+            </ul>
+            <button class="sm-plan-btn @(plano.Destaque ? "sm-plan-btn-featured" : "")"
+                    @onclick="@(() => IrParaCadastro(plano))">
+              @(plano.Valor > 0 ? T("plan.cta") : "Falar com vendas")
+            </button>
+          </div>
+        }
+      </div>
+    }
   </section>
 
   <section class="sm-cta-sec">
@@ -248,22 +229,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            Planos = await db.Planos
-                .Where(p => p.Ativo)
-                .OrderBy(p => p.Valor)
-                .ToListAsync();
-        }
-        catch
-        {
-            // Banco indisponível — mostra seção vazia
-        }
-        finally
-        {
-            CarregandoPlanos = false;
-        }
+        await using var db = await DbFactory.CreateDbContextAsync();
+        Planos = await db.Planos
+            .Where(p => p.Ativo)
+            .OrderBy(p => p.Valor)
+            .ToListAsync();
+        CarregandoPlanos = false;
     }
 
     private void IrParaCadastro(Plano plano)
@@ -276,8 +247,8 @@
 
     private string CurrentLang = "pt";
     private bool LangOpen = false;
-    private string FlagUrl   => CurrentLang switch { "en" => "/images/flags/us.png", "es" => "/images/flags/es.png", _ => "/images/flags/br.png" };
-    private string LangLabel => CurrentLang switch { "en" => "English", "es" => "Español", _ => "Português" };
+    private string FlagUrl    => CurrentLang switch { "en" => "/images/flags/us.png", "es" => "/images/flags/es.png", _ => "/images/flags/br.png" };
+    private string LangLabel  => CurrentLang switch { "en" => "English", "es" => "Español", _ => "Português" };
 
     private void ToggleLang() => LangOpen = !LangOpen;
     private void SetLang(string lang) { CurrentLang = lang; LangOpen = false; }
@@ -343,15 +314,15 @@
     private List<RowData> WaterRows = new()
     {
         new("A", new(){
-            new("A1","occ","Boa Viagem","lancha-top.png"), new("A2","occ","Sereia","lancha-top.png"),
+            new("A1","occ","Boa Viagem","lancha-top.svg"), new("A2","occ","Sereia","lancha-top.svg"),
             new("A3","free"), new("A4","free"),
-            new("A5","mov","Liberdade","lancha-top.png"), new("A6","free"),
-            new("A7","occ","Netuno","veleiro-top.png"), new("A8","free"),
+            new("A5","mov","Liberdade","lancha-top.svg"), new("A6","free"),
+            new("A7","occ","Netuno","veleiro-top.svg"), new("A8","free"),
         }),
         new("B", new(){
-            new("B1","free"), new("B2","occ","Mar Azul","lancha-top.png"),
-            new("B3","occ","Sol Nascente","lancha-top.png"), new("B4","maint"),
-            new("B5","free"), new("B6","occ","Vento Norte","veleiro-top.png"),
+            new("B1","free"), new("B2","occ","Mar Azul","lancha-top.svg"),
+            new("B3","occ","Sol Nascente","lancha-top.svg"), new("B4","maint"),
+            new("B5","free"), new("B6","occ","Vento Norte","veleiro-top.svg"),
             new("B7","free"), new("B8","free"),
         }),
     };
@@ -359,14 +330,14 @@
     private List<RowData> DryRows = new()
     {
         new("S1", new(){
-            new("S1-1","occ","Aquarius","lancha-top.png"), new("S1-2","occ","Titan","lancha-top.png"),
+            new("S1-1","occ","Aquarius","lancha-top.svg"), new("S1-2","occ","Titan","lancha-top.svg"),
             new("S1-3","free"), new("S1-4","free"),
-            new("S1-5","occ","Atlantis","lancha-top.png"), new("S1-6","free"),
+            new("S1-5","occ","Atlantis","lancha-top.svg"), new("S1-6","free"),
         }),
         new("S2", new(){
-            new("S2-1","free"), new("S2-2","mov","Poseidon","lancha-top.png"),
-            new("S2-3","occ","Brisa","veleiro-top.png"), new("S2-4","free"),
-            new("S2-5","free"), new("S2-6","occ","Orca","lancha-top.png"),
+            new("S2-1","free"), new("S2-2","mov","Poseidon","lancha-top.svg"),
+            new("S2-3","occ","Brisa","veleiro-top.svg"), new("S2-4","free"),
+            new("S2-5","free"), new("S2-6","occ","Orca","lancha-top.svg"),
         }),
     };
 }
