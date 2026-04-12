@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SetiMarine.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59056;http://localhost:59057"
+    }
+  }
+}
