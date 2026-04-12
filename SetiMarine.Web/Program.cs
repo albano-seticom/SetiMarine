@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using SetiMarine.Infrastructure.Data;
 
@@ -29,7 +29,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseStaticFiles();
+var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+provider.Mappings[".svg"] = "image/svg+xml";
+app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = provider });
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
