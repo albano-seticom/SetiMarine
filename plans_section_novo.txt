@@ -1,0 +1,66 @@
+  <!-- ── PLANOS ── -->
+  <section class="sm-plans">
+    <div class="sm-plans-inner">
+      <div class="sm-sec-eye" style="color:#29b6f6">@T("plans.eye")</div>
+      <h2 class="sm-sec-h" style="color:#fff">@T("plans.title")</h2>
+      <p class="sm-sec-p" style="color:rgba(255,255,255,.5)">@T("plans.sub")</p>
+      @if (CarregandoPlanos)
+      {
+        <div class="sm-plans-loading">Carregando planos...</div>
+      }
+      else if (!Planos.Any())
+      {
+        <div class="sm-plans-loading">Em breve — planos disponíveis aqui.</div>
+      }
+      else
+      {
+        <div class="sm-plans-grid">
+          @foreach (var plano in Planos)
+          {
+            <div class="sm-plan-card @(plano.Destaque ? "sm-plan-featured" : "")">
+              @if (plano.Destaque)
+              {
+                <div class="sm-plan-badge">
+                  <span class="sm-plan-badge-dot"></span> @T("plan.popular")
+                </div>
+              }
+              <div class="sm-plan-name">@plano.Nome</div>
+              <div class="sm-plan-price">
+                @if (plano.Valor > 0)
+                {
+                  <span class="sm-price-val">R$ @plano.Valor.ToString("N0")</span><span class="sm-price-mo">/mês</span>
+                }
+                else
+                {
+                  <span class="sm-price-consult">Sob consulta</span>
+                }
+              </div>
+              <div class="sm-plan-limits">
+                @if (plano.LimiteEmbarcacoes > 0)
+                { <span>Até @plano.LimiteEmbarcacoes embarcações</span> }
+                else
+                { <span>Embarcações ilimitadas</span> }
+                @if (plano.LimiteUsuarios > 0)
+                { <span>Até @plano.LimiteUsuarios usuários</span> }
+                else
+                { <span>Usuários ilimitados</span> }
+              </div>
+              @if (!string.IsNullOrEmpty(plano.Recursos))
+              {
+                <ul class="sm-plan-list">
+                  @foreach (var rec in plano.Recursos.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                  {
+                    <li><span class="sm-plan-check">✓</span> @rec.Trim()</li>
+                  }
+                </ul>
+              }
+              <button class="sm-plan-btn @(plano.Destaque ? "sm-plan-btn-featured" : "")"
+                      @onclick="@(() => IrParaCadastro(plano))">
+                @(plano.Valor > 0 ? T("plan.cta") : "Falar com vendas")
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>

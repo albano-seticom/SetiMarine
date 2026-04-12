@@ -1,0 +1,67 @@
+  <!-- ── MAPA VISUAL ── -->
+  <section class="sm-map-section">
+    <div class="sm-sec-eye">@T("map.eye")</div>
+    <h2 class="sm-sec-h" style="color:#fff">@T("map.title")</h2>
+    <p class="sm-sec-p">@T("map.sub")</p>
+    <div class="sm-map-demo">
+      <div class="sm-map-legend">
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-free"></div> @T("status.free")</div>
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-occ"></div> @T("status.occupied")</div>
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-mov"></div> @T("status.moving")</div>
+        <div class="sm-leg"><div class="sm-leg-dot sm-leg-maint"></div> @T("status.maint")</div>
+      </div>
+
+      <div class="sm-map-zone-title">@T("zone.water")</div>
+      <div class="sm-map-water-grid">
+        @foreach (var row in WaterRows)
+        {
+          <div class="sm-pontoon">
+            <div class="sm-pontoon-label">Pontão @row.Label</div>
+            <div class="sm-pontoon-slots">
+              @foreach (var slip in row.Slips)
+              {
+                <div class="sm-slip sm-slip-@slip.Status" title="@slip.Code @(slip.Boat != null ? "· " + slip.Boat : "")">
+                  @if (slip.Boat != null)
+                  {
+                    <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-slip-boat" />
+                  }
+                  else
+                  {
+                    <div class="sm-slip-icon">
+                      <svg width="28" height="48" viewBox="0 0 28 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="14" cy="24" rx="11" ry="20" fill="rgba(41,182,246,0.08)" stroke="rgba(41,182,246,0.2)" stroke-width="1"/>
+                      </svg>
+                    </div>
+                  }
+                  <span class="sm-slip-code">@slip.Code</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="sm-map-zone-title sm-zone-dry">@T("zone.dry")</div>
+      <div class="sm-dry-grid">
+        @foreach (var row in DryRows)
+        {
+          <div class="sm-dry-sector">
+            <div class="sm-dry-sector-label">Setor @row.Label</div>
+            @foreach (var slip in row.Slips)
+            {
+              <div class="sm-dry-slot">
+                <div class="sm-dry-slot-indicator sm-dsi-@slip.Status">
+                  @if (slip.Boat != null)
+                  {
+                    <img src="/images/boats/top/@slip.ImgFile" alt="@slip.Boat" class="sm-dry-boat-icon" />
+                  }
+                </div>
+                <span class="sm-dry-slot-name">@slip.Code</span>
+                <span class="sm-dry-slot-boat">@(slip.Boat ?? "livre")</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
