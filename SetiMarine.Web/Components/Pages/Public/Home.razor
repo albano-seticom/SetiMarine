@@ -229,12 +229,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        Planos = await db.Planos
-            .Where(p => p.Ativo)
-            .OrderBy(p => p.Valor)
-            .ToListAsync();
-        CarregandoPlanos = false;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            Planos = await db.Planos
+                .Where(p => p.Ativo)
+                .OrderBy(p => p.Valor)
+                .ToListAsync();
+        }
+        catch
+        {
+            // Banco indisponível — mostra seção vazia
+        }
+        finally
+        {
+            CarregandoPlanos = false;
+        }
     }
 
     private void IrParaCadastro(Plano plano)

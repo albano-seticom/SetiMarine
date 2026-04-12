@@ -7,15 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-//builder.Services.AddDbContextFactory<AppDbContext>(options =>
-//    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
-        o.LoginPath       = "/login";
-        o.LogoutPath      = "/logout";
-        o.ExpireTimeSpan  = TimeSpan.FromHours(12);
+        o.LoginPath = "/login";
+        o.LogoutPath = "/logout";
+        o.ExpireTimeSpan = TimeSpan.FromHours(12);
     });
 
 builder.Services.AddAuthorization();
