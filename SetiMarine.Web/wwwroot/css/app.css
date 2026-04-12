@@ -135,3 +135,4 @@ body { font-family: "DM Sans", sans-serif; background: var(--white); color: var(
 .sidebar-nav a:hover, .sidebar-nav a.active { background: rgba(255,255,255,.08); color: #fff; }
 .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.08); }
 .app-content { flex: 1; overflow-y: auto; background: var(--white); padding: 32px; }
+.sm-hero-bg { background-image: url('/images/marina/marina-hero.jpg') !important; background-size: cover !important; background-position: center bottom !important; opacity: .18 !important; } .sm-map-section::before { background-image: url('/images/marina/marina-aerial.jpg') !important; background-size: cover !important; background-position: center !important; opacity: .07 !important; }
