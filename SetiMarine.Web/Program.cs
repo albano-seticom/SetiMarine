@@ -31,7 +31,12 @@ if (!app.Environment.IsDevelopment())
 
 var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
 provider.Mappings[".svg"] = "image/svg+xml";
-app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = provider });
+provider.Mappings[".mp4"] = "video/mp4";
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = provider
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();

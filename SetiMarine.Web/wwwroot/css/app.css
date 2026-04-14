@@ -136,3 +136,144 @@ body { font-family: "DM Sans", sans-serif; background: var(--white); color: var(
 .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.08); }
 .app-content { flex: 1; overflow-y: auto; background: var(--white); padding: 32px; }
 .sm-hero-bg { background-image: url('/images/marina/marina-hero.jpg') !important; background-size: cover !important; background-position: center bottom !important; opacity: .18 !important; } .sm-map-section::before { background-image: url('/images/marina/marina-aerial.jpg') !important; background-size: cover !important; background-position: center !important; opacity: .07 !important; }
+
+/* ── HERO VIDEO BACKGROUND ── */
+.sm-hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 40px 0;
+    overflow: hidden;
+    background: #0a1628;
+}
+.sm-hero-video-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+.sm-hero-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+}
+.sm-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(10,22,40,0.55) 0%,
+        rgba(10,22,40,0.45) 50%,
+        rgba(10,22,40,0.75) 100%
+    );
+    z-index: 1;
+}
+.sm-hero-bg { display: none; }
+.sm-hero-grid { display: none; }
+.sm-hero-glow { display: none; }
+
+/* Conteúdo do hero sobre o vídeo */
+.sm-hero > *:not(.sm-hero-video-wrap):not(.sm-hero-overlay) {
+    position: relative;
+    z-index: 2;
+}
+.sm-chip {
+    background: rgba(255,255,255,.12) !important;
+    border-color: rgba(41,182,246,.5) !important;
+    color: #fff !important;
+    backdrop-filter: blur(8px);
+}
+.sm-chip .sm-dot { background: #29b6f6; }
+.sm-h1 { color: #fff !important; text-shadow: 0 2px 20px rgba(0,0,0,.4); }
+.sm-accent { color: #29b6f6 !important; }
+.sm-sub { color: rgba(255,255,255,.8) !important; text-shadow: 0 1px 8px rgba(0,0,0,.3); }
+.sm-ghost {
+    background: rgba(255,255,255,.1) !important;
+    border-color: rgba(255,255,255,.35) !important;
+    color: #fff !important;
+    backdrop-filter: blur(8px);
+}
+.sm-ghost:hover { background: rgba(255,255,255,.2) !important; }
+
+/* Stats bar no estilo dark sobre o vídeo */
+.sm-stats {
+    background: rgba(10,22,40,0.75) !important;
+    border-color: rgba(41,182,246,.2) !important;
+    backdrop-filter: blur(12px);
+    transform: translateY(-28px);
+}
+.sm-stat { border-color: rgba(41,182,246,.15) !important; }
+.sm-stat-n { color: #29b6f6 !important; }
+.sm-stat-l { color: rgba(255,255,255,.5) !important; }
+
+/* Scroll indicator */
+.sm-scroll-hint {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: .6;
+    animation: fadeInUp 1s ease 1s both;
+}
+.sm-scroll-hint span {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.7);
+    writing-mode: horizontal-tb;
+}
+.sm-scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(255,255,255,.7), transparent);
+    animation: scrollLine 2s ease-in-out infinite;
+}
+@keyframes scrollLine {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to   { opacity: .6; transform: translateX(-50%) translateY(0); }
+}
+
+/* Barcos do hero — ajuste para ficarem visíveis sobre o vídeo */
+.sm-boats { position: relative; z-index: 2; }
+.sm-boat { box-shadow: 0 20px 60px rgba(0,0,0,.5) !important; }
+
+/* Navbar transparente sobre o vídeo */
+.sm-nav {
+    background: rgba(10,22,40,0.7) !important;
+    border-color: rgba(255,255,255,.08) !important;
+}
+.sm-logo-name { color: #fff !important; }
+.sm-btn-login { color: rgba(255,255,255,.8) !important; border-color: rgba(255,255,255,.2) !important; }
+.sm-btn-login:hover { background: rgba(255,255,255,.1) !important; }
+
+/* DEBUG VIDEO */
+.sm-hero-video-wrap {
+    display: block !important;
+    z-index: 0 !important;
+}
+
+.sm-hero-video {
+    display: block !important;
+    opacity: 1 !important;
+}
