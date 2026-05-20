@@ -1,0 +1,22 @@
+@using SetiMarine.Domain.Enums
+
+@{
+    var (cls, label) = Status switch
+    {
+        StatusMovimentacao.Agendado          => ("badge badge-occ",  "Agendado"),
+        StatusMovimentacao.AguardandoPreparo => ("badge",            "Aguard. Preparo"),
+        StatusMovimentacao.EmPreparo         => ("badge badge-mov",  "Em Preparo"),
+        StatusMovimentacao.Pronto            => ("badge badge-free", "Pronto"),
+        StatusMovimentacao.Descendo          => ("badge badge-mov",  "Descendo"),
+        StatusMovimentacao.NaAgua            => ("badge badge-free", "Na Água"),
+        StatusMovimentacao.Retornando        => ("badge badge-mov",  "Retornando"),
+        StatusMovimentacao.Subindo           => ("badge badge-mov",  "Subindo"),
+        StatusMovimentacao.Finalizado        => ("badge",            "Finalizado"),
+        _                                    => ("badge",            Status.ToString()),
+    };
+}
+<span class="@cls" style="@(Status == StatusMovimentacao.AguardandoPreparo ? "background:rgba(120,120,120,.1);color:var(--ink-500);" : Status == StatusMovimentacao.Finalizado ? "background:rgba(36,53,149,.06);color:var(--ink-400);" : "")">@label</span>
+
+@code {
+    [Parameter, EditorRequired] public StatusMovimentacao Status { get; set; }
+}

@@ -1,0 +1,761 @@
+@page "/vagas/layout"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject VagaService VagaService
+@inject CorredorService CorredorService
+@inject AlocacaoService AlocacaoService
+@inject IJSRuntime JS
+@inject UsuarioContextService UserCtx
+@implements IAsyncDisposable
+
+<PageTitle>Layout da Marina — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Vagas</span>
+        <h1>Layout da Marina</h1>
+    </div>
+    <div class="page-head-actions">
+        <div class="layout-legend">
+            <span><i style="background:#4caf7d;"></i>Livre</span>
+            <span><i style="background:#3a6bbf;"></i>Ocupada</span>
+            <span><i style="background:#c9991a;"></i>Movimentação</span>
+            <span><i style="background:#bf3a3a;"></i>Manutenção</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" @onclick="ResetarVisualizacao">Centralizar</button>
+        <a href="/vagas" class="btn btn-ghost btn-sm">Lista</a>
+        <a href="/vagas/nova" class="btn btn-primary btn-sm">+ Nova Vaga</a>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    <div class="mc-wrapper" id="marina-canvas">
+        <div class="mc-inner">
+
+            <!-- ════════════════════════════════
+                 ÁREA SECA — topo do canvas
+            ════════════════════════════════ -->
+            <div class="dry-area" style="width:@(_canvasW)px;height:@DryH px;"></div>
+
+            <!-- ════════════════════════════════
+                 CAIS PRINCIPAL (main pier)
+            ════════════════════════════════ -->
+            <div class="main-pier" style="top:@DryH px;width:@(_canvasW)px;">
+                @foreach (var f in _fingers)
+                {
+                    <!-- conexão do finger no cais -->
+                    <div class="main-pier-join"
+                         style="left:@(f.X)px;width:@FingerW px;"></div>
+                    <!-- label do pier no cais -->
+                    <div class="main-pier-label"
+                         style="left:@(f.X + FingerW/2)px;">
+                        @f.Nome
+                    </div>
+                }
+            </div>
+
+            <!-- ════════════════════════════════
+                 FINGER PIERS (corredores)
+            ════════════════════════════════ -->
+            @foreach (var f in _fingers)
+            {
+                <div class="finger"
+                     style="left:@(f.X)px;
+                            top:@(DryH + MainPierH)px;
+                            width:@FingerW px;
+                            height:@(f.Len)px;">
+                    <!-- tábuas do finger -->
+                    @for (var y = 6; y < f.Len; y += 9)
+                    {
+                        <div class="finger-plank" style="top:@(y)px;"></div>
+                    }
+                    <!-- T-head no fim do finger -->
+                    <div class="finger-thead"
+                         style="bottom:-@THeadH px;
+                                left:-@THeadExtra px;
+                                width:@(FingerW + THeadExtra * 2)px;
+                                height:@THeadH px;"></div>
+                    <!-- label dentro do finger -->
+                    <div class="finger-label">@f.Nome</div>
+                </div>
+            }
+
+            <!-- ════════════════════════════════
+                 VAGAS / BERÇOS
+            ════════════════════════════════ -->
+            @foreach (var v in _vagas)
+            {
+                var mol  = v.Tipo == TipoVaga.Agua;
+                var st   = v.Status.ToString().ToLower();
+                var embs = v.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
+                var occ  = embs.Any();
+
+                <div class="berco @(mol ? "berco-agua" : "berco-seco") status-@st @(occ ? "occ" : "")"
+                     data-vaga-id="@v.Id"
+                     style="left:@(v.PosX)px;top:@(v.PosY)px;width:@(v.Largura)px;height:@(v.Altura)px;"
+                     @onclick="() => Selecionar(v)">
+
+                    @if (mol && occ)
+                    {
+                        <!-- Barco — planta (top-down) -->
+                        <div class="boat @st">
+                            <div class="boat-body"></div>
+                            <div class="boat-bow"></div>
+                            <div class="boat-deck"></div>
+                        </div>
+                        <!-- Linhas de amarração -->
+                        <div class="moor moor-a"></div>
+                        <div class="moor moor-b"></div>
+                    }
+
+                    <div class="berco-code">@v.Codigo</div>
+
+                    @if (occ)
+                    {
+                        <div class="berco-name">@embs[0].Embarcacao?.Nome</div>
+                    }
+
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         PAINEL LATERAL
+    ════════════════════════════════ -->
+    @if (_sel != null)
+    {
+        <div class="side-panel">
+            <div class="sp-head">
+                <div>
+                    <div class="sp-ey">Vaga</div>
+                    <div class="sp-title">@_sel.Codigo</div>
+                </div>
+                <button @onclick="() => _sel = null" class="sp-close">×</button>
+            </div>
+
+            <div class="sp-badges">
+                <StatusVagaBadge Status="_sel.Status" />
+                @if (_sel.Tipo == TipoVaga.Agua)
+                { <span class="badge" style="background:rgba(70,140,180,.12);color:#2a6080;">Molhada</span> }
+                else
+                { <span class="badge" style="background:var(--line);color:var(--ink-500);">Seca</span> }
+            </div>
+
+            <div class="sp-meta">
+                <div>Corredor <strong>@(_sel.Corredor?.Nome ?? "—")</strong></div>
+                <div>Máx. <strong>@_sel.TamanhoMaxPes pés / @_sel.ComprimentoMaxMetros m</strong></div>
+                <div>Posição <code>@_sel.PosX × @_sel.PosY</code></div>
+            </div>
+
+            <div class="sp-sec-label">Embarcações</div>
+
+            @if (!_sel.EmbarcacoesNaVaga.Any(e => e.Ativa))
+            {
+                <p class="sp-empty">Berço livre</p>
+            }
+            else
+            {
+                @foreach (var ve in _sel.EmbarcacoesNaVaga.Where(e => e.Ativa))
+                {
+                    <div class="sp-emb">
+                        <span>@ve.Embarcacao?.Nome</span>
+                        <button class="btn btn-danger btn-sm"
+                                style="padding:1px 8px;"
+                                @onclick="() => DesalocarAsync(ve)">×</button>
+                    </div>
+                }
+            }
+
+            <a href="/vagas/@_sel.Id" class="btn btn-ghost btn-sm sp-edit">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editar Vaga
+            </a>
+
+            @if (_erro != null)
+            {
+                <div class="sp-err">@_erro</div>
+            }
+        </div>
+    }
+}
+
+<style>
+
+/* ────────────────────────────────────────────────
+   LEGENDA
+──────────────────────────────────────────────── */
+.layout-legend {
+    display: flex;
+    gap: .55rem;
+    align-items: center;
+    margin-right: .85rem;
+}
+.layout-legend span {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .68rem;
+    color: var(--ink-500);
+}
+.layout-legend i {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* ────────────────────────────────────────────────
+   CANVAS — FUNDO DE ÁGUA
+──────────────────────────────────────────────── */
+.mc-wrapper {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 192px);
+    /* Azul de água — parecido com o diagrama de referência */
+    background:
+        linear-gradient(180deg,
+            #6fa8c0 0%,
+            #5a9ab5 35%,
+            #4e8eaa 100%
+        );
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: default;
+    /* Textura de água — ondas suaves */
+    background-image:
+        repeating-linear-gradient(
+            180deg,
+            transparent          0px,
+            transparent          18px,
+            rgba(255,255,255,.04) 18px,
+            rgba(255,255,255,.04) 19px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent          0px,
+            transparent          60px,
+            rgba(255,255,255,.02) 60px,
+            rgba(255,255,255,.02) 61px
+        ),
+        linear-gradient(180deg, #6fa8c0, #4e8eaa);
+}
+
+.mc-inner {
+    position: relative;
+    width: 2400px;
+    height: 1800px;
+    transform-origin: 0 0;
+}
+
+/* ────────────────────────────────────────────────
+   ÁREA SECA (top)
+──────────────────────────────────────────────── */
+.dry-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(0,0,0,.025)  0px,
+            rgba(0,0,0,.025)  1px,
+            transparent       1px,
+            transparent       24px
+        ),
+        repeating-linear-gradient(
+            180deg,
+            rgba(0,0,0,.025)  0px,
+            rgba(0,0,0,.025)  1px,
+            transparent       1px,
+            transparent       24px
+        ),
+        linear-gradient(180deg, #c4beb4 0%, #b8b2aa 100%);
+    border-bottom: 2px solid #a09890;
+    z-index: 2;
+}
+
+/* ────────────────────────────────────────────────
+   CAIS PRINCIPAL (main pier)
+──────────────────────────────────────────────── */
+.main-pier {
+    position: absolute;
+    height: @(MainPierH)px;
+    left: 0;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(0,0,0,.04)  0px,
+            rgba(0,0,0,.04)  1px,
+            transparent      1px,
+            transparent      20px
+        ),
+        linear-gradient(180deg, #d0c9bc 0%, #c4bcac 55%, #b8b0a0 100%);
+    border-top:    2px solid #a89880;
+    border-bottom: 3px solid #908070;
+    box-shadow: 0 6px 18px rgba(0,0,0,.4);
+    z-index: 5;
+}
+
+.main-pier-join {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(0,0,0,.07);
+    border-left:  1px solid rgba(0,0,0,.1);
+    border-right: 1px solid rgba(0,0,0,.1);
+}
+
+.main-pier-label {
+    position: absolute;
+    bottom: 5px;
+    transform: translateX(-50%);
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: rgba(60,50,35,.7);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 6;
+}
+
+/* ────────────────────────────────────────────────
+   FINGER PIER
+──────────────────────────────────────────────── */
+.finger {
+    position: absolute;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            #d8ceae 0px,
+            #d8ceae 8px,
+            #ccc2a2 8px,
+            #ccc2a2 9px
+        );
+    border-left:  2px solid #b4a882;
+    border-right: 2px solid #b4a882;
+    box-shadow:
+        -4px 0 14px rgba(0,0,0,.25),
+         4px 0 14px rgba(0,0,0,.25),
+         0  10px 20px rgba(0,0,0,.2);
+    z-index: 4;
+}
+
+.finger-plank {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    height: 1px;
+    background: rgba(0,0,0,.07);
+}
+
+.finger-thead {
+    position: absolute;
+    background: linear-gradient(180deg, #d0c6a4, #c0b892);
+    border-left:  2px solid #b4a882;
+    border-right: 2px solid #b4a882;
+    border-bottom: 2px solid #a89870;
+    border-radius: 0 0 3px 3px;
+    box-shadow: 0 6px 14px rgba(0,0,0,.25);
+}
+
+.finger-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%) rotate(90deg);
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: rgba(60,50,35,.6);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ────────────────────────────────────────────────
+   BERÇO BASE
+──────────────────────────────────────────────── */
+.berco {
+    position: absolute;
+    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 3px;
+    user-select: none;
+    overflow: hidden;
+    z-index: 3;
+    transition: filter .12s;
+}
+.berco:hover    { filter: brightness(1.1); z-index: 8; }
+.berco.dragging { cursor: grabbing; z-index: 90; filter: brightness(1.15); }
+
+/* ──── BERÇO MOLHADO ──── */
+.berco-agua {
+    /* fundo transparente — a água do canvas aparece */
+    background: rgba(255,255,255,.08);
+    border: 1px dashed rgba(220,210,180,.45);
+}
+
+/* Tira de status na borda inferior */
+.berco-agua::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+}
+.berco-agua.status-livre::after          { background: #4caf7d; }
+.berco-agua.status-ocupada::after        { background: #3a6bbf; }
+.berco-agua.status-emmovimentacao::after { background: #c9991a; }
+.berco-agua.status-manutencao::after     { background: #bf3a3a; }
+
+/* Berço ocupado — levemente mais visível */
+.berco-agua.occ {
+    background: rgba(255,255,255,.12);
+    border-color: rgba(220,210,180,.6);
+}
+
+/* ──── BARCO — PLANTA (top-down) ──── */
+.boat {
+    position: absolute;
+    /* ocupa o interior do berço com margens */
+    inset: 6% 16% 12%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,.35));
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Proa — ponta triangular */
+.boat-bow {
+    width: 48%;
+    height: 16%;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #f0ece2, #e4dec8);
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Casco / body */
+.boat-body {
+    width: 100%;
+    flex: 1;
+    background: linear-gradient(180deg, #ede8da 0%, #ddd5c0 55%, #ccc2a8 100%);
+    border-radius: 0 0 35% 35%;
+    border: 1px solid rgba(100,85,55,.15);
+}
+
+/* Cabine / superestrutura */
+.boat-deck {
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    top: 20%;
+    height: 28%;
+    background: linear-gradient(180deg, rgba(200,192,172,.9), rgba(180,170,148,.8));
+    border-radius: 3px 3px 2px 2px;
+    border: 1px solid rgba(80,70,50,.1);
+}
+
+/* Variações de cor por status */
+.boat.status-emmovimentacao .boat-body { background: linear-gradient(180deg,#e8daa8,#c8b870); }
+.boat.status-manutencao     .boat-body { background: linear-gradient(180deg,#d8c8c0,#b8a098); }
+
+/* Linhas de amarração */
+.moor {
+    position: absolute;
+    width: 1px;
+    top: 0;
+    height: 10%;
+    background: linear-gradient(180deg,rgba(180,160,110,.7),rgba(180,160,110,.1));
+    z-index: 3;
+    pointer-events: none;
+}
+.moor-a { left:  25%; }
+.moor-b { right: 25%; }
+
+/* ──── BERÇO SECO ──── */
+.berco-seco {
+    border: 1.5px solid;
+    border-radius: 2px;
+}
+.berco-seco.status-livre          { background:#2e2e2e; border-color:#454545; }
+.berco-seco.status-ocupada        { background:#162038; border-color:#2a3a58; }
+.berco-seco.status-emmovimentacao { background:#2c1e08; border-color:#3e2c12; }
+.berco-seco.status-manutencao     { background:#300e0e; border-color:#441818; }
+.berco-seco:hover { filter:brightness(1.12); }
+
+/* ──── LABELS DAS VAGAS ──── */
+.berco-code {
+    position: relative;
+    z-index: 5;
+    font-size: .62rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.92);
+    text-shadow: 0 1px 3px rgba(0,0,0,.7);
+    letter-spacing: .06em;
+    line-height: 1;
+}
+
+.berco-name {
+    position: relative;
+    z-index: 5;
+    font-size: .52rem;
+    color: rgba(255,255,255,.55);
+    text-shadow: 0 1px 2px rgba(0,0,0,.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 92%;
+    line-height: 1.2;
+    margin-top: 1px;
+}
+
+/* ────────────────────────────────────────────────
+   PAINEL LATERAL
+──────────────────────────────────────────────── */
+.side-panel {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 248px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.14);
+    padding: 18px;
+    z-index: 300;
+    animation: spIn .18s ease;
+}
+
+@@keyframes spIn {
+    from { opacity:0; transform:translateY(-50%) translateX(14px); }
+    to   { opacity:1; transform:translateY(-50%) translateX(0); }
+}
+
+.sp-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: .85rem;
+}
+.sp-ey {
+    font-size: .6rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-300);
+    margin-bottom: .15rem;
+}
+.sp-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink-900);
+    letter-spacing: .04em;
+}
+.sp-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-300);
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0;
+}
+
+.sp-badges {
+    display: flex;
+    gap: .35rem;
+    flex-wrap: wrap;
+    margin-bottom: .8rem;
+}
+
+.sp-meta {
+    font-size: .78rem;
+    color: var(--ink-500);
+    display: flex;
+    flex-direction: column;
+    gap: .22rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: .6rem 0;
+    margin-bottom: .7rem;
+}
+.sp-meta strong { color: var(--ink-900); }
+.sp-meta code {
+    font-size: .72rem;
+    background: #f4f3f0;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.sp-sec-label {
+    font-size: .6rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-300);
+    margin-bottom: .42rem;
+}
+
+.sp-empty {
+    font-size: .78rem;
+    color: var(--ink-300);
+    margin: 0 0 .7rem;
+}
+
+.sp-emb {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: .3rem;
+    padding: .32rem .42rem;
+    background: #f5f4f1;
+    border-radius: 3px;
+    font-size: .8rem;
+    font-weight: 500;
+}
+
+.sp-edit {
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    gap: .4rem;
+    margin-top: .7rem;
+}
+
+.sp-err {
+    margin-top: .55rem;
+    padding: .5rem .65rem;
+    background: rgba(164,68,54,.08);
+    border: 1px solid rgba(164,68,54,.2);
+    color: var(--s-maint);
+    font-size: .76rem;
+    border-radius: 2px;
+}
+
+</style>
+
+@code {
+    /* ─── Layout constants ─── */
+    private const int DryH       = 80;   /* altura da área seca */
+    private const int MainPierH  = 44;   /* altura do cais principal */
+    private const int FingerW    = 22;   /* largura de cada finger */
+    private const int THeadH     = 14;   /* altura do T-head */
+    private const int THeadExtra = 10;   /* extensão lateral do T-head */
+
+    private int _canvasW = 2400;
+
+    /* ─── State ─── */
+    private List<Vaga>     _vagas      = new();
+    private List<Corredor> _corredores = new();
+    private List<FingerDef>_fingers    = new();
+    private Vaga?          _sel;
+    private bool           _carregando = true;
+    private string?        _erro;
+    private DotNetObjectReference<Layout>? _dotnetRef;
+
+    private record FingerDef(string Nome, int X, int Len);
+
+    /* ─── Init ─── */
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _corredores = await CorredorService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _vagas      = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        RecalcFingers();
+        _carregando = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_carregando)
+        {
+            _dotnetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("layoutMarina.init", _dotnetRef, "marina-canvas");
+        }
+    }
+
+    /* ─── Calcula posição dos fingers a partir das vagas de cada corredor ─── */
+    private void RecalcFingers()
+    {
+        _fingers = _corredores
+            .Select(c =>
+            {
+                var vgs = _vagas.Where(v => v.CorredorId == c.Id).ToList();
+                if (!vgs.Any()) return null;
+
+                /* centro X do grupo de vagas → centro do finger */
+                var minX   = (int)vgs.Min(v => v.PosX);
+                var maxX   = (int)vgs.Max(v => v.PosX + v.Largura);
+                var cx     = (minX + maxX) / 2;
+                var fingerX = cx - FingerW / 2;
+
+                /* comprimento do finger até a vaga mais distante */
+                var maxBot = (int)vgs.Max(v => v.PosY + v.Altura);
+                var len    = Math.Max(maxBot - (DryH + MainPierH) + 24, 60);
+
+                return new FingerDef(c.Nome, fingerX, len);
+            })
+            .OfType<FingerDef>()
+            .ToList();
+    }
+
+    /* ─── Drag callback do JS ─── */
+    [JSInvokable]
+    public async Task OnVagaMovida(int vagaId, decimal x, decimal y)
+    {
+        try
+        {
+            await VagaService.AtualizarPosicaoAsync(vagaId, UserCtx.EmpresaId, x, y);
+            var v = _vagas.FirstOrDefault(v => v.Id == vagaId);
+            if (v != null) { v.PosX = x; v.PosY = y; }
+            RecalcFingers();
+        }
+        catch (Exception ex) { _erro = ex.Message; StateHasChanged(); }
+    }
+
+    private void Selecionar(Vaga v)
+    {
+        _sel  = v == _sel ? null : v;
+        _erro = null;
+    }
+
+    private async Task ResetarVisualizacao()
+        => await JS.InvokeVoidAsync("layoutMarina.resetView");
+
+    private async Task DesalocarAsync(VagaEmbarcacao ve)
+    {
+        _erro = null;
+        try
+        {
+            await AlocacaoService.DesalocarEmbarcacaoAsync(ve.Id, UserCtx.EmpresaId);
+            _vagas = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+            RecalcFingers();
+            _sel = _vagas.FirstOrDefault(v => v.Id == _sel?.Id);
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await JS.InvokeVoidAsync("layoutMarina.destroy");
+        _dotnetRef?.Dispose();
+    }
+}

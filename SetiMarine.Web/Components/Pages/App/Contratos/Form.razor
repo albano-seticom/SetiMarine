@@ -1,0 +1,190 @@
+@page "/contratos/novo"
+@page "/contratos/{Id:int}"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject ContratoService ContratoService
+@inject NavigationManager Nav
+@inject UsuarioContextService UserCtx
+
+<PageTitle>@(_isNovo ? "Novo Contrato" : "Editar Contrato") — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow"><a href="/contratos" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line);">Contratos</a> /</span>
+        <h1>@(_isNovo ? "Novo Contrato" : "Editar Contrato")</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    <EditForm Model="_contrato" OnValidSubmit="SalvarAsync" style="max-width:680px;">
+        <DataAnnotationsValidator />
+
+        <div class="form-section">
+            <div class="form-section-title">Partes do Contrato</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Cliente *</label>
+                    <select @bind="_clienteIdStr">
+                        <option value="">Selecione...</option>
+                        @foreach (var c in _clientes)
+                        { <option value="@c.Id">@c.Nome</option> }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Embarcação *</label>
+                    <select @bind="_embarcacaoIdStr">
+                        <option value="">Selecione...</option>
+                        @foreach (var e in _embarcacoes)
+                        { <option value="@e.Id">@e.Nome @(e.Cliente != null ? $"({e.Cliente.Nome})" : "")</option> }
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Vaga *</label>
+                    <select @bind="_vagaIdStr">
+                        <option value="">Selecione...</option>
+                        @foreach (var v in _vagas)
+                        { <option value="@v.Id">@v.Codigo @(v.Corredor != null ? $"— {v.Corredor.Nome}" : "")</option> }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Tipo de Contrato</label>
+                    <select @bind="_tipoStr">
+                        <option value="Mensalista">Mensalista</option>
+                        <option value="Diaria">Diária</option>
+                        <option value="Visitante">Visitante</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Valores e Vigência</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Valor Mensal (R$)</label>
+                    <InputNumber @bind-Value="_contrato.ValorMensal" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Início *</label>
+                    <InputDate @bind-Value="_contrato.Inicio" />
+                </div>
+                <div class="field">
+                    <label>Fim (deixe vazio = indeterminado)</label>
+                    <InputDate @bind-Value="_contrato.Fim" />
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns:auto 1fr;">
+                <div class="field" style="display:flex;align-items:flex-end;padding-bottom:.5rem;">
+                    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;text-transform:none;letter-spacing:0;font-size:.88rem;color:var(--ink-900);">
+                        <InputCheckbox @bind-Value="_contrato.Ativo" />
+                        Contrato ativo
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        @if (_erro != null)
+        {
+            <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
+        }
+
+        <div class="form-actions">
+            <a href="/contratos" class="btn btn-ghost">Cancelar</a>
+            <button type="submit" class="btn btn-primary" disabled="@_salvando">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Contrato _contrato = new();
+    private List<Cliente>    _clientes    = new();
+    private List<Embarcacao> _embarcacoes = new();
+    private List<Vaga>       _vagas       = new();
+
+    private string _clienteIdStr    = "";
+    private string _embarcacaoIdStr = "";
+    private string _vagaIdStr       = "";
+    private string _tipoStr         = "Mensalista";
+
+    private bool _isNovo    => Id is null;
+    private bool _carregando = true;
+    private bool _salvando;
+    private string? _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _clientes    = await ContratoService.ListarClientesAsync(UserCtx.EmpresaId);
+        _embarcacoes = await ContratoService.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
+        _vagas       = await ContratoService.ListarVagasAsync(UserCtx.EmpresaId);
+
+        if (!_isNovo)
+        {
+            var existente = await ContratoService.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
+            if (existente == null) { Nav.NavigateTo("/contratos"); return; }
+            _contrato        = existente;
+            _clienteIdStr    = _contrato.ClienteId.ToString();
+            _embarcacaoIdStr = _contrato.EmbarcacaoId.ToString();
+            _vagaIdStr       = _contrato.VagaId.ToString();
+            _tipoStr         = _contrato.Tipo.ToString();
+        }
+        else
+        {
+            _contrato = new Contrato
+            {
+                EmpresaId = UserCtx.EmpresaId,
+                Inicio    = DateTime.Today,
+                Ativo     = true
+            };
+        }
+        _carregando = false;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _salvando = true;
+        _erro     = null;
+        try
+        {
+            if (!int.TryParse(_clienteIdStr,    out var cliId) || cliId == 0) { _erro = "Selecione o cliente.";     _salvando = false; return; }
+            if (!int.TryParse(_embarcacaoIdStr, out var embId) || embId == 0) { _erro = "Selecione a embarcação."; _salvando = false; return; }
+            if (!int.TryParse(_vagaIdStr,       out var vagId) || vagId == 0) { _erro = "Selecione a vaga.";       _salvando = false; return; }
+
+            _contrato.ClienteId    = cliId;
+            _contrato.EmbarcacaoId = embId;
+            _contrato.VagaId       = vagId;
+            _contrato.Tipo         = Enum.Parse<TipoContrato>(_tipoStr);
+
+            if (_isNovo) await ContratoService.CriarAsync(_contrato);
+            else         await ContratoService.EditarAsync(_contrato);
+
+            Nav.NavigateTo("/contratos");
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+}

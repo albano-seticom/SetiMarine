@@ -22,6 +22,68 @@ namespace SetiMarine.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SetiMarine.Domain.Entities.ChecklistTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descricao")
+                        .HasColumnType("text");
+
+                    b.Property<int>("EmpresaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmpresaId");
+
+                    b.ToTable("mar_checklist_templates", (string)null);
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.ChecklistTemplateItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ChecklistTemplateId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Obrigatorio")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChecklistTemplateId");
+
+                    b.ToTable("mar_checklist_template_itens", (string)null);
+                });
+
             modelBuilder.Entity("SetiMarine.Domain.Entities.Cliente", b =>
                 {
                     b.Property<int>("Id")
@@ -139,6 +201,43 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.ToTable("mar_contratos", (string)null);
                 });
 
+            modelBuilder.Entity("SetiMarine.Domain.Entities.Corredor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descricao")
+                        .HasColumnType("text");
+
+                    b.Property<int>("EmpresaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TamanhoMaxPes")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmpresaId");
+
+                    b.ToTable("mar_corredores", (string)null);
+                });
+
             modelBuilder.Entity("SetiMarine.Domain.Entities.Embarcacao", b =>
                 {
                     b.Property<int>("Id")
@@ -200,7 +299,8 @@ namespace SetiMarine.Infrastructure.Migrations
 
                     b.HasIndex("ClienteId");
 
-                    b.HasIndex("VagaFixaId");
+                    b.HasIndex("VagaFixaId")
+                        .IsUnique();
 
                     b.ToTable("mar_embarcacoes", (string)null);
                 });
@@ -271,6 +371,40 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.HasIndex("PlanoId");
 
                     b.ToTable("sis_empresas", (string)null);
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.FotoServico", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descricao")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("EhAvaria")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("RegistroServicoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("TiradaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegistroServicoId");
+
+                    b.ToTable("mar_fotos_servico", (string)null);
                 });
 
             modelBuilder.Entity("SetiMarine.Domain.Entities.HistoricoMovimentacao", b =>
@@ -400,6 +534,55 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.ToTable("mar_ordens_servico", (string)null);
                 });
 
+            modelBuilder.Entity("SetiMarine.Domain.Entities.PedidoUso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DataPrevista")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmbarcacaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EmpresaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MensagemOriginal")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("MovimentacaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Observacao")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Origem")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("EmbarcacaoId");
+
+                    b.HasIndex("MovimentacaoId");
+
+                    b.ToTable("mar_pedidos_uso", (string)null);
+                });
+
             modelBuilder.Entity("SetiMarine.Domain.Entities.Plano", b =>
                 {
                     b.Property<int>("Id")
@@ -445,6 +628,101 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.ToTable("cfg_planos", (string)null);
                 });
 
+            modelBuilder.Entity("SetiMarine.Domain.Entities.RegistroServico", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AgendadoPara")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmbarcacaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EmpresaId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("FinalizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("IniciadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("MovimentacaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Observacao")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ResponsavelId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TipoServicoConfigId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("VagaId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmbarcacaoId");
+
+                    b.HasIndex("MovimentacaoId");
+
+                    b.HasIndex("ResponsavelId");
+
+                    b.HasIndex("TipoServicoConfigId");
+
+                    b.HasIndex("VagaId");
+
+                    b.ToTable("mar_registros_servico", (string)null);
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.RegistroServicoItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ChecklistTemplateItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Observacao")
+                        .HasColumnType("text");
+
+                    b.Property<int>("RegistroServicoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChecklistTemplateItemId");
+
+                    b.HasIndex("RegistroServicoId");
+
+                    b.ToTable("mar_registro_servico_itens", (string)null);
+                });
+
             modelBuilder.Entity("SetiMarine.Domain.Entities.SessaoAtiva", b =>
                 {
                     b.Property<int>("Id")
@@ -453,7 +731,13 @@ namespace SetiMarine.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CriadaEm")
+                    b.Property<int>("EmpresaId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("IniciadaEm")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Ip")
@@ -474,7 +758,48 @@ namespace SetiMarine.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UsuarioId");
+
                     b.ToTable("sis_sessoes", (string)null);
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.TipoServicoConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("ChecklistTemplateId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmpresaId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FrequenciaDias")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChecklistTemplateId");
+
+                    b.HasIndex("EmpresaId");
+
+                    b.ToTable("mar_tipos_servico_config", (string)null);
                 });
 
             modelBuilder.Entity("SetiMarine.Domain.Entities.Usuario", b =>
@@ -544,6 +869,9 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.Property<decimal>("ComprimentoMaxMetros")
                         .HasColumnType("numeric");
 
+                    b.Property<int?>("CorredorId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("EmbarcacaoAtualId")
                         .HasColumnType("integer");
 
@@ -551,6 +879,9 @@ namespace SetiMarine.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Largura")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("LarguraMaxPes")
                         .HasColumnType("numeric");
 
                     b.Property<string>("Observacao")
@@ -568,17 +899,74 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("TamanhoMaxPes")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("Tipo")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EmbarcacaoAtualId");
+                    b.HasIndex("CorredorId");
 
                     b.HasIndex("EmpresaId", "Codigo")
                         .IsUnique();
 
                     b.ToTable("mar_vagas", (string)null);
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.VagaEmbarcacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativa")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("EmbarcacaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EntradaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SaidaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("VagaId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmbarcacaoId");
+
+                    b.HasIndex("VagaId");
+
+                    b.ToTable("mar_vaga_embarcacoes", (string)null);
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.ChecklistTemplate", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.Empresa", "Empresa")
+                        .WithMany()
+                        .HasForeignKey("EmpresaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Empresa");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.ChecklistTemplateItem", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.ChecklistTemplate", "ChecklistTemplate")
+                        .WithMany("Itens")
+                        .HasForeignKey("ChecklistTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChecklistTemplate");
                 });
 
             modelBuilder.Entity("SetiMarine.Domain.Entities.Cliente", b =>
@@ -619,6 +1007,17 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.Navigation("Vaga");
                 });
 
+            modelBuilder.Entity("SetiMarine.Domain.Entities.Corredor", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.Empresa", "Empresa")
+                        .WithMany()
+                        .HasForeignKey("EmpresaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Empresa");
+                });
+
             modelBuilder.Entity("SetiMarine.Domain.Entities.Embarcacao", b =>
                 {
                     b.HasOne("SetiMarine.Domain.Entities.Cliente", "Cliente")
@@ -628,9 +1027,9 @@ namespace SetiMarine.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("SetiMarine.Domain.Entities.Vaga", "VagaFixa")
-                        .WithMany()
-                        .HasForeignKey("VagaFixaId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithOne("EmbarcacaoAtual")
+                        .HasForeignKey("SetiMarine.Domain.Entities.Embarcacao", "VagaFixaId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Cliente");
 
@@ -644,6 +1043,17 @@ namespace SetiMarine.Infrastructure.Migrations
                         .HasForeignKey("PlanoId");
 
                     b.Navigation("Plano");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.FotoServico", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.RegistroServico", "RegistroServico")
+                        .WithMany("Fotos")
+                        .HasForeignKey("RegistroServicoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RegistroServico");
                 });
 
             modelBuilder.Entity("SetiMarine.Domain.Entities.HistoricoMovimentacao", b =>
@@ -667,8 +1077,7 @@ namespace SetiMarine.Infrastructure.Migrations
 
                     b.HasOne("SetiMarine.Domain.Entities.Usuario", "Responsavel")
                         .WithMany()
-                        .HasForeignKey("ResponsavelId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ResponsavelId");
 
                     b.HasOne("SetiMarine.Domain.Entities.Vaga", "Vaga")
                         .WithMany()
@@ -700,6 +1109,111 @@ namespace SetiMarine.Infrastructure.Migrations
                     b.Navigation("Responsavel");
                 });
 
+            modelBuilder.Entity("SetiMarine.Domain.Entities.PedidoUso", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SetiMarine.Domain.Entities.Embarcacao", "Embarcacao")
+                        .WithMany()
+                        .HasForeignKey("EmbarcacaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SetiMarine.Domain.Entities.Movimentacao", "Movimentacao")
+                        .WithMany()
+                        .HasForeignKey("MovimentacaoId");
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Embarcacao");
+
+                    b.Navigation("Movimentacao");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.RegistroServico", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.Embarcacao", "Embarcacao")
+                        .WithMany()
+                        .HasForeignKey("EmbarcacaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SetiMarine.Domain.Entities.Movimentacao", "Movimentacao")
+                        .WithMany()
+                        .HasForeignKey("MovimentacaoId");
+
+                    b.HasOne("SetiMarine.Domain.Entities.Usuario", "Responsavel")
+                        .WithMany()
+                        .HasForeignKey("ResponsavelId");
+
+                    b.HasOne("SetiMarine.Domain.Entities.TipoServicoConfig", "TipoServicoConfig")
+                        .WithMany()
+                        .HasForeignKey("TipoServicoConfigId");
+
+                    b.HasOne("SetiMarine.Domain.Entities.Vaga", "Vaga")
+                        .WithMany()
+                        .HasForeignKey("VagaId");
+
+                    b.Navigation("Embarcacao");
+
+                    b.Navigation("Movimentacao");
+
+                    b.Navigation("Responsavel");
+
+                    b.Navigation("TipoServicoConfig");
+
+                    b.Navigation("Vaga");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.RegistroServicoItem", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.ChecklistTemplateItem", "ChecklistTemplateItem")
+                        .WithMany()
+                        .HasForeignKey("ChecklistTemplateItemId");
+
+                    b.HasOne("SetiMarine.Domain.Entities.RegistroServico", "RegistroServico")
+                        .WithMany("Itens")
+                        .HasForeignKey("RegistroServicoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChecklistTemplateItem");
+
+                    b.Navigation("RegistroServico");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.SessaoAtiva", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.TipoServicoConfig", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.ChecklistTemplate", "ChecklistTemplate")
+                        .WithMany("TiposServico")
+                        .HasForeignKey("ChecklistTemplateId");
+
+                    b.HasOne("SetiMarine.Domain.Entities.Empresa", "Empresa")
+                        .WithMany()
+                        .HasForeignKey("EmpresaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChecklistTemplate");
+
+                    b.Navigation("Empresa");
+                });
+
             modelBuilder.Entity("SetiMarine.Domain.Entities.Usuario", b =>
                 {
                     b.HasOne("SetiMarine.Domain.Entities.Empresa", "Empresa")
@@ -713,10 +1227,10 @@ namespace SetiMarine.Infrastructure.Migrations
 
             modelBuilder.Entity("SetiMarine.Domain.Entities.Vaga", b =>
                 {
-                    b.HasOne("SetiMarine.Domain.Entities.Embarcacao", "EmbarcacaoAtual")
-                        .WithMany()
-                        .HasForeignKey("EmbarcacaoAtualId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("SetiMarine.Domain.Entities.Corredor", "Corredor")
+                        .WithMany("Vagas")
+                        .HasForeignKey("CorredorId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("SetiMarine.Domain.Entities.Empresa", "Empresa")
                         .WithMany("Vagas")
@@ -724,14 +1238,45 @@ namespace SetiMarine.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("EmbarcacaoAtual");
+                    b.Navigation("Corredor");
 
                     b.Navigation("Empresa");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.VagaEmbarcacao", b =>
+                {
+                    b.HasOne("SetiMarine.Domain.Entities.Embarcacao", "Embarcacao")
+                        .WithMany()
+                        .HasForeignKey("EmbarcacaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SetiMarine.Domain.Entities.Vaga", "Vaga")
+                        .WithMany("EmbarcacoesNaVaga")
+                        .HasForeignKey("VagaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Embarcacao");
+
+                    b.Navigation("Vaga");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.ChecklistTemplate", b =>
+                {
+                    b.Navigation("Itens");
+
+                    b.Navigation("TiposServico");
                 });
 
             modelBuilder.Entity("SetiMarine.Domain.Entities.Cliente", b =>
                 {
                     b.Navigation("Embarcacoes");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.Corredor", b =>
+                {
+                    b.Navigation("Vagas");
                 });
 
             modelBuilder.Entity("SetiMarine.Domain.Entities.Empresa", b =>
@@ -746,6 +1291,20 @@ namespace SetiMarine.Infrastructure.Migrations
             modelBuilder.Entity("SetiMarine.Domain.Entities.Movimentacao", b =>
                 {
                     b.Navigation("Historico");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.RegistroServico", b =>
+                {
+                    b.Navigation("Fotos");
+
+                    b.Navigation("Itens");
+                });
+
+            modelBuilder.Entity("SetiMarine.Domain.Entities.Vaga", b =>
+                {
+                    b.Navigation("EmbarcacaoAtual");
+
+                    b.Navigation("EmbarcacoesNaVaga");
                 });
 #pragma warning restore 612, 618
         }

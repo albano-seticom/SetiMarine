@@ -1,3 +1,403 @@
-@page "/cadastro"
+﻿@page "/cadastro"
 @layout EmptyLayout
-<h2>Cadastro — em construção</h2>
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject AuthService AuthService
+@inject NavigationManager Nav
+@inject IDbContextFactory<AppDbContext> DbFactory
+@using SetiMarine.Application.Services
+@using SetiMarine.Infrastructure.Data
+@using SetiMarine.Domain.Entities
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Criar conta â€” SetiMarine</PageTitle>
+
+<style>
+@@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@@300;600&family=Outfit:wght@@300;400;500;600&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ocean: #050d1a; --deep: #071525; --surface: #0a1e30;
+  --glass: rgba(255,255,255,.04); --border: rgba(0,200,255,.12);
+  --cyan: #00d4ff; --text: #e8f4f8; --muted: #5a8098; --red: #ff4d6d;
+  --green: #00e5a0;
+}
+body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans-serif; }
+
+.cad-wrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 2rem 1rem;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,80,140,.4) 0%, transparent 70%), var(--ocean);
+}
+
+.cad-card {
+  width: 100%; max-width: 520px;
+  background: var(--deep); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2.5rem 2rem;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  animation: fadeUp .5s ease both;
+}
+@@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.cad-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; text-decoration: none; }
+.logo-icon {
+  width: 36px; height: 36px; background: linear-gradient(135deg,#00d4ff,#00a8cc);
+  border-radius: 10px; display: grid; place-items: center;
+  box-shadow: 0 0 18px rgba(0,212,255,.3); font-size: 1.1rem;
+}
+.logo-text { font-family: 'Cormorant Garamond',serif; font-size: 1.4rem; font-weight: 600; }
+.logo-text b { color: var(--cyan); }
+
+/* Steps indicator */
+.steps { display: flex; align-items: center; gap: 0; margin-bottom: 2rem; }
+.step {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .8rem; font-weight: 500; color: var(--muted);
+  flex: 1;
+}
+.step.active { color: var(--cyan); }
+.step.done   { color: var(--green); }
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid currentColor; display: grid; place-items: center;
+  font-size: .75rem; font-weight: 700; flex-shrink: 0;
+  transition: all .3s;
+}
+.step.done .step-num { background: var(--green); border-color: var(--green); color: #030b14; }
+.step.active .step-num { background: rgba(0,212,255,.15); }
+.step-line { flex: 1; height: 1px; background: var(--border); margin: 0 6px; }
+.step-label { display: none; }
+@@media(min-width:480px) { .step-label { display: inline; } }
+
+.cad-title { font-size: 1.3rem; font-weight: 500; margin-bottom: .3rem; }
+.cad-sub   { color: var(--muted); font-size: .88rem; margin-bottom: 1.8rem; }
+
+.field       { margin-bottom: 1.1rem; }
+.field label {
+  display: block; font-size: .78rem; font-weight: 500;
+  color: var(--muted); margin-bottom: .4rem; letter-spacing: .04em; text-transform: uppercase;
+}
+.field input, .field select {
+  width: 100%; padding: .68rem 1rem;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'Outfit',sans-serif; font-size: .93rem;
+  transition: border-color .2s; outline: none;
+}
+.field input:focus, .field select:focus { border-color: rgba(0,212,255,.5); background: rgba(0,212,255,.04); }
+.field input::placeholder { color: var(--muted); }
+.field select option { background: var(--deep); }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.btn-primary {
+  width: 100%; padding: .75rem;
+  background: var(--cyan); color: #030b14;
+  border: none; border-radius: 8px;
+  font-family: 'Outfit',sans-serif; font-size: .93rem; font-weight: 600;
+  cursor: pointer; margin-top: .5rem;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+}
+.btn-primary:hover:not(:disabled) { background: #1ad8ff; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,212,255,.3); }
+.btn-primary:disabled { opacity:.6; cursor:not-allowed; }
+
+.btn-ghost {
+  width: 100%; padding: .7rem;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'Outfit',sans-serif; font-size: .88rem;
+  cursor: pointer; margin-top: .5rem; transition: color .2s, border-color .2s;
+}
+.btn-ghost:hover { color: var(--text); border-color: rgba(0,212,255,.3); }
+
+.btns { display: flex; flex-direction: column; gap: .6rem; margin-top: .8rem; }
+
+.erro-box {
+  background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.3);
+  color: #ff7a93; border-radius: 8px; padding: .7rem 1rem;
+  font-size: .87rem; margin-bottom: 1.1rem;
+}
+
+/* Planos */
+.planos-grid { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.2rem; }
+.plano-opt {
+  border: 2px solid var(--border); border-radius: 10px; padding: .9rem 1.1rem;
+  cursor: pointer; transition: border-color .2s, background .2s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.plano-opt:hover            { border-color: rgba(0,212,255,.3); background: rgba(0,212,255,.03); }
+.plano-opt.selected         { border-color: var(--cyan); background: rgba(0,212,255,.07); }
+.plano-opt.featured         { border-color: rgba(0,212,255,.35); }
+.plano-nome { font-weight: 600; font-size: .95rem; }
+.plano-preco { font-size: .85rem; color: var(--muted); }
+.plano-badge { font-size: .7rem; background: var(--cyan); color: #030b14; border-radius: 4px; padding: 2px 6px; font-weight: 700; }
+
+/* ConfirmaÃ§Ã£o */
+.confirm-row { display: flex; justify-content: space-between; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.confirm-row:last-child { border-bottom: none; }
+.confirm-label { color: var(--muted); }
+.confirm-val   { font-weight: 500; }
+
+.success-icon { font-size: 3rem; text-align: center; margin-bottom: 1rem; animation: pop .4s ease; }
+@@keyframes pop { from{transform:scale(.5);opacity:0} 70%{transform:scale(1.1)} to{transform:scale(1);opacity:1} }
+
+.spin {
+  width: 16px; height: 16px; border: 2px solid rgba(3,11,20,.3);
+  border-top-color: #030b14; border-radius: 50%; animation: spin .6s linear infinite;
+}
+@@keyframes spin { to{transform:rotate(360deg)} }
+
+.login-footer { text-align: center; margin-top: 1.5rem; font-size: .85rem; color: var(--muted); }
+.login-footer a { color: var(--cyan); text-decoration: none; }
+</style>
+
+<div class="cad-wrap">
+  <div class="cad-card">
+
+    <a href="/" class="cad-logo">
+      <div class="logo-icon">âš“</div>
+      <span class="logo-text">Seti<b>Marine</b></span>
+    </a>
+
+    <!-- Indicador de etapas -->
+    <div class="steps">
+      <div class="step @(Etapa >= 1 ? (Etapa > 1 ? "done" : "active") : "")">
+        <div class="step-num">@(Etapa > 1 ? "âœ“" : "1")</div>
+        <span class="step-label">Empresa</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step @(Etapa >= 2 ? (Etapa > 2 ? "done" : "active") : "")">
+        <div class="step-num">@(Etapa > 2 ? "âœ“" : "2")</div>
+        <span class="step-label">Administrador</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step @(Etapa >= 3 ? "active" : "")">
+        <div class="step-num">3</div>
+        <span class="step-label">ConfirmaÃ§Ã£o</span>
+      </div>
+    </div>
+
+    @if (_erro != null)
+    {
+      <div class="erro-box">@_erro</div>
+    }
+
+    <!-- ===== ETAPA 1: Dados da Empresa ===== -->
+    @if (Etapa == 1)
+    {
+      <div class="cad-title">Dados da empresa</div>
+      <div class="cad-sub">Informe os dados da sua marina.</div>
+
+      <div class="field">
+        <label>RazÃ£o Social *</label>
+        <input @bind="RazaoSocial" placeholder="Marina Exemplo Ltda" />
+      </div>
+      <div class="field">
+        <label>Nome Fantasia</label>
+        <input @bind="NomeFantasia" placeholder="Marina Exemplo" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>CNPJ *</label>
+          <input @bind="Cnpj" placeholder="00.000.000/0001-00" />
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input @bind="Telefone" placeholder="(00) 00000-0000" />
+        </div>
+      </div>
+      <div class="field">
+        <label>E-mail da empresa *</label>
+        <input type="email" @bind="EmailEmpresa" placeholder="contato@suamarina.com.br" />
+      </div>
+
+      <div class="field">
+        <label>Plano *</label>
+        @if (_carregandoPlanos)
+        {
+          <div style="color:var(--muted);font-size:.85rem;">Carregando planos...</div>
+        }
+        else
+        {
+          <div class="planos-grid">
+            @foreach (var p in _planos)
+            {
+              <div class="plano-opt @(PlanoSelecionadoId == p.Id ? "selected" : "") @(p.Destaque ? "featured" : "")"
+                   @onclick="() => PlanoSelecionadoId = p.Id">
+                <div>
+                  <div class="plano-nome">@p.Nome</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                  @if (p.Destaque) { <span class="plano-badge">Popular</span> }
+                  <span class="plano-preco">
+                    @(p.Valor > 0 ? $"R$ {p.Valor:N0}/mÃªs" : "Sob consulta")
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="btns">
+        <button class="btn-primary" @onclick="AvancarEtapa1">PrÃ³ximo â€” Administrador â†’</button>
+        <a href="/login" class="btn-ghost" style="text-align:center;display:block;padding:.7rem;">JÃ¡ tenho uma conta</a>
+      </div>
+    }
+
+    <!-- ===== ETAPA 2: Dados do Admin ===== -->
+    @if (Etapa == 2)
+    {
+      <div class="cad-title">Dados do administrador</div>
+      <div class="cad-sub">VocÃª serÃ¡ o primeiro administrador da conta.</div>
+
+      <div class="field">
+        <label>Nome completo *</label>
+        <input @bind="NomeAdmin" placeholder="JoÃ£o da Silva" />
+      </div>
+      <div class="field">
+        <label>E-mail de acesso *</label>
+        <input type="email" @bind="EmailAdmin" placeholder="joao@suamarina.com.br" />
+      </div>
+      <div class="field">
+        <label>Senha *</label>
+        <input type="password" @bind="Senha" placeholder="MÃ­nimo 6 caracteres" />
+      </div>
+      <div class="field">
+        <label>Confirmar senha *</label>
+        <input type="password" @bind="ConfirmarSenha" placeholder="Repita a senha" />
+      </div>
+
+      <div class="btns">
+        <button class="btn-primary" @onclick="AvancarEtapa2">PrÃ³ximo â€” ConfirmaÃ§Ã£o â†’</button>
+        <button class="btn-ghost" @onclick="() => { Etapa = 1; _erro = null; }">â† Voltar</button>
+      </div>
+    }
+
+    <!-- ===== ETAPA 3: ConfirmaÃ§Ã£o ===== -->
+    @if (Etapa == 3 && !_sucesso)
+    {
+      <div class="cad-title">Confirme os dados</div>
+      <div class="cad-sub">Revise tudo antes de criar a conta.</div>
+
+      <div style="margin-bottom:1.5rem;">
+        <div class="confirm-row"><span class="confirm-label">RazÃ£o Social</span><span class="confirm-val">@RazaoSocial</span></div>
+        <div class="confirm-row"><span class="confirm-label">Nome Fantasia</span><span class="confirm-val">@(NomeFantasia ?? "â€”")</span></div>
+        <div class="confirm-row"><span class="confirm-label">CNPJ</span><span class="confirm-val">@Cnpj</span></div>
+        <div class="confirm-row"><span class="confirm-label">E-mail empresa</span><span class="confirm-val">@EmailEmpresa</span></div>
+        <div class="confirm-row"><span class="confirm-label">Plano</span><span class="confirm-val">@(_planos.FirstOrDefault(p => p.Id == PlanoSelecionadoId)?.Nome ?? "â€”")</span></div>
+        <div class="confirm-row"><span class="confirm-label">Administrador</span><span class="confirm-val">@NomeAdmin</span></div>
+        <div class="confirm-row"><span class="confirm-label">E-mail de acesso</span><span class="confirm-val">@EmailAdmin</span></div>
+      </div>
+
+      <div class="btns">
+        <button class="btn-primary" @onclick="FinalizarAsync" disabled="@_carregando">
+          @if (_carregando)
+          { <div class="spin"></div> <span>Criando conta...</span> }
+          else
+          { <span>âœ“ Criar conta agora</span> }
+        </button>
+        <button class="btn-ghost" @onclick="() => { Etapa = 2; _erro = null; }">â† Voltar</button>
+      </div>
+    }
+
+    <!-- ===== SUCESSO ===== -->
+    @if (_sucesso)
+    {
+      <div class="success-icon">ðŸŽ‰</div>
+      <div class="cad-title" style="text-align:center;">Conta criada!</div>
+      <div class="cad-sub" style="text-align:center;margin-bottom:1.5rem;">
+        Bem-vindo ao SetiMarine. Sua marina estÃ¡ pronta para decolar.
+      </div>
+      <button class="btn-primary" @onclick="@(() => Nav.NavigateTo("/login", forceLoad: true))">
+        Ir para o login â†’
+      </button>
+    }
+
+    @if (!_sucesso)
+    {
+      <div class="login-footer" style="margin-top:1.5rem;">
+        JÃ¡ tem uma conta? <a href="/login">Entrar</a>
+      </div>
+    }
+
+  </div>
+</div>
+
+@code {
+    private int Etapa = 1;
+    private bool _sucesso;
+    private bool _carregando;
+    private bool _carregandoPlanos = true;
+    private string? _erro;
+    private List<Plano> _planos = new();
+
+    // Etapa 1
+    private string RazaoSocial = "";
+    private string? NomeFantasia;
+    private string Cnpj = "";
+    private string? Telefone;
+    private string EmailEmpresa = "";
+    private int? PlanoSelecionadoId;
+
+    // Etapa 2
+    private string NomeAdmin = "";
+    private string EmailAdmin = "";
+    private string Senha = "";
+    private string ConfirmarSenha = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _planos = await db.Planos
+            .Where(p => p.Ativo)
+            .OrderBy(p => p.Valor)
+            .ToListAsync();
+
+        if (_planos.Any())
+            PlanoSelecionadoId = _planos.FirstOrDefault(p => p.Destaque)?.Id ?? _planos.First().Id;
+
+        _carregandoPlanos = false;
+    }
+
+    private void AvancarEtapa1()
+    {
+        _erro = null;
+        if (string.IsNullOrWhiteSpace(RazaoSocial)) { _erro = "RazÃ£o Social Ã© obrigatÃ³ria."; return; }
+        if (string.IsNullOrWhiteSpace(Cnpj))        { _erro = "CNPJ Ã© obrigatÃ³rio."; return; }
+        if (string.IsNullOrWhiteSpace(EmailEmpresa)){ _erro = "E-mail da empresa Ã© obrigatÃ³rio."; return; }
+        if (PlanoSelecionadoId == null)              { _erro = "Selecione um plano."; return; }
+        Etapa = 2;
+    }
+
+    private void AvancarEtapa2()
+    {
+        _erro = null;
+        if (string.IsNullOrWhiteSpace(NomeAdmin))  { _erro = "Nome do administrador Ã© obrigatÃ³rio."; return; }
+        if (string.IsNullOrWhiteSpace(EmailAdmin)) { _erro = "E-mail de acesso Ã© obrigatÃ³rio."; return; }
+        if (Senha.Length < 6)                      { _erro = "A senha deve ter pelo menos 6 caracteres."; return; }
+        if (Senha != ConfirmarSenha)               { _erro = "As senhas nÃ£o conferem."; return; }
+        Etapa = 3;
+    }
+
+    private async Task FinalizarAsync()
+    {
+        _carregando = true;
+        _erro = null;
+
+        var (sucesso, erro) = await AuthService.CadastrarEmpresaAsync(
+            RazaoSocial, NomeFantasia, Cnpj, Telefone, EmailEmpresa,
+            PlanoSelecionadoId!.Value,
+            NomeAdmin, EmailAdmin, Senha);
+
+        if (!sucesso)
+        {
+            _erro = erro;
+            _carregando = false;
+            return;
+        }
+
+        _sucesso = true;
+        _carregando = false;
+    }
+}
+

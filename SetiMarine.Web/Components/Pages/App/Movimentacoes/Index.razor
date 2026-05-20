@@ -1,0 +1,149 @@
+@page "/movimentacoes"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject MovimentacaoService MovService
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Movimentações — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Operações</span>
+        <h1>Movimentações</h1>
+    </div>
+    <div class="page-head-actions">
+        <div class="field" style="margin:0;min-width:180px;">
+            <select @bind="_filtroStatus" @bind:after="CarregarAsync" style="height:34px;">
+                <option value="">Todos os status</option>
+                <option value="Agendado">Agendado</option>
+                <option value="AguardandoPreparo">Aguardando Preparo</option>
+                <option value="EmPreparo">Em Preparo</option>
+                <option value="Pronto">Pronto</option>
+                <option value="Descendo">Descendo</option>
+                <option value="NaAgua">Na Água</option>
+                <option value="Retornando">Retornando</option>
+                <option value="Subindo">Subindo</option>
+                <option value="Finalizado">Finalizado</option>
+            </select>
+        </div>
+        <a href="/movimentacoes/nova" class="btn btn-primary btn-sm">+ Nova Movimentação</a>
+    </div>
+</div>
+
+<!-- Pipeline de status -->
+<div style="display:flex;gap:.4rem;margin-bottom:1.75rem;overflow-x:auto;padding-bottom:.25rem;">
+    @foreach (var (st, label, count) in _pipeline)
+    {
+        var ativo = count > 0;
+        <div style="flex-shrink:0;padding:.55rem .85rem;border-radius:3px;border:1px solid var(--line);@(ativo ? "background:var(--navy-900);color:#fff;border-color:transparent;" : "color:var(--ink-300);")">
+            <div style="font-size:1.1rem;font-weight:700;line-height:1;">@count</div>
+            <div style="font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;margin-top:.1rem;opacity:@(ativo ? ".85" : ".5");">@label</div>
+        </div>
+    }
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_movs.Any())
+{
+    <div style="padding:3rem 2rem;text-align:center;color:var(--ink-300);">
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhuma movimentação encontrada</p>
+        <a href="/movimentacoes/nova" class="btn btn-primary btn-sm">Registrar Movimentação</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Embarcação</th>
+                    <th>Cliente</th>
+                    <th>Vaga</th>
+                    <th>Responsável</th>
+                    <th>Agendado para</th>
+                    <th>Status</th>
+                    <th style="width:100px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in _movs)
+                {
+                    <tr>
+                        <td><strong style="font-weight:500;">@(m.Embarcacao?.Nome ?? "—")</strong></td>
+                        <td style="color:var(--ink-500);">@(m.Embarcacao?.Cliente?.Nome ?? "—")</td>
+                        <td style="color:var(--ink-500);font-family:monospace;font-size:.8rem;">@(m.Vaga?.Codigo ?? "—")</td>
+                        <td style="color:var(--ink-500);">@(m.Responsavel?.Nome ?? "—")</td>
+                        <td style="color:var(--ink-500);font-size:.8rem;">@m.AgendadoPara.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td><MovStatusBadge Status="@m.Status" /></td>
+                        <td>
+                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                <a href="/movimentacoes/@m.Id" class="btn btn-ghost btn-sm" title="Ver / Editar">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                                @if (m.Status != StatusMovimentacao.Finalizado)
+                                {
+                                    <button class="btn btn-ghost btn-sm" title="Avançar etapa"
+                                            @onclick="() => AvancarAsync(m)"
+                                            style="color:var(--s-free);">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Movimentacao> _movs = new();
+    private string _filtroStatus = "";
+    private bool _carregando = true;
+
+    private static readonly (StatusMovimentacao, string)[] _stages =
+    {
+        (StatusMovimentacao.Agendado,          "Agendado"),
+        (StatusMovimentacao.AguardandoPreparo, "Aguard."),
+        (StatusMovimentacao.EmPreparo,         "Preparo"),
+        (StatusMovimentacao.Pronto,            "Pronto"),
+        (StatusMovimentacao.Descendo,          "Descendo"),
+        (StatusMovimentacao.NaAgua,            "Na Água"),
+        (StatusMovimentacao.Retornando,        "Retorno"),
+        (StatusMovimentacao.Subindo,           "Subindo"),
+        (StatusMovimentacao.Finalizado,        "Concluído"),
+    };
+
+    private List<(StatusMovimentacao, string, int)> _pipeline = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        StatusMovimentacao? st = Enum.TryParse<StatusMovimentacao>(_filtroStatus, out var sv) ? sv : null;
+        _movs = await MovService.ListarPorEmpresaAsync(UserCtx.EmpresaId, st);
+        _pipeline = _stages.Select(s => (s.Item1, s.Item2, _movs.Count(m => m.Status == s.Item1))).ToList();
+        _carregando = false;
+    }
+
+    private async Task AvancarAsync(Movimentacao m)
+    {
+        try { await MovService.AvancarStatusAsync(m.Id, UserCtx.EmpresaId); await CarregarAsync(); }
+        catch { }
+    }
+}

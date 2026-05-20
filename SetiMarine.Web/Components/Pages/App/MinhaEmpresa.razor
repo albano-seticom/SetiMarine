@@ -1,0 +1,209 @@
+@page "/minha-empresa"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@inject EmpresaService EmpService
+@inject UsuarioService UsuService
+@inject NavigationManager Nav
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Minha Empresa — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Gestão</span>
+        <h1>Minha Empresa</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (_empresa != null)
+{
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start;">
+
+        <!-- Formulário principal -->
+        <div>
+            <EditForm Model="_empresa" OnValidSubmit="SalvarAsync">
+                <DataAnnotationsValidator />
+
+                <div class="form-section">
+                    <div class="form-section-title">Dados da Empresa</div>
+
+                    <div class="form-row">
+                        <div class="field">
+                            <label>Razão Social *</label>
+                            <InputText @bind-Value="_empresa.RazaoSocial" />
+                            <ValidationMessage For="() => _empresa.RazaoSocial" />
+                        </div>
+                        <div class="field">
+                            <label>Nome Fantasia *</label>
+                            <InputText @bind-Value="_empresa.NomeFantasia" />
+                            <ValidationMessage For="() => _empresa.NomeFantasia" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field">
+                            <label>CNPJ</label>
+                            <InputText @bind-Value="_empresa.Cnpj" placeholder="00.000.000/0000-00" />
+                        </div>
+                        <div class="field">
+                            <label>Telefone</label>
+                            <InputText @bind-Value="_empresa.Telefone" placeholder="(00) 00000-0000" />
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="grid-template-columns:1fr;">
+                        <div class="field">
+                            <label>E-mail</label>
+                            <InputText @bind-Value="_empresa.Email" type="email" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">Endereço</div>
+
+                    <div class="form-row" style="grid-template-columns:1fr;">
+                        <div class="field">
+                            <label>Endereço Completo</label>
+                            <InputText @bind-Value="_empresa.EnderecoCompleto" placeholder="Rua, número, complemento" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field">
+                            <label>Cidade</label>
+                            <InputText @bind-Value="_empresa.Cidade" />
+                        </div>
+                        <div class="field">
+                            <label>Estado</label>
+                            <InputText @bind-Value="_empresa.Estado" maxlength="2" style="text-transform:uppercase;" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">Integrações</div>
+
+                    <div class="form-row" style="grid-template-columns:1fr;">
+                        <div class="field">
+                            <label>Instância WhatsApp</label>
+                            <InputText @bind-Value="_empresa.InstanciaWhatsApp" placeholder="ID da instância Evolution API" />
+                        </div>
+                    </div>
+                </div>
+
+                @if (_erro != null)
+                {
+                    <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
+                }
+                @if (_sucesso)
+                {
+                    <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(74,138,92,.08);border:1px solid rgba(74,138,92,.22);color:var(--s-free);font-size:.82rem;border-radius:2px;">Dados salvos com sucesso.</div>
+                }
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" disabled="@_salvando">
+                        @(_salvando ? "Salvando..." : "Salvar Alterações")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+
+        <!-- Painel lateral: plano e usuários -->
+        <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+            <!-- Plano -->
+            <div class="form-section" style="margin:0;">
+                <div class="form-section-title">Plano Atual</div>
+                @if (_empresa.Plano != null)
+                {
+                    <div style="font-size:1.1rem;font-weight:700;color:var(--navy-700);margin-bottom:.35rem;">@_empresa.Plano.Nome</div>
+                    <div style="font-size:.78rem;color:var(--ink-500);margin-bottom:.75rem;">@_empresa.Plano.Descricao</div>
+                    <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.85rem;">
+                        <div style="font-size:.75rem;color:var(--ink-400);">
+                            <strong style="color:var(--ink-900);">@_empresa.Plano.LimiteEmbarcacoes</strong> embarcações
+                        </div>
+                        <div style="font-size:.75rem;color:var(--ink-400);">
+                            <strong style="color:var(--ink-900);">@_empresa.Plano.LimiteUsuarios</strong> usuários
+                        </div>
+                    </div>
+                    @if (_empresa.PlanoVenceEm.HasValue)
+                    {
+                        var diasRestantes = (_empresa.PlanoVenceEm.Value - DateTime.UtcNow).Days;
+                        var corVenc = diasRestantes < 7 ? "var(--s-maint)" : diasRestantes < 30 ? "#9a7420" : "var(--ink-500)";
+                        <div style="font-size:.72rem;color:@corVenc;">
+                            Vence em @_empresa.PlanoVenceEm.Value.ToLocalTime().ToString("dd/MM/yyyy")
+                            (@diasRestantes dias)
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="font-size:.8rem;color:var(--ink-400);">Nenhum plano ativo</div>
+                }
+                <div style="margin-top:1rem;">
+                    <a href="/planos" class="btn btn-ghost btn-sm">Ver planos</a>
+                </div>
+            </div>
+
+            <!-- Estatísticas rápidas -->
+            <div class="form-section" style="margin:0;">
+                <div class="form-section-title">Equipe</div>
+                <div style="font-size:1.4rem;font-weight:700;color:var(--navy-700);line-height:1;margin-bottom:.25rem;">@_totalUsuarios</div>
+                <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);">usuários cadastrados</div>
+                <div style="margin-top:1rem;">
+                    <a href="/usuarios" class="btn btn-ghost btn-sm">Gerenciar usuários</a>
+                </div>
+            </div>
+
+            <!-- Conta criada em -->
+            <div style="padding:.75rem 1rem;border:1px solid var(--line);border-radius:3px;">
+                <div style="font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-300);margin-bottom:.3rem;">Conta criada em</div>
+                <div style="font-size:.85rem;color:var(--ink-600);">@_empresa.CriadaEm.ToLocalTime().ToString("dd/MM/yyyy")</div>
+            </div>
+        </div>
+
+    </div>
+}
+
+@code {
+    private Empresa? _empresa;
+    private int _totalUsuarios;
+    private bool _carregando = true;
+    private bool _salvando;
+    private bool _sucesso;
+    private string? _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _empresa       = await EmpService.ObterAsync(UserCtx.EmpresaId);
+        var usuarios   = await UsuService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _totalUsuarios = usuarios.Count;
+        _carregando    = false;
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (_empresa == null) return;
+        _salvando = true;
+        _sucesso  = false;
+        _erro     = null;
+        try
+        {
+            await EmpService.EditarAsync(_empresa);
+            _sucesso = true;
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+}

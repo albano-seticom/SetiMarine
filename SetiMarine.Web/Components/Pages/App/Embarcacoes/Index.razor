@@ -1,0 +1,134 @@
+@page "/embarcacoes"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject EmbarcacaoService EmbarcacaoService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Embarcações — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Cadastros</span>
+        <h1>Embarcações</h1>
+    </div>
+    <div class="page-head-actions">
+        <a href="/embarcacoes/nova" class="btn btn-primary btn-sm">+ Nova Embarcação</a>
+    </div>
+</div>
+
+<!-- Busca -->
+<div style="margin-bottom:1.5rem;max-width:340px;">
+    <div class="field" style="margin:0;">
+        <input type="search" placeholder="Buscar por nome, registro ou modelo..."
+               @bind="_busca" @bind:event="oninput" @bind:after="BuscarAsync"
+               style="width:100%;height:34px;" />
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_embarcacoes.Any())
+{
+    <div style="padding:4rem 2rem;text-align:center;color:var(--ink-300);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto 1rem;display:block;opacity:.4;">
+            <path d="M2 20h20M4 20l2-8h12l2 8M8 12V6a4 4 0 0 1 8 0v6"/>
+        </svg>
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">
+            @(string.IsNullOrWhiteSpace(_busca) ? "Nenhuma embarcação cadastrada" : "Nenhuma embarcação encontrada")
+        </p>
+        @if (string.IsNullOrWhiteSpace(_busca))
+        {
+            <a href="/embarcacoes/nova" class="btn btn-primary btn-sm">Cadastrar Primeira Embarcação</a>
+        }
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th>Proprietário</th>
+                    <th>Comprimento</th>
+                    <th>Registro</th>
+                    <th>Status</th>
+                    <th style="width:88px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in _embarcacoes)
+                {
+                    <tr>
+                        <td>
+                            <strong style="font-weight:500;">@e.Nome</strong>
+                            @if (!string.IsNullOrWhiteSpace(e.Modelo))
+                            {
+                                <span style="display:block;font-size:.75rem;color:var(--ink-400);">@e.Fabricante @e.Modelo @(e.AnoFabricacao.HasValue ? e.AnoFabricacao.ToString() : "")</span>
+                            }
+                        </td>
+                        <td style="color:var(--ink-500);">@TipoLabel(e.Tipo)</td>
+                        <td style="color:var(--ink-500);">@(e.Cliente?.Nome ?? "—")</td>
+                        <td style="color:var(--ink-500);">@e.ComprimentoMetros m</td>
+                        <td style="color:var(--ink-500);font-size:.8rem;font-family:monospace;">@(e.NumeroRegistro ?? "—")</td>
+                        <td>
+                            @if (e.Ativa)
+                            { <span class="badge badge-free">Ativa</span> }
+                            else
+                            { <span class="badge" style="background:var(--line);color:var(--ink-500);">Inativa</span> }
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                <a href="/embarcacoes/@e.Id" class="btn btn-ghost btn-sm" title="Editar">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Embarcacao> _embarcacoes = new();
+    private string _busca = "";
+    private bool _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        _embarcacoes = await EmbarcacaoService.ListarPorEmpresaAsync(UserCtx.EmpresaId, _busca);
+        _carregando = false;
+    }
+
+    private async Task BuscarAsync()
+        => await CarregarAsync();
+
+    private static string TipoLabel(TipoEmbarcacao tipo) => tipo switch
+    {
+        TipoEmbarcacao.Lancha  => "Lancha",
+        TipoEmbarcacao.Veleiro => "Veleiro",
+        TipoEmbarcacao.Escuna  => "Escuna",
+        TipoEmbarcacao.JetSki  => "Jet Ski",
+        _                      => "Outro",
+    };
+}

@@ -1,0 +1,21 @@
+@using SetiMarine.Domain.Enums
+
+@switch (Status)
+{
+    case StatusVaga.Livre:
+        <span class="badge badge-free">Livre</span>
+        break;
+    case StatusVaga.Ocupada:
+        <span class="badge badge-occ">Ocupada</span>
+        break;
+    case StatusVaga.EmMovimentacao:
+        <span class="badge badge-mov">Em Movimentação</span>
+        break;
+    case StatusVaga.Manutencao:
+        <span class="badge badge-maint">Manutenção</span>
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public StatusVaga Status { get; set; }
+}

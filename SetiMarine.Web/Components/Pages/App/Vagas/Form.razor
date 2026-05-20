@@ -1,0 +1,214 @@
+@page "/vagas/nova"
+@page "/vagas/{Id:int}"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject VagaService VagaService
+@inject CorredorService CorredorService
+@inject NavigationManager Nav
+@inject UsuarioContextService UserCtx
+
+<PageTitle>@(_isNovo ? "Nova Vaga" : "Editar Vaga") — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow"><a href="/vagas" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line);">Vagas</a> /</span>
+        <h1>@(_isNovo ? "Nova Vaga" : _vaga.Codigo)</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    <EditForm Model="_vaga" OnValidSubmit="SalvarAsync" style="max-width:700px;">
+        <DataAnnotationsValidator />
+
+        <div class="form-section">
+            <div class="form-section-title">Identificação</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Código *</label>
+                    <InputText @bind-Value="_vaga.Codigo" placeholder="Ex: A-01" />
+                    <ValidationMessage For="() => _vaga.Codigo" />
+                </div>
+                <div class="field">
+                    <label>Corredor</label>
+                    <select @bind="_corredorIdStr">
+                        <option value="">Sem corredor</option>
+                        @foreach (var c in _corredores)
+                        {
+                            <option value="@c.Id">@c.Nome</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Setor</label>
+                    <InputText @bind-Value="_vaga.Setor" placeholder="Ex: Norte" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Tipo de Vaga</label>
+                    <select @bind="_tipoStr">
+                        <option value="Agua">Molhada (Água)</option>
+                        <option value="Seco">Seca</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Status</label>
+                    <select @bind="_statusStr">
+                        <option value="Livre">Livre</option>
+                        <option value="Ocupada">Ocupada</option>
+                        <option value="EmMovimentacao">Em Movimentação</option>
+                        <option value="Manutencao">Manutenção</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Dimensões</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Tamanho Máx. (pés)</label>
+                    <InputNumber @bind-Value="_vaga.TamanhoMaxPes" />
+                </div>
+                <div class="field">
+                    <label>Largura Máx. (pés)</label>
+                    <InputNumber @bind-Value="_vaga.LarguraMaxPes" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="field">
+                    <label>Comprimento Máx. (m)</label>
+                    <InputNumber @bind-Value="_vaga.ComprimentoMaxMetros" />
+                </div>
+                <div class="field">
+                    <label>Boca Máx. (m)</label>
+                    <InputNumber @bind-Value="_vaga.BocaMaxMetros" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Posição no Layout</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Pos. X (px)</label>
+                    <InputNumber @bind-Value="_vaga.PosX" />
+                </div>
+                <div class="field">
+                    <label>Pos. Y (px)</label>
+                    <InputNumber @bind-Value="_vaga.PosY" />
+                </div>
+                <div class="field">
+                    <label>Largura visual (px)</label>
+                    <InputNumber @bind-Value="_vaga.Largura" />
+                </div>
+                <div class="field">
+                    <label>Altura visual (px)</label>
+                    <InputNumber @bind-Value="_vaga.Altura" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Observações</div>
+
+            <div class="form-row" style="grid-template-columns:1fr;">
+                <div class="field">
+                    <InputTextArea @bind-Value="_vaga.Observacao" rows="2" style="resize:vertical;" placeholder="Observações sobre a vaga..." />
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns:auto 1fr;">
+                <div class="field" style="display:flex;align-items:flex-end;padding-bottom:.5rem;">
+                    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;text-transform:none;letter-spacing:0;font-size:.88rem;color:var(--ink-900);">
+                        <InputCheckbox @bind-Value="_vaga.Ativa" />
+                        Vaga ativa
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        @if (_erro != null)
+        {
+            <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">
+                @_erro
+            </div>
+        }
+
+        <div class="form-actions">
+            <a href="/vagas" class="btn btn-ghost">Cancelar</a>
+            <button type="submit" class="btn btn-primary" disabled="@_salvando">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Vaga _vaga = new();
+    private List<Corredor> _corredores = new();
+    private bool _isNovo => Id is null;
+    private bool _carregando = true;
+    private bool _salvando;
+    private string? _erro;
+
+    private string _corredorIdStr = "";
+    private string _tipoStr = "Agua";
+    private string _statusStr = "Livre";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _corredores = await CorredorService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+
+        if (!_isNovo)
+        {
+            var existente = await VagaService.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
+            if (existente == null) { Nav.NavigateTo("/vagas"); return; }
+            _vaga = existente;
+            _corredorIdStr = _vaga.CorredorId?.ToString() ?? "";
+            _tipoStr = _vaga.Tipo.ToString();
+            _statusStr = _vaga.Status.ToString();
+        }
+        else
+        {
+            _vaga = new Vaga { EmpresaId = UserCtx.EmpresaId, Ativa = true, Largura = 60, Altura = 40 };
+        }
+        _carregando = false;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _salvando = true;
+        _erro = null;
+        try
+        {
+            _vaga.CorredorId = int.TryParse(_corredorIdStr, out var cid) ? cid : null;
+            _vaga.Tipo = Enum.Parse<TipoVaga>(_tipoStr);
+            _vaga.Status = Enum.Parse<StatusVaga>(_statusStr);
+
+            if (_isNovo) await VagaService.CriarAsync(_vaga);
+            else         await VagaService.EditarAsync(_vaga);
+            Nav.NavigateTo("/vagas");
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+}

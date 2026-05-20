@@ -1,0 +1,189 @@
+@page "/servicos/nova"
+@page "/servicos/{Id:int}"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject OrdemServicoService OSService
+@inject NavigationManager Nav
+@inject UsuarioContextService UserCtx
+
+<PageTitle>@(_isNovo ? "Nova OS" : "Editar OS") — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow"><a href="/servicos" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line);">Ordens de Serviço</a> /</span>
+        <h1>@(_isNovo ? "Nova Ordem de Serviço" : $"OS #{ Id}")</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    <EditForm Model="_os" OnValidSubmit="SalvarAsync" style="max-width:680px;">
+        <DataAnnotationsValidator />
+
+        <div class="form-section">
+            <div class="form-section-title">Serviço</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Embarcação *</label>
+                    <select @bind="_embarcacaoIdStr">
+                        <option value="">Selecione...</option>
+                        @foreach (var e in _embarcacoes)
+                        { <option value="@e.Id">@e.Nome @(e.Cliente != null ? $"({e.Cliente.Nome})" : "")</option> }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Tipo de Serviço *</label>
+                    <InputText @bind-Value="_os.TipoServico" placeholder="Ex: Limpeza, Manutenção, Abastecimento" />
+                    <ValidationMessage For="() => _os.TipoServico" />
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns:1fr;">
+                <div class="field">
+                    <label>Descrição / Instruções</label>
+                    <InputTextArea @bind-Value="_os.Descricao" rows="3" style="resize:vertical;" placeholder="Detalhe o que deve ser feito..." />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Atribuição e Valores</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Responsável</label>
+                    <select @bind="_responsavelIdStr">
+                        <option value="">Não atribuído (terceiro)</option>
+                        @foreach (var u in _colaboradores)
+                        { <option value="@u.Id">@u.Nome — @(u.Perfil == PerfilUsuario.Admin ? "Gerente" : "Operacional")</option> }
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Valor Estimado (R$)</label>
+                    <InputNumber @bind-Value="_os.ValorEstimado" />
+                </div>
+                <div class="field">
+                    <label>Valor Final (R$)</label>
+                    <InputNumber @bind-Value="_os.ValorFinal" />
+                </div>
+            </div>
+        </div>
+
+        @if (!_isNovo)
+        {
+            <div class="form-section">
+                <div class="form-section-title">Status</div>
+                <div class="form-row" style="grid-template-columns:1fr;">
+                    <div class="field">
+                        <label>Status atual</label>
+                        <select @bind="_statusStr">
+                            <option value="Pendente">Pendente</option>
+                            <option value="EmExecucao">Em Execução</option>
+                            <option value="Finalizado">Finalizado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_erro != null)
+        {
+            <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
+        }
+
+        <div class="form-actions">
+            <a href="/servicos" class="btn btn-ghost">Cancelar</a>
+            @if (!_isNovo)
+            {
+                <a href="/servicos/@Id/imprimir" target="_blank" class="btn btn-ghost">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Imprimir OS
+                </a>
+            }
+            <button type="submit" class="btn btn-primary" disabled="@_salvando">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private OrdemServico _os = new();
+    private List<Embarcacao> _embarcacoes  = new();
+    private List<Usuario>    _colaboradores = new();
+
+    private string _embarcacaoIdStr  = "";
+    private string _responsavelIdStr = "";
+    private string _statusStr        = "Pendente";
+
+    private bool _isNovo    => Id is null;
+    private bool _carregando = true;
+    private bool _salvando;
+    private string? _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _embarcacoes   = await OSService.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
+        _colaboradores = await OSService.ListarColaboradoresAsync(UserCtx.EmpresaId);
+
+        if (!_isNovo)
+        {
+            var existente = await OSService.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
+            if (existente == null) { Nav.NavigateTo("/servicos"); return; }
+            _os                = existente;
+            _embarcacaoIdStr   = _os.EmbarcacaoId.ToString();
+            _responsavelIdStr  = _os.ResponsavelId?.ToString() ?? "";
+            _statusStr         = _os.Status.ToString();
+        }
+        else
+        {
+            _os = new OrdemServico { EmpresaId = UserCtx.EmpresaId };
+        }
+        _carregando = false;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _salvando = true;
+        _erro     = null;
+        try
+        {
+            if (!int.TryParse(_embarcacaoIdStr, out var embId) || embId == 0)
+            { _erro = "Selecione a embarcação."; _salvando = false; return; }
+
+            _os.EmbarcacaoId  = embId;
+            _os.ResponsavelId = int.TryParse(_responsavelIdStr, out var rid) ? rid : null;
+
+            if (!_isNovo)
+            {
+                _os.Status = Enum.Parse<StatusOS>(_statusStr);
+                if (_os.Status == StatusOS.Finalizado && _os.FinalizadaEm == null)
+                    _os.FinalizadaEm = DateTime.UtcNow;
+            }
+
+            if (_isNovo) await OSService.CriarAsync(_os);
+            else         await OSService.EditarAsync(_os);
+
+            Nav.NavigateTo("/servicos");
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+}

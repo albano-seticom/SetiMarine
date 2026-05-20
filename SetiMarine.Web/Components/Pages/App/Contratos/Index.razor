@@ -1,0 +1,138 @@
+@page "/contratos"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject ContratoService ContratoService
+@inject IJSRuntime JS
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Contratos — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Cadastros</span>
+        <h1>Contratos</h1>
+    </div>
+    <div class="page-head-actions">
+        <div class="field" style="margin:0;min-width:140px;">
+            <select @bind="_filtroAtivo" @bind:after="CarregarAsync" style="height:34px;">
+                <option value="">Todos</option>
+                <option value="true">Ativos</option>
+                <option value="false">Encerrados</option>
+            </select>
+        </div>
+        <a href="/contratos/novo" class="btn btn-primary btn-sm">+ Novo Contrato</a>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_contratos.Any())
+{
+    <div style="padding:4rem 2rem;text-align:center;color:var(--ink-300);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto 1rem;display:block;opacity:.4;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhum contrato encontrado</p>
+        <a href="/contratos/novo" class="btn btn-primary btn-sm">Criar Primeiro Contrato</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Embarcação</th>
+                    <th>Vaga</th>
+                    <th>Tipo</th>
+                    <th>Valor / mês</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Status</th>
+                    <th style="width:100px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in _contratos)
+                {
+                    <tr>
+                        <td><strong style="font-weight:500;">@(c.Cliente?.Nome ?? "—")</strong></td>
+                        <td style="color:var(--ink-500);">@(c.Embarcacao?.Nome ?? "—")</td>
+                        <td style="color:var(--ink-500);font-family:monospace;font-size:.8rem;">@(c.Vaga?.Codigo ?? "—")</td>
+                        <td>
+                            <span class="badge" style="background:var(--line);color:var(--ink-600);">
+                                @(c.Tipo == TipoContrato.Mensalista ? "Mensalista"
+                                : c.Tipo == TipoContrato.Diaria     ? "Diária"
+                                : "Visitante")
+                            </span>
+                        </td>
+                        <td style="font-weight:500;">@c.ValorMensal.ToString("C2")</td>
+                        <td style="color:var(--ink-500);font-size:.8rem;">@c.Inicio.ToString("dd/MM/yyyy")</td>
+                        <td style="color:var(--ink-500);font-size:.8rem;">@(c.Fim.HasValue ? c.Fim.Value.ToString("dd/MM/yyyy") : "—")</td>
+                        <td>
+                            @if (c.Ativo)
+                            { <span class="badge badge-free">Ativo</span> }
+                            else
+                            { <span class="badge" style="background:var(--line);color:var(--ink-500);">Encerrado</span> }
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                <a href="/contratos/@c.Id" class="btn btn-ghost btn-sm" title="Editar">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                                @if (c.Ativo)
+                                {
+                                    <button class="btn btn-danger btn-sm" title="Encerrar" @onclick="() => ConfirmarEncerramento(c)">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_erro != null)
+{
+    <div style="margin-top:1.5rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;display:flex;justify-content:space-between;align-items:center;">
+        @_erro <button @onclick="() => _erro = null" style="background:none;border:none;cursor:pointer;color:inherit;font-size:1rem;line-height:1;padding:0 0 0 1rem;">×</button>
+    </div>
+}
+
+@code {
+    private List<Contrato> _contratos = new();
+    private string _filtroAtivo = "true";
+    private bool _carregando = true;
+    private string? _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        bool? ativo = _filtroAtivo == "" ? null : _filtroAtivo == "true";
+        _contratos = await ContratoService.ListarPorEmpresaAsync(UserCtx.EmpresaId, ativo);
+        _carregando = false;
+    }
+
+    private async Task ConfirmarEncerramento(Contrato c)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Encerrar o contrato de '{c.Cliente?.Nome}'?")) return;
+        try { await ContratoService.EncerrarAsync(c.Id, UserCtx.EmpresaId); await CarregarAsync(); }
+        catch (Exception ex) { _erro = ex.Message; }
+    }
+}

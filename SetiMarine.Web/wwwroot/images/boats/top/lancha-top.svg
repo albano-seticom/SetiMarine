@@ -1,29 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 56" width="36" height="56">
-  <defs>
-    <linearGradient id="lt" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#e3f2fd"/>
-      <stop offset="100%" stop-color="#1565c0"/>
-    </linearGradient>
-    <linearGradient id="lt2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#29b6f6"/>
-      <stop offset="100%" stop-color="#0288d1"/>
-    </linearGradient>
-  </defs>
-  <!-- Casco externo -->
-  <path d="M18,2 C10,2 4,8 4,18 L4,46 C4,50 10,54 18,54 C26,54 32,50 32,46 L32,18 C32,8 26,2 18,2 Z" fill="url(#lt2)"/>
-  <!-- Deck interno -->
-  <path d="M18,5 C12,5 7,10 7,18 L7,44 C7,48 12,52 18,52 C24,52 29,48 29,44 L29,18 C29,10 24,5 18,5 Z" fill="url(#lt)"/>
-  <!-- Cabine -->
-  <rect x="10" y="16" width="16" height="20" rx="3" fill="#1565c0" opacity="0.7"/>
-  <!-- Para-brisa cabine -->
-  <path d="M11,18 L25,18 L24,22 L12,22 Z" fill="#29b6f6" opacity="0.8"/>
-  <!-- Janelas laterais -->
-  <rect x="8" y="20" width="3" height="6" rx="1" fill="#29b6f6" opacity="0.6"/>
-  <rect x="25" y="20" width="3" height="6" rx="1" fill="#29b6f6" opacity="0.6"/>
-  <!-- Proa detalhe -->
-  <path d="M13,7 L23,7 L22,14 L14,14 Z" fill="#e3f2fd" opacity="0.5"/>
-  <!-- Popa motor -->
-  <rect x="12" y="44" width="12" height="5" rx="2" fill="#0a3d8f"/>
-  <!-- Linha central -->
-  <line x1="18" y1="6" x2="18" y2="42" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 100" fill="none">
+  <!-- Casco principal da lancha (vista de cima) -->
+  <path d="M20 2 C12 2 6 8 5 16 L4 72 C4 80 6 88 10 93 L12 97 C14 99 18 100 20 100 C22 100 26 99 28 97 L30 93 C34 88 36 80 36 72 L35 16 C34 8 28 2 20 2Z" fill="currentColor" opacity="0.85"/>
+  <!-- Linha central (quilha) -->
+  <line x1="20" y1="5" x2="20" y2="95" stroke="white" stroke-width="0.8" opacity="0.4"/>
+  <!-- Parabrisa/cabine -->
+  <rect x="12" y="22" width="16" height="22" rx="3" fill="white" opacity="0.18"/>
+  <!-- Detalhe do deck traseiro -->
+  <rect x="10" y="62" width="20" height="18" rx="2" fill="white" opacity="0.1"/>
+  <!-- Motor -->
+  <rect x="14" y="82" width="12" height="8" rx="2" fill="white" opacity="0.15"/>
+  <!-- Proa (linha de design) -->
+  <path d="M20 4 L16 14 L24 14 Z" fill="white" opacity="0.2"/>
 </svg>

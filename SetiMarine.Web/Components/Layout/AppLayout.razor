@@ -1,21 +1,268 @@
 @inherits LayoutComponentBase
-<div class="app-shell">
-    <aside class="sidebar">
-        <div class="sidebar-logo">Seti<b>Marine</b></div>
-        <nav class="sidebar-nav">
-            <NavLink href="/dashboard">Dashboard</NavLink>
-            <NavLink href="/mapa">Mapa da Marina</NavLink>
-            <NavLink href="/movimentacoes">Movimentações</NavLink>
-            <NavLink href="/embarcacoes">Embarcações</NavLink>
-            <NavLink href="/clientes">Clientes</NavLink>
-            <NavLink href="/vagas">Vagas</NavLink>
-            <NavLink href="/servicos">Serviços</NavLink>
-            <NavLink href="/usuarios">Usuários</NavLink>
-            <NavLink href="/relatorios">Relatórios</NavLink>
-        </nav>
-        <div class="sidebar-footer">
-            <NavLink href="/perfil">Meu perfil</NavLink>
+@using System.Security.Claims
+@inject NavigationManager Nav
+
+<link rel="stylesheet" href="css/app-layout.css" />
+
+<CascadingAuthenticationState>
+<div class="shell @(_collapsed ? "collapsed" : "") @(_light ? "light" : "")">
+
+  <!-- Sidebar -->
+  <aside class="sb">
+
+    <div class="sb-logo">
+      <a href="/dashboard" class="sb-logo-left">
+        <div class="sb-logo-icon">S</div>
+        <span class="sb-logo-name">Seti<b>Marine</b></span>
+      </a>
+      <button class="sb-collapse-btn" @onclick="ToggleCollapse" title="Recolher menu">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          <path d="M7 1L3 5l4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <nav class="sb-nav">
+
+      <span class="sb-label">Principal</span>
+
+      <NavLink href="/dashboard" Match="NavLinkMatch.All">
+        <span class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+        </span>
+        Dashboard
+      </NavLink>
+
+      <NavLink href="/vagas/layout">
+        <span class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+          </svg>
+        </span>
+        Mapa da Marina
+      </NavLink>
+
+      <NavLink href="/movimentacoes">
+        <span class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </span>
+        Movimentacoes
+      </NavLink>
+
+      <AuthorizeView Roles="Admin,SuperAdmin">
+        <Authorized>
+          <span class="sb-label">Configuracoes</span>
+
+          <NavLink href="/corredores">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </span>
+            Corredores
+          </NavLink>
+
+          <NavLink href="/vagas">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+              </svg>
+            </span>
+            Vagas
+          </NavLink>
+
+          <NavLink href="/embarcacoes">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20l5-5 5 5"/><path d="M12 15V3"/>
+              </svg>
+            </span>
+            Embarcacoes
+          </NavLink>
+
+          <NavLink href="/clientes">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            Clientes
+          </NavLink>
+
+          <NavLink href="/contratos">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </span>
+            Contratos
+          </NavLink>
+
+          <NavLink href="/servicos">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              </svg>
+            </span>
+            Servicos
+          </NavLink>
+
+          <span class="sb-label">Gestao</span>
+
+          <NavLink href="/usuarios">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </span>
+            Usuarios
+          </NavLink>
+
+          <NavLink href="/relatorios">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </span>
+            Relatorios
+          </NavLink>
+
+          <NavLink href="/minha-empresa">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            Minha Empresa
+          </NavLink>
+        </Authorized>
+      </AuthorizeView>
+
+      <AuthorizeView Roles="SuperAdmin">
+        <Authorized>
+          <span class="sb-label gold">Super Admin</span>
+          <NavLink href="/superadmin" class="sa" Match="NavLinkMatch.All">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </span>
+            Painel SETICOM
+          </NavLink>
+        </Authorized>
+      </AuthorizeView>
+
+    </nav>
+
+    <div class="sb-footer">
+      <a href="/planos" class="sb-fbtn">
+        <span class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </span>
+        Planos <span class="sb-badge">Em breve</span>
+      </a>
+
+      <button class="sb-fbtn" @onclick="ToggleTheme">
+        <span class="ic">
+          @if (_light)
+          {
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          }
+          else
+          {
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          }
+        </span>
+        @(_light ? "Tema Escuro" : "Tema Claro")
+      </button>
+
+      <AuthorizeView>
+        <Authorized>
+          <a href="/perfil" class="sb-user">
+            <div class="sb-av">@_ini</div>
+            <div class="sb-ui">
+              <div class="sb-un">@_nome</div>
+              <div class="sb-ur">@_role</div>
+            </div>
+            <span class="sb-arr">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </span>
+          </a>
+        </Authorized>
+      </AuthorizeView>
+
+      <a href="/auth/logout" class="sb-fbtn sb-sair">
+        <span class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </span>
+        Sair
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    @if (_collapsed)
+    {
+      <button class="sb-collapse-btn" @onclick="ToggleCollapse" style="margin-right:auto;position:relative;width:28px;height:28px;" title="Expandir menu">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          <path d="M3 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </button>
+    }
+    <AuthorizeView>
+      <Authorized>
+        <div class="topbar-user">
+          <strong>@_nome</strong>
+          <span class="topbar-sep">·</span>
+          <span>@_empresa</span>
         </div>
-    </aside>
-    <main class="app-content">@Body</main>
+      </Authorized>
+    </AuthorizeView>
+  </div>
+
+  <!-- Conteudo -->
+  <main class="app-main">@Body</main>
+
 </div>
+</CascadingAuthenticationState>
+
+@code {
+    private bool _collapsed;
+    private bool _light;
+    private string _nome = "", _role = "", _ini = "U", _empresa = "";
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState == null) return;
+        var auth = await AuthState;
+        var u = auth.User;
+        if (u.Identity?.IsAuthenticated != true) return;
+        _nome    = u.Identity.Name ?? "";
+        _ini     = _nome.Length > 0 ? _nome[0].ToString().ToUpper() : "U";
+        _empresa = u.FindFirst("EmpresaNome")?.Value ?? "";
+        _role    = u.IsInRole("SuperAdmin") ? "Super Admin"
+                 : u.IsInRole("Admin")      ? "Administrador"
+                 : "Operacional";
+    }
+
+    private void ToggleCollapse() => _collapsed = !_collapsed;
+    private void ToggleTheme()    => _light = !_light;
+}

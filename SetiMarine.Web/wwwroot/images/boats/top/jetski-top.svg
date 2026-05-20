@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 70" fill="none">
+  <!-- Casco do jet ski (mais compacto) -->
+  <path d="M15 2 C10 2 6 6 5 12 L4 48 C4 56 6 62 9 66 L11 68.5 C12.5 69.5 14 70 15 70 C16 70 17.5 69.5 19 68.5 L21 66 C24 62 26 56 26 48 L25 12 C24 6 20 2 15 2Z" fill="currentColor" opacity="0.85"/>
+  <!-- Linha central -->
+  <line x1="15" y1="4" x2="15" y2="66" stroke="white" stroke-width="0.8" opacity="0.4"/>
+  <!-- Banco do piloto -->
+  <rect x="9" y="24" width="12" height="20" rx="3" fill="white" opacity="0.2"/>
+  <!-- Detalhe da proa -->
+  <path d="M15 3 L11 14 L19 14 Z" fill="white" opacity="0.22"/>
+  <!-- Motor traseiro -->
+  <rect x="10" y="54" width="10" height="8" rx="2" fill="white" opacity="0.18"/>
+</svg>

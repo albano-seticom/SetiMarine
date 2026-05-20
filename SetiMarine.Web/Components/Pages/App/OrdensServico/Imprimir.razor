@@ -1,0 +1,174 @@
+@page "/servicos/{Id:int}/imprimir"
+@layout EmptyLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject OrdemServicoService OSService
+@inject UsuarioContextService UserCtx
+@inject NavigationManager Nav
+
+<PageTitle>OS #@Id — SetiMarine</PageTitle>
+
+<style>
+    body { background: #fff; color: #111; font-family: 'Outfit', Arial, sans-serif; margin: 0; }
+    .print-wrap { max-width: 720px; margin: 0 auto; padding: 2rem 2.5rem; }
+    .print-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 2px solid #111; }
+    .print-logo { font-size: 1.3rem; font-weight: 700; letter-spacing: -.01em; }
+    .print-logo b { color: #243595; }
+    .print-meta { text-align: right; font-size: .8rem; color: #555; }
+    .print-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 1.5rem; }
+    .print-section { margin-bottom: 1.5rem; }
+    .print-section-title { font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: #888; margin-bottom: .6rem; border-bottom: 1px solid #e5e5e5; padding-bottom: .3rem; }
+    .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 2rem; }
+    .print-field label { font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; color: #888; display: block; margin-bottom: .1rem; }
+    .print-field span { font-size: .88rem; color: #111; }
+    .print-desc { font-size: .88rem; line-height: 1.6; color: #333; white-space: pre-wrap; }
+    .print-footer { margin-top: 3rem; display: flex; gap: 4rem; }
+    .sign-line { flex: 1; }
+    .sign-line hr { border: none; border-top: 1px solid #333; margin-bottom: .3rem; }
+    .sign-label { font-size: .65rem; color: #888; letter-spacing: .1em; text-transform: uppercase; }
+    @@media print {
+        .no-print { display: none !important; }
+        body { print-color-adjust: exact; }
+    }
+</style>
+
+@if (_carregando)
+{
+    <div style="padding:4rem;text-align:center;color:#888;">Carregando...</div>
+}
+else if (_os == null)
+{
+    <div style="padding:4rem;text-align:center;color:#888;">OS não encontrada.</div>
+}
+else
+{
+    <div class="print-wrap">
+
+        <div class="no-print" style="margin-bottom:1.5rem;display:flex;gap:.75rem;align-items:center;">
+            <button onclick="window.print()" style="padding:.5rem 1.25rem;background:#243595;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:.82rem;font-weight:500;">
+                Imprimir / Salvar PDF
+            </button>
+            <a href="/servicos/@Id" style="font-size:.82rem;color:#555;text-decoration:none;">← Voltar</a>
+        </div>
+
+        <div class="print-header">
+            <div class="print-logo">Seti<b>Marine</b></div>
+            <div class="print-meta">
+                <div style="font-weight:600;">Ordem de Serviço #@_os.Id</div>
+                <div>Emitida em @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+            </div>
+        </div>
+
+        <div class="print-title">@_os.TipoServico</div>
+
+        <div class="print-section">
+            <div class="print-section-title">Embarcação e Cliente</div>
+            <div class="print-grid">
+                <div class="print-field">
+                    <label>Embarcação</label>
+                    <span>@(_os.Embarcacao?.Nome ?? "—")</span>
+                </div>
+                <div class="print-field">
+                    <label>Cliente</label>
+                    <span>@(_os.Embarcacao?.Cliente?.Nome ?? "—")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="print-section">
+            <div class="print-section-title">Atribuição e Status</div>
+            <div class="print-grid">
+                <div class="print-field">
+                    <label>Responsável</label>
+                    <span>@(_os.Responsavel?.Nome ?? "Não atribuído (terceiro)")</span>
+                </div>
+                <div class="print-field">
+                    <label>Status</label>
+                    <span>@(_os.Status switch {
+                        StatusOS.Pendente    => "Pendente",
+                        StatusOS.EmExecucao => "Em Execução",
+                        StatusOS.Finalizado => "Finalizado",
+                        _                   => _os.Status.ToString()
+                    })</span>
+                </div>
+                <div class="print-field">
+                    <label>Criada em</label>
+                    <span>@_os.CriadaEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                @if (_os.FinalizadaEm.HasValue)
+                {
+                    <div class="print-field">
+                        <label>Finalizada em</label>
+                        <span>@_os.FinalizadaEm.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (_os.ValorEstimado.HasValue || _os.ValorFinal.HasValue)
+        {
+            <div class="print-section">
+                <div class="print-section-title">Valores</div>
+                <div class="print-grid">
+                    @if (_os.ValorEstimado.HasValue)
+                    {
+                        <div class="print-field">
+                            <label>Valor Estimado</label>
+                            <span>@_os.ValorEstimado.Value.ToString("C2")</span>
+                        </div>
+                    }
+                    @if (_os.ValorFinal.HasValue)
+                    {
+                        <div class="print-field">
+                            <label>Valor Final</label>
+                            <span style="font-weight:600;">@_os.ValorFinal.Value.ToString("C2")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_os.Descricao))
+        {
+            <div class="print-section">
+                <div class="print-section-title">Descrição / Instruções</div>
+                <div class="print-desc">@_os.Descricao</div>
+            </div>
+        }
+
+        <div class="print-section" style="margin-top:1rem;">
+            <div class="print-section-title">Observações</div>
+            <div style="border:1px solid #ddd;border-radius:3px;min-height:80px;padding:.75rem;font-size:.8rem;color:#aaa;">
+                (uso da equipe)
+            </div>
+        </div>
+
+        <div class="print-footer">
+            <div class="sign-line">
+                <hr />
+                <div class="sign-label">Responsável pela execução</div>
+            </div>
+            <div class="sign-line">
+                <hr />
+                <div class="sign-label">Aprovação / Recebimento</div>
+            </div>
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private OrdemServico? _os;
+    private bool _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _os = await OSService.ObterPorIdAsync(Id, UserCtx.EmpresaId);
+        _carregando = false;
+    }
+}

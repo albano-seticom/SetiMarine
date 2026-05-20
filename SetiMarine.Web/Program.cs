@@ -1,47 +1,74 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using SetiMarine.Infrastructure.Data;
+using SetiMarine.Infrastructure.Services;
+using SetiMarine.Application.Services;
+using SetiMarine.Domain.Data;
+using SetiMarine.Web.Components;
+using SetiMarine.Web.Endpoints;
+using SetiMarine.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddCascadingAuthenticationState();
+
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<ISetiMarineDbContext, AppDbContext>(sp =>
+    sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
-        o.LoginPath       = "/login";
-        o.LogoutPath      = "/logout";
-        o.ExpireTimeSpan  = TimeSpan.FromHours(12);
+        o.LoginPath      = "/login";
+        o.LogoutPath     = "/logout";
+        o.ExpireTimeSpan = TimeSpan.FromHours(12);
     });
 
 builder.Services.AddAuthorization();
 builder.Services.AddSignalR();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<UsuarioContextService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<CorredorService>();
+builder.Services.AddScoped<VagaService>();
+builder.Services.AddScoped<AlocacaoService>();
+builder.Services.AddScoped<ClienteService>();
+builder.Services.AddScoped<EmbarcacaoService>();
+builder.Services.AddScoped<UsuarioService>();
+builder.Services.AddScoped<ContratoService>();
+builder.Services.AddScoped<OrdemServicoService>();
+builder.Services.AddScoped<MovimentacaoService>();
+builder.Services.AddScoped<EmpresaService>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+    using var dbContext = dbContextFactory.CreateDbContext();
+    await dbContext.Database.MigrateAsync();
+}
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 
-var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
-provider.Mappings[".svg"] = "image/svg+xml";
-provider.Mappings[".mp4"] = "video/mp4";
-app.UseStaticFiles(new StaticFileOptions
-{
-    ContentTypeProvider = provider
-});
-
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAntiforgery();
+app.MapAuthEndpoints();
 
-app.MapRazorComponents<SetiMarine.Web.Components.App>()
+app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();

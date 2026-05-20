@@ -1,0 +1,162 @@
+@page "/vagas"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject VagaService VagaService
+@inject CorredorService CorredorService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Vagas — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Configurações</span>
+        <h1>Vagas</h1>
+    </div>
+    <div class="page-head-actions">
+        <a href="/vagas/layout" class="btn btn-ghost btn-sm">Ver Layout</a>
+        <a href="/vagas/nova" class="btn btn-primary btn-sm">+ Nova Vaga</a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:flex-end;">
+    <div class="field" style="margin:0;min-width:160px;">
+        <label>Corredor</label>
+        <select @bind="_filtroCorredorId" @bind:after="CarregarAsync" style="height:34px;">
+            <option value="">Todos</option>
+            @foreach (var c in _corredores)
+            {
+                <option value="@c.Id">@c.Nome</option>
+            }
+        </select>
+    </div>
+    <div class="field" style="margin:0;min-width:140px;">
+        <label>Status</label>
+        <select @bind="_filtroStatus" @bind:after="CarregarAsync" style="height:34px;">
+            <option value="">Todos</option>
+            <option value="Livre">Livre</option>
+            <option value="Ocupada">Ocupada</option>
+            <option value="EmMovimentacao">Em Movimentação</option>
+            <option value="Manutencao">Manutenção</option>
+        </select>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_vagas.Any())
+{
+    <div style="padding:4rem 2rem;text-align:center;color:var(--ink-300);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto 1rem;display:block;opacity:.4;">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+        </svg>
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhuma vaga encontrada</p>
+        <a href="/vagas/nova" class="btn btn-primary btn-sm">Criar Primeira Vaga</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Corredor</th>
+                    <th>Tipo</th>
+                    <th>Tamanho (pés)</th>
+                    <th>Status</th>
+                    <th>Embarcação</th>
+                    <th style="width:88px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in _vagas)
+                {
+                    <tr>
+                        <td><strong style="font-weight:500;font-family:var(--f-mono, monospace);">@v.Codigo</strong></td>
+                        <td style="color:var(--ink-500);">@(v.Corredor?.Nome ?? "—")</td>
+                        <td>
+                            @if (v.Tipo == TipoVaga.Agua)
+                            { <span class="badge" style="background:rgba(30,100,180,.08);color:#1e64b4;">Molhada</span> }
+                            else
+                            { <span class="badge" style="background:var(--line);color:var(--ink-500);">Seca</span> }
+                        </td>
+                        <td style="color:var(--ink-500);">@v.TamanhoMaxPes pés</td>
+                        <td><StatusVagaBadge Status="@v.Status" /></td>
+                        <td style="color:var(--ink-500);">
+                            @{
+                                var emb = v.EmbarcacoesNaVaga.FirstOrDefault(e => e.Ativa)?.Embarcacao?.Nome;
+                            }
+                            @(emb ?? "—")
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                <a href="/vagas/@v.Id" class="btn btn-ghost btn-sm" title="Editar">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                                <button class="btn btn-danger btn-sm" title="Excluir" @onclick="() => ConfirmarExclusao(v)">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_erro != null)
+{
+    <div style="margin-top:1.5rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;display:flex;justify-content:space-between;align-items:center;">
+        @_erro
+        <button @onclick="() => _erro = null" style="background:none;border:none;cursor:pointer;color:inherit;font-size:1rem;line-height:1;padding:0 0 0 1rem;">×</button>
+    </div>
+}
+
+@code {
+    private List<Vaga> _vagas = new();
+    private List<Corredor> _corredores = new();
+    private string _filtroCorredorId = "";
+    private string _filtroStatus = "";
+    private bool _carregando = true;
+    private string? _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _corredores = await CorredorService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        int? corredorId = int.TryParse(_filtroCorredorId, out var cid) ? cid : null;
+        StatusVaga? status = Enum.TryParse<StatusVaga>(_filtroStatus, out var st) ? st : null;
+        _vagas = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId, corredorId, status);
+        _carregando = false;
+    }
+
+    private async Task ConfirmarExclusao(Vaga vaga)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Excluir a vaga '{vaga.Codigo}'?")) return;
+        try
+        {
+            await VagaService.ExcluirAsync(vaga.Id, UserCtx.EmpresaId);
+            await CarregarAsync();
+        }
+        catch (InvalidOperationException ex) { _erro = ex.Message; }
+    }
+}

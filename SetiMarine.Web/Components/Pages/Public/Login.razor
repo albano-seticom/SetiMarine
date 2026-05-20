@@ -1,3 +1,128 @@
-@page "/login"
+﻿@page "/login"
 @layout EmptyLayout
-<h2>Login — em construção</h2>
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject NavigationManager Nav
+
+<PageTitle>Entrar â€” SetiMarine</PageTitle>
+
+<style>
+@@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@@300;600&family=Outfit:wght@@300;400;500;600&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ocean: #050d1a; --deep: #071525;
+  --glass: rgba(255,255,255,0.04); --border: rgba(0,200,255,0.12);
+  --cyan: #00d4ff; --text: #e8f4f8; --muted: #5a8098;
+}
+body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; }
+
+.login-wrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 2rem 1rem;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,80,140,.4) 0%, transparent 70%), var(--ocean);
+}
+.login-card {
+  width: 100%; max-width: 420px;
+  background: var(--deep); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2.5rem 2rem;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  animation: fadeUp .5s ease both;
+}
+@@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.logo { display:flex; align-items:center; gap:10px; margin-bottom:2rem; text-decoration:none; }
+.logo-icon {
+  width:36px; height:36px; background:linear-gradient(135deg,#00d4ff,#00a8cc);
+  border-radius:10px; display:grid; place-items:center;
+  box-shadow:0 0 18px rgba(0,212,255,.3); font-size:1.1rem;
+}
+.logo-text { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--text); }
+.logo-text b { color:var(--cyan); }
+
+h2 { font-size:1.4rem; font-weight:500; margin-bottom:.4rem; }
+.sub { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+
+.field { margin-bottom:1.2rem; }
+.field-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.45rem; }
+.field label { font-size:.82rem; font-weight:500; color:var(--muted); letter-spacing:.03em; text-transform:uppercase; }
+.forgot { font-size:.8rem; color:var(--muted); text-decoration:none; }
+.forgot:hover { color:var(--cyan); }
+
+.field input {
+  width:100%; padding:.7rem 1rem;
+  background:rgba(255,255,255,.04); border:1px solid var(--border);
+  border-radius:8px; color:var(--text);
+  font-family:'Outfit',sans-serif; font-size:.95rem;
+  outline:none; transition:border-color .2s;
+}
+.field input:focus { border-color:rgba(0,212,255,.5); background:rgba(0,212,255,.04); }
+.field input::placeholder { color:var(--muted); }
+
+.btn-entrar {
+  width:100%; padding:.78rem; background:var(--cyan); color:#030b14;
+  border:none; border-radius:8px; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:.95rem; font-weight:600;
+  margin-top:.5rem; transition:background .2s, transform .15s;
+}
+.btn-entrar:hover { background:#1ad8ff; transform:translateY(-1px); }
+
+.erro { background:rgba(255,77,109,.1); border:1px solid rgba(255,77,109,.3); color:#ff7a93; border-radius:8px; padding:.75rem 1rem; font-size:.88rem; margin-bottom:1.2rem; }
+.divider { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+.footer { text-align:center; font-size:.85rem; color:var(--muted); }
+.footer a { color:var(--cyan); text-decoration:none; }
+</style>
+
+<div class="login-wrap">
+  <div class="login-card">
+
+    <a href="/" class="logo">
+      <div class="logo-icon">âš“</div>
+      <span class="logo-text">Seti<b>Marine</b></span>
+    </a>
+
+    <h2>Bem-vindo de volta</h2>
+    <p class="sub">Entre com suas credenciais para acessar o painel.</p>
+
+    @if (_erro != null)
+    {
+      <div class="erro">@_erro</div>
+    }
+
+    <form method="post" action="/auth/login">
+      <input type="hidden" name="returnUrl" value="/dashboard" />
+
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" name="email" placeholder="seu@email.com" autocomplete="email" required />
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <label>Senha</label>
+          <a href="#" class="forgot">Esqueci minha senha</a>
+        </div>
+        <input type="password" name="senha" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password" required />
+      </div>
+
+      <button type="submit" class="btn-entrar">Entrar</button>
+    </form>
+
+    <hr class="divider" />
+    <div class="footer">
+      Nao tem uma conta? <a href="/cadastro" onclick="irPara('/cadastro')">Criar conta gratis</a>
+    </div>
+
+  </div>
+</div>
+
+@code {
+    private string? _erro;
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(Nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("erro", out var erro))
+            _erro = erro;
+    }
+}
+

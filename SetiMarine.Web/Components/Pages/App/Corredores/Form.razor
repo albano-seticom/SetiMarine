@@ -1,0 +1,122 @@
+@page "/corredores/novo"
+@page "/corredores/{Id:int}"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@inject CorredorService CorredorService
+@inject NavigationManager Nav
+@inject UsuarioContextService UserCtx
+
+<PageTitle>@(_isNovo ? "Novo Corredor" : "Editar Corredor") — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow"><a href="/corredores" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line);">Corredores</a> /</span>
+        <h1>@(_isNovo ? "Novo Corredor" : _corredor.Nome)</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    <EditForm Model="_corredor" OnValidSubmit="SalvarAsync" style="max-width:640px;">
+        <DataAnnotationsValidator />
+
+        <div class="form-section">
+            <div class="form-section-title">Dados do Corredor</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Nome *</label>
+                    <InputText @bind-Value="_corredor.Nome" placeholder="Ex: Corredor A" />
+                    <ValidationMessage For="() => _corredor.Nome" />
+                </div>
+                <div class="field">
+                    <label>Tamanho Máx. (pés)</label>
+                    <InputNumber @bind-Value="_corredor.TamanhoMaxPes" />
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns:1fr;">
+                <div class="field">
+                    <label>Descrição</label>
+                    <InputTextArea @bind-Value="_corredor.Descricao" rows="2" style="resize:vertical;" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Ordem de Exibição</label>
+                    <InputNumber @bind-Value="_corredor.Ordem" />
+                </div>
+                <div class="field" style="display:flex;align-items:flex-end;padding-bottom:.5rem;">
+                    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;text-transform:none;letter-spacing:0;font-size:.88rem;color:var(--ink-900);">
+                        <InputCheckbox @bind-Value="_corredor.Ativo" />
+                        Corredor ativo
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        @if (_erro != null)
+        {
+            <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">
+                @_erro
+            </div>
+        }
+
+        <div class="form-actions">
+            <a href="/corredores" class="btn btn-ghost">Cancelar</a>
+            <button type="submit" class="btn btn-primary" disabled="@_salvando">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Corredor _corredor = new();
+    private bool _isNovo => Id is null;
+    private bool _carregando = true;
+    private bool _salvando;
+    private string? _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        if (!_isNovo)
+        {
+            var existente = await CorredorService.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
+            if (existente == null) { Nav.NavigateTo("/corredores"); return; }
+            _corredor = existente;
+        }
+        else
+        {
+            _corredor = new Corredor { EmpresaId = UserCtx.EmpresaId, Ativo = true };
+        }
+        _carregando = false;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _salvando = true;
+        _erro = null;
+        try
+        {
+            if (_isNovo) await CorredorService.CriarAsync(_corredor);
+            else         await CorredorService.EditarAsync(_corredor);
+            Nav.NavigateTo("/corredores");
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+}
