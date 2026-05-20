@@ -1,0 +1,160 @@
+@page "/produtos"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject ProdutoService ProdService
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Produtos — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Loja</span>
+        <h1>Produtos</h1>
+    </div>
+    <div class="page-head-actions">
+        <div class="field" style="margin:0;min-width:160px;">
+            <select @bind="_filtroCategoria" @bind:after="CarregarAsync" style="height:34px;">
+                <option value="">Todas as categorias</option>
+                <option value="Acessorio">Acessório</option>
+                <option value="Combustivel">Combustível</option>
+                <option value="Lubrificante">Lubrificante</option>
+                <option value="Peca">Peça</option>
+                <option value="Equipamento">Equipamento</option>
+                <option value="Alimento">Alimento</option>
+                <option value="Outro">Outro</option>
+            </select>
+        </div>
+        <a href="/produtos/novo" class="btn btn-primary btn-sm">+ Novo Produto</a>
+        <a href="/produtos/vendas" class="btn btn-ghost btn-sm">Ver Transações</a>
+    </div>
+</div>
+
+<!-- Contadores -->
+<div style="display:flex;gap:.75rem;margin-bottom:1.75rem;flex-wrap:wrap;">
+    <div style="padding:.65rem 1rem;border:1px solid var(--line);border-radius:3px;min-width:110px;">
+        <div style="font-size:1.4rem;font-weight:700;color:var(--navy-700);line-height:1;">@_produtos.Count</div>
+        <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);margin-top:.15rem;">Produtos</div>
+    </div>
+    <div style="padding:.65rem 1rem;border:1px solid var(--line);border-radius:3px;min-width:110px;">
+        <div style="font-size:1.4rem;font-weight:700;color:var(--s-free);line-height:1;">@_produtos.Count(p => p.Alugavel)</div>
+        <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);margin-top:.15rem;">Alugáveis</div>
+    </div>
+    @if (_semEstoque > 0)
+    {
+        <div style="padding:.65rem 1rem;border:1px solid rgba(164,68,54,.3);border-radius:3px;min-width:110px;background:rgba(164,68,54,.05);">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--s-maint);line-height:1;">@_semEstoque</div>
+            <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--s-maint);margin-top:.15rem;opacity:.8;">Sem estoque</div>
+        </div>
+    }
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_produtos.Any())
+{
+    <div style="padding:3rem 2rem;text-align:center;color:var(--ink-300);">
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhum produto cadastrado</p>
+        <a href="/produtos/novo" class="btn btn-primary btn-sm">Cadastrar Produto</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Categoria</th>
+                    <th>Unidade</th>
+                    <th>Preço Venda</th>
+                    <th>Aluguel/dia</th>
+                    <th>Estoque</th>
+                    <th>Status</th>
+                    <th style="width:100px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in _produtos)
+                {
+                    var estoqueOk = p.Estoque > p.EstoqueMinimo;
+                    var estoqueBaixo = p.Estoque > 0 && p.Estoque <= p.EstoqueMinimo;
+                    <tr>
+                        <td><strong style="font-weight:500;">@p.Nome</strong></td>
+                        <td style="color:var(--ink-500);">@CategoriaLabel(p.Categoria)</td>
+                        <td style="color:var(--ink-400);font-size:.8rem;">@p.Unidade</td>
+                        <td style="font-weight:500;">@(p.PrecoVenda.HasValue ? p.PrecoVenda.Value.ToString("C2") : "—")</td>
+                        <td style="color:var(--ink-500);">@(p.PrecoAluguelDia.HasValue ? p.PrecoAluguelDia.Value.ToString("C2") : "—")</td>
+                        <td>
+                            <span style="font-weight:600;color:@(estoqueOk ? "var(--ink-900)" : estoqueBaixo ? "#9a7420" : "var(--s-maint)");">
+                                @p.Estoque
+                            </span>
+                            @if (p.EstoqueMinimo > 0)
+                            {
+                                <span style="font-size:.72rem;color:var(--ink-300);margin-left:.3rem;">/ mín @p.EstoqueMinimo</span>
+                            }
+                        </td>
+                        <td>
+                            @if (p.Ativo)
+                            { <span class="badge badge-free">Ativo</span> }
+                            else
+                            { <span class="badge" style="background:rgba(120,120,120,.1);color:var(--ink-400);">Inativo</span> }
+                            @if (p.Alugavel)
+                            { <span class="badge badge-occ" style="margin-left:.3rem;">Aluguel</span> }
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                <a href="/produtos/@p.Id" class="btn btn-ghost btn-sm" title="Editar">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                                <a href="/produtos/vendas/nova?produtoId=@p.Id" class="btn btn-ghost btn-sm" title="Registrar venda/aluguel" style="color:var(--s-free);">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Produto> _produtos = new();
+    private string _filtroCategoria = "";
+    private bool _carregando = true;
+    private int _semEstoque;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        CategoriaProduto? cat = Enum.TryParse<CategoriaProduto>(_filtroCategoria, out var cv) ? cv : null;
+        _produtos   = await ProdService.ListarAsync(UserCtx.EmpresaId, apenasAtivos: null, categoria: cat);
+        _semEstoque = _produtos.Count(p => p.Estoque == 0 && p.Ativo);
+        _carregando = false;
+    }
+
+    private static string CategoriaLabel(CategoriaProduto c) => c switch
+    {
+        CategoriaProduto.Acessorio    => "Acessório",
+        CategoriaProduto.Combustivel  => "Combustível",
+        CategoriaProduto.Lubrificante => "Lubrificante",
+        CategoriaProduto.Peca         => "Peça",
+        CategoriaProduto.Equipamento  => "Equipamento",
+        CategoriaProduto.Alimento     => "Alimento",
+        _                             => "Outro",
+    };
+}

@@ -45,6 +45,7 @@ builder.Services.AddScoped<ContratoService>();
 builder.Services.AddScoped<OrdemServicoService>();
 builder.Services.AddScoped<MovimentacaoService>();
 builder.Services.AddScoped<EmpresaService>();
+builder.Services.AddScoped<ProdutoService>();
 
 var app = builder.Build();
 

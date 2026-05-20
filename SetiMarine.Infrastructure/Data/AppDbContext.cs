@@ -51,6 +51,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // ============================================================
     public DbSet<OrdemServico> OrdensServico { get; set; }
 
+    // ============================================================
+    // MARINA - Produtos e Vendas
+    // ============================================================
+    public DbSet<Produto> Produtos { get; set; }
+    public DbSet<VendaProduto> VendasProduto { get; set; }
+
     protected override void OnModelCreating(ModelBuilder mb)
     {
         base.OnModelCreating(mb);
@@ -84,6 +90,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         mb.Entity<FotoServico>().ToTable("mar_fotos_servico");
 
         mb.Entity<OrdemServico>().ToTable("mar_ordens_servico");
+
+        mb.Entity<Produto>().ToTable("mar_produtos");
+        mb.Entity<VendaProduto>().ToTable("mar_vendas_produto");
+
+        mb.Entity<VendaProduto>()
+            .Ignore(v => v.ValorTotal);
 
         // ============================================================
         // Indices unicos

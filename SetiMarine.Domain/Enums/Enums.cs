@@ -55,3 +55,18 @@ public enum StatusPedidoUso
     Pronto     = 3,
     Cancelado  = 4,
 }
+
+public enum CategoriaProduto
+{
+    Acessorio   = 0,
+    Combustivel = 1,
+    Lubrificante = 2,
+    Peca        = 3,
+    Equipamento = 4,
+    Alimento    = 5,
+    Outro       = 99,
+}
+
+public enum TipoTransacao { Venda = 0, Aluguel = 1 }
+
+public enum StatusAluguel { Ativo = 0, Devolvido = 1, Atrasado = 2 }

@@ -1,0 +1,161 @@
+@page "/produtos/vendas"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject ProdutoService ProdService
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Transações de Produtos — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow"><a href="/produtos" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line);">Produtos</a> /</span>
+        <h1>Vendas e Aluguéis</h1>
+    </div>
+    <div class="page-head-actions">
+        <div class="field" style="margin:0;min-width:140px;">
+            <select @bind="_filtroTipo" @bind:after="CarregarAsync" style="height:34px;">
+                <option value="">Todos</option>
+                <option value="Venda">Vendas</option>
+                <option value="Aluguel">Aluguéis</option>
+            </select>
+        </div>
+        <a href="/produtos/vendas/nova" class="btn btn-primary btn-sm">+ Registrar</a>
+    </div>
+</div>
+
+<!-- Contadores -->
+<div style="display:flex;gap:.75rem;margin-bottom:1.75rem;flex-wrap:wrap;">
+    <div style="padding:.65rem 1rem;border:1px solid var(--line);border-radius:3px;min-width:110px;">
+        <div style="font-size:1.4rem;font-weight:700;color:var(--navy-700);line-height:1;">@_transacoes.Count(t => t.Tipo == TipoTransacao.Venda)</div>
+        <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);margin-top:.15rem;">Vendas</div>
+    </div>
+    <div style="padding:.65rem 1rem;border:1px solid var(--line);border-radius:3px;min-width:110px;">
+        <div style="font-size:1.4rem;font-weight:700;color:var(--s-free);line-height:1;">@_transacoes.Count(t => t.Tipo == TipoTransacao.Aluguel)</div>
+        <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);margin-top:.15rem;">Aluguéis</div>
+    </div>
+    @if (_alugueisAtivos > 0)
+    {
+        <div style="padding:.65rem 1rem;border:1px solid rgba(184,138,46,.3);border-radius:3px;min-width:110px;background:rgba(184,138,46,.05);">
+            <div style="font-size:1.4rem;font-weight:700;color:#9a7420;line-height:1;">@_alugueisAtivos</div>
+            <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#9a7420;margin-top:.15rem;opacity:.8;">Em uso</div>
+        </div>
+    }
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_transacoes.Any())
+{
+    <div style="padding:3rem 2rem;text-align:center;color:var(--ink-300);">
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhuma transação registrada</p>
+        <a href="/produtos/vendas/nova" class="btn btn-primary btn-sm">Registrar Venda ou Aluguel</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>Produto</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Qtd</th>
+                    <th>Valor</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th style="width:90px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in _transacoes)
+                {
+                    <tr>
+                        <td style="color:var(--ink-300);font-size:.8rem;font-family:monospace;">#@t.Id</td>
+                        <td><strong style="font-weight:500;">@(t.Produto?.Nome ?? "—")</strong></td>
+                        <td style="color:var(--ink-500);">@(t.Cliente?.Nome ?? "—")</td>
+                        <td>
+                            @if (t.Tipo == TipoTransacao.Venda)
+                            { <span class="badge badge-occ">Venda</span> }
+                            else
+                            { <span class="badge badge-mov">Aluguel</span> }
+                        </td>
+                        <td style="color:var(--ink-500);">@t.Quantidade @(t.Produto?.Unidade ?? "")</td>
+                        <td style="font-weight:500;">@((t.Quantidade * t.PrecoUnitario).ToString("C2"))</td>
+                        <td style="color:var(--ink-500);font-size:.8rem;">@t.DataTransacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @if (t.Tipo == TipoTransacao.Aluguel)
+                            {
+                                @if (t.StatusAluguel == SetiMarine.Domain.Enums.StatusAluguel.Devolvido)
+                                { <span class="badge badge-free">Devolvido</span> }
+                                else if (t.DataDevolucaoPrevista < DateTime.UtcNow)
+                                { <span class="badge badge-maint">Atrasado</span> }
+                                else
+                                { <span class="badge badge-mov">Em uso</span> }
+                            }
+                            else
+                            { <span class="badge" style="background:rgba(120,120,120,.08);color:var(--ink-400);">Concluído</span> }
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                @if (t.Tipo == TipoTransacao.Aluguel && t.StatusAluguel != SetiMarine.Domain.Enums.StatusAluguel.Devolvido)
+                                {
+                                    <button class="btn btn-ghost btn-sm" title="Registrar devolução"
+                                            @onclick="() => DevolverAsync(t)"
+                                            style="color:var(--s-free);">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_erro != null)
+{
+    <div style="margin-top:1rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
+}
+
+@code {
+    private List<VendaProduto> _transacoes = new();
+    private string _filtroTipo = "";
+    private bool _carregando = true;
+    private int _alugueisAtivos;
+    private string? _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        TipoTransacao? tipo = Enum.TryParse<TipoTransacao>(_filtroTipo, out var tv) ? tv : null;
+        _transacoes    = await ProdService.ListarTransacoesAsync(UserCtx.EmpresaId, tipo);
+        _alugueisAtivos = _transacoes.Count(t => t.Tipo == TipoTransacao.Aluguel
+                                              && t.StatusAluguel != SetiMarine.Domain.Enums.StatusAluguel.Devolvido);
+        _carregando = false;
+    }
+
+    private async Task DevolverAsync(VendaProduto t)
+    {
+        _erro = null;
+        try { await ProdService.RegistrarDevolucaoAsync(t.Id, UserCtx.EmpresaId); await CarregarAsync(); }
+        catch (Exception ex) { _erro = ex.Message; }
+    }
+}
