@@ -1,0 +1,70 @@
+<div class="modal-backdrop" @onclick="Fechar">
+    <div class="modal-dialog" style="width:min(95vw,@Width);" @onclick:stopPropagation="true">
+
+        <div class="modal-header">
+            @if (Title != null)
+            {
+                <div class="modal-header-title">@Title</div>
+            }
+            <button class="modal-close-btn" @onclick="Fechar" aria-label="Fechar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-body">@ChildContent</div>
+
+    </div>
+</div>
+
+<style>
+.modal-backdrop {
+    position: fixed; inset: 0; z-index: 900;
+    background: rgba(0,0,0,.48);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: mfade .18s ease;
+}
+@@keyframes mfade { from{opacity:0} to{opacity:1} }
+
+.modal-dialog {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: mslide .18s ease;
+    box-shadow: 0 16px 60px rgba(0,0,0,.22);
+}
+@@keyframes mslide { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+.modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem .85rem;
+    border-bottom: 1px solid var(--line);
+    gap: 1rem;
+}
+.modal-header-title {
+    font-size: .95rem; font-weight: 700; color: var(--ink-900);
+    letter-spacing: -.01em;
+}
+.modal-close-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-300); padding: 4px; border-radius: 4px;
+    display: flex; align-items: center; transition: color .15s, background .15s;
+    flex-shrink: 0;
+}
+.modal-close-btn:hover { color: var(--ink-900); background: var(--surface,rgba(0,0,0,.04)); }
+
+.modal-body { padding: 1.25rem; }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string Width { get; set; } = "520px";
+
+    private void Fechar() => OnClose.InvokeAsync();
+}
