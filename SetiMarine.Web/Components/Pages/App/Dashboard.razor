@@ -4,313 +4,366 @@
 @using SetiMarine.Application.Services
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
-@using System.Text.Json
 @inject VagaService VagaService
-@inject IJSRuntime JS
+@inject MovimentacaoService MovService
 @inject UsuarioContextService UserCtx
 
-<PageTitle>Dashboard - SetiMarine</PageTitle>
+<PageTitle>Dashboard — SetiMarine</PageTitle>
 
 <style>
-.dash{display:flex;flex-direction:column;gap:1.1rem;height:100%;}
-.dash-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.8rem;}
-.dash-title{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--ocean-800,#0d1f3c);}
-.dash-sub{font-size:.8rem;color:var(--ocean-200,#4d8fd4);margin-top:2px;text-transform:capitalize;}
-.dash-actions{display:flex;gap:.5rem;}
-.btn-dash{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem 1rem;border-radius:7px;font-family:'Barlow',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all .15s;border:none;}
-.btn-dash.outline{background:transparent;color:var(--ocean-600,#112a52);border:1.5px solid rgba(22,53,103,.2);}
-.btn-dash.outline:hover{background:var(--ocean-50,#e8f3fb);border-color:var(--ocean-400,#1d4785);}
-.btn-dash.coral{background:var(--coral,#e8453c);color:#fff;box-shadow:0 2px 8px rgba(232,69,60,.3);}
-.btn-dash.coral:hover{background:#c43832;transform:translateY(-1px);}
-.btn-dash.teal{background:var(--teal,#1ab3a6);color:#fff;box-shadow:0 2px 6px rgba(26,179,166,.3);}
-.btn-dash.teal:hover{background:#128f84;transform:translateY(-1px);}
+.dash { display:flex;flex-direction:column;gap:1.25rem; }
 
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;}
-@@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}}
-.mc{background:#fff;border:1px solid rgba(22,53,103,.1);border-radius:10px;padding:.9rem 1.1rem;display:flex;align-items:center;gap:.9rem;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);transition:box-shadow .2s,transform .2s;}
-.mc:hover{box-shadow:0 4px 18px rgba(0,0,0,.12);transform:translateY(-2px);}
-.mc-bar{position:absolute;top:0;left:0;right:0;height:3px;}
-.mc.g .mc-bar{background:#1ab3a6;} .mc.b .mc-bar{background:#1d4785;} .mc.y .mc-bar{background:#c9a84c;} .mc.r .mc-bar{background:#e8453c;}
-.mc-ico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.mc.g .mc-ico{background:rgba(26,179,166,.1);color:#1ab3a6;}
-.mc.b .mc-ico{background:rgba(22,53,103,.09);color:#1d4785;}
-.mc.y .mc-ico{background:rgba(201,168,76,.12);color:#c9a84c;}
-.mc.r .mc-ico{background:rgba(232,69,60,.09);color:#e8453c;}
-.mc-lbl{font-size:.68rem;font-weight:600;color:#4d8fd4;text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;}
-.mc-val{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:700;line-height:1;}
-.mc.g .mc-val{color:#1ab3a6;} .mc.b .mc-val{color:#1d4785;} .mc.y .mc-val{color:#c9a84c;} .mc.r .mc-val{color:#e8453c;}
+/* ── Header ─────────────────────────────────── */
+.dash-header { display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.8rem; }
+.dash-title  { font-size:1.4rem;font-weight:700;letter-spacing:-.01em;color:var(--ink-900); }
+.dash-sub    { font-size:.78rem;color:var(--ink-400);margin-top:3px;text-transform:capitalize; }
+.dash-actions{ display:flex;gap:.5rem;flex-wrap:wrap; }
 
-.mapa-wrap{flex:1;background:#fff;border:1px solid rgba(22,53,103,.1);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:400px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
-.mapa-top{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.2rem;border-bottom:1px solid rgba(22,53,103,.08);flex-shrink:0;background:var(--ocean-900,#060f1e);}
-.mapa-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.4px;text-transform:uppercase;display:flex;align-items:center;gap:.5rem;color:#fff;}
-.live-dot{width:8px;height:8px;border-radius:50%;background:#1ab3a6;animation:pulse 2s ease-in-out infinite;}
-@@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.35)}}
-.leg{display:flex;gap:.9rem;align-items:center;}
-.leg-i{display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:rgba(255,255,255,.55);}
-.leg-d{width:10px;height:10px;border-radius:2px;}
+/* ── Métricas ────────────────────────────────── */
+.metrics { display:grid;grid-template-columns:repeat(5,1fr);gap:.7rem; }
+@@media(max-width:960px){ .metrics{ grid-template-columns:repeat(3,1fr); } }
+@@media(max-width:600px) { .metrics{ grid-template-columns:repeat(2,1fr); } }
+.mc { background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;position:relative;overflow:hidden;transition:box-shadow .18s,transform .18s; }
+.mc:hover { box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-2px); }
+.mc-bar  { position:absolute;top:0;left:0;right:0;height:3px; }
+.mc.g .mc-bar { background:var(--s-free); }
+.mc.b .mc-bar { background:var(--navy-700); }
+.mc.y .mc-bar { background:#c9a84c; }
+.mc.r .mc-bar { background:var(--s-maint); }
+.mc.p .mc-bar { background:#7a5e10; }
+.mc-ico { width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.mc.g .mc-ico { background:rgba(74,138,92,.1); color:var(--s-free); }
+.mc.b .mc-ico { background:rgba(36,53,149,.08);color:var(--navy-700); }
+.mc.y .mc-ico { background:rgba(201,168,76,.12);color:#9a7420; }
+.mc.r .mc-ico { background:rgba(164,68,54,.09); color:var(--s-maint); }
+.mc.p .mc-ico { background:rgba(184,138,46,.1); color:#7a5e10; }
+.mc-lbl { font-size:.62rem;font-weight:600;color:var(--ink-400);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px; }
+.mc-val { font-size:1.8rem;font-weight:700;line-height:1; }
+.mc.g .mc-val { color:var(--s-free); }
+.mc.b .mc-val { color:var(--navy-700); }
+.mc.y .mc-val { color:#9a7420; }
+.mc.r .mc-val { color:var(--s-maint); }
+.mc.p .mc-val { color:#7a5e10; }
 
-.mapa-body{flex:1;position:relative;background:#050d1a;background-image:linear-gradient(rgba(0,212,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.025) 1px,transparent 1px);background-size:40px 40px;overflow:hidden;cursor:default;}
-.canvas-inner{position:absolute;width:2400px;height:1600px;transform-origin:0 0;}
+/* ── Blocos de mapa ──────────────────────────── */
+.marina-block { border-radius:4px;overflow:hidden; }
+.marina-block-head { display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem; }
+.marina-block-icon { width:28px;height:28px;border-radius:3px;display:grid;place-items:center;flex-shrink:0; }
+.marina-block-title{ font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase; }
+.marina-block-count{ margin-left:auto;font-size:.62rem;font-weight:600;padding:.18rem .5rem;border-radius:20px; }
+.marina-block-body { padding:.85rem 1rem 1rem; }
 
-/* Vagas */
-.vaga-item{position:absolute;border-radius:6px;border:1.5px solid;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;cursor:pointer;user-select:none;transition:border-color .15s,box-shadow .15s,transform .1s;overflow:hidden;padding:3px;}
-.vaga-item:hover{z-index:20;transform:scale(1.04);box-shadow:0 0 0 3px rgba(255,255,255,.12);}
-.vaga-item.livre{background:rgba(26,179,166,.1);border-color:rgba(26,179,166,.45);}
-.vaga-item.ocupada{background:rgba(22,53,103,.22);border-color:rgba(29,71,133,.55);}
-.vaga-item.emmovimentacao{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.5);}
-.vaga-item.manutencao{background:rgba(232,69,60,.12);border-color:rgba(232,69,60,.45);}
-.vcod{font-family:'Barlow Condensed',sans-serif;font-size:.65rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);letter-spacing:.5px;line-height:1;margin-bottom:2px;width:100%;text-align:center;}
-.vaga-tipo{position:absolute;bottom:3px;right:4px;}
-.vaga-tipo svg{width:9px;height:9px;opacity:.35;}
+.block-molhada .marina-block-head  { background:rgba(36,53,149,.05);border-bottom:1px solid rgba(36,53,149,.1); }
+.block-molhada .marina-block-icon  { background:rgba(36,53,149,.1);color:var(--navy-700); }
+.block-molhada .marina-block-title { color:var(--navy-700); }
+.block-molhada .marina-block-count { background:rgba(36,53,149,.08);color:var(--navy-700); }
+.block-molhada { border:1px solid rgba(36,53,149,.14); }
 
-/* Container de barcos dentro da vaga */
-.boat-container{position:absolute;inset:4px;pointer-events:none;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:3px;}
-.boat-slot{position:relative;display:flex;align-items:center;justify-content:center;}
-.boat-slot img{width:100%;height:100%;object-fit:contain;transition:transform .15s,opacity .15s;pointer-events:none;user-select:none;}
+.block-seca .marina-block-head  { background:rgba(184,138,46,.05);border-bottom:1px solid rgba(184,138,46,.12); }
+.block-seca .marina-block-icon  { background:rgba(184,138,46,.1);color:#7a5e10; }
+.block-seca .marina-block-title { color:#7a5e10; }
+.block-seca .marina-block-count { background:rgba(184,138,46,.1);color:#7a5e10; }
+.block-seca { border:1px solid rgba(184,138,46,.18); }
 
-/* Manutencao overlay */
-.vaga-item.manutencao .vaga-tipo-txt{font-size:.55rem;color:rgba(255,77,60,.7);text-align:center;padding:0 2px;margin-top:auto;}
+.block-passeio .marina-block-head  { background:rgba(74,138,92,.05);border-bottom:1px solid rgba(74,138,92,.12); }
+.block-passeio .marina-block-icon  { background:rgba(74,138,92,.1);color:var(--s-free); }
+.block-passeio .marina-block-title { color:var(--s-free); }
+.block-passeio .marina-block-count { background:rgba(74,138,92,.1);color:var(--s-free); }
+.block-passeio { border:1px solid rgba(74,138,92,.18); }
 
-/* Controles */
-.ctrls{position:absolute;bottom:12px;left:12px;z-index:50;display:flex;gap:.35rem;flex-direction:column;}
-.ctrls-row{display:flex;gap:.35rem;}
-.cbtn{width:30px;height:30px;border-radius:7px;background:rgba(5,13,26,.85);border:1px solid rgba(0,200,255,.15);color:rgba(255,255,255,.7);cursor:pointer;font-size:.85rem;display:grid;place-items:center;backdrop-filter:blur(8px);transition:all .15s;}
-.cbtn:hover{border-color:rgba(0,212,255,.4);color:#fff;}
-.hint-txt{position:absolute;bottom:12px;right:14px;font-size:.68rem;color:rgba(255,255,255,.3);}
+/* ── Corredor sub-header ─────────────────────── */
+.corredor-row { margin-bottom:.9rem; }
+.corredor-lbl { font-size:.6rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem; }
+.corredor-lbl::after { content:'';flex:1;height:1px;background:var(--line); }
 
-/* Painel de detalhes */
-.det-panel{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:230px;background:#071525;border:1px solid rgba(0,200,255,.12);border-radius:12px;padding:1.1rem;z-index:100;animation:slin .2s ease;box-shadow:0 8px 40px rgba(0,0,0,.6);}
-@@keyframes slin{from{opacity:0;transform:translateY(-50%) translateX(14px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
-.det-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
-.det-cod{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.5px;text-transform:uppercase;}
-.det-x{background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;font-size:1rem;line-height:1;padding:2px;transition:color .15s;}
-.det-x:hover{color:#fff;}
-.det-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.7rem;}
-.det-badge.livre{background:rgba(26,179,166,.15);color:#1ab3a6;}
-.det-badge.ocupada{background:rgba(29,71,133,.2);color:#4d8fd4;}
-.det-badge.emmovimentacao{background:rgba(201,168,76,.15);color:#c9a84c;}
-.det-badge.manutencao{background:rgba(232,69,60,.12);color:#e8453c;}
-.det-row{display:flex;justify-content:space-between;font-size:.78rem;padding:.28rem 0;border-bottom:1px solid rgba(255,255,255,.06);}
-.det-row:last-of-type{border-bottom:none;}
-.det-key{color:rgba(255,255,255,.4);}
-.det-val{color:rgba(255,255,255,.8);text-align:right;}
-.det-emb-lbl{font-size:.68rem;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin:.65rem 0 .35rem;}
-.det-emb-tag{display:inline-block;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);color:#00d4ff;border-radius:4px;padding:2px 7px;font-size:.72rem;margin:.1rem .1rem;}
-.det-link{display:block;margin-top:.8rem;text-align:center;background:rgba(26,179,166,.12);border:1px solid rgba(26,179,166,.25);color:#1ab3a6;border-radius:7px;padding:.4rem;font-size:.78rem;text-decoration:none;transition:background .2s;font-weight:600;letter-spacing:.3px;}
-.det-link:hover{background:rgba(26,179,166,.22);}
+/* ── Vaga card ───────────────────────────────── */
+.vagas-grid { display:flex;flex-wrap:wrap;gap:.4rem; }
+.vaga-card {
+    width:86px;height:60px;border-radius:4px;border:1.5px solid;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:.15rem;cursor:pointer;text-decoration:none;
+    transition:transform .1s,box-shadow .12s;
+    padding:4px;position:relative;overflow:hidden;
+}
+.vaga-card:hover { transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.09); }
+.vaga-card.livre        { background:rgba(74,138,92,.08); border-color:rgba(74,138,92,.32); }
+.vaga-card.ocupada      { background:rgba(36,53,149,.08); border-color:rgba(36,53,149,.28); }
+.vaga-card.movimentacao { background:rgba(184,138,46,.09);border-color:rgba(184,138,46,.35); }
+.vaga-card.manutencao   { background:rgba(164,68,54,.07); border-color:rgba(164,68,54,.26); }
+.vaga-cod { font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1; }
+.vaga-card.livre        .vaga-cod { color:var(--s-free); }
+.vaga-card.ocupada      .vaga-cod { color:var(--navy-700); }
+.vaga-card.movimentacao .vaga-cod { color:#9a7420; }
+.vaga-card.manutencao   .vaga-cod { color:var(--s-maint); }
+.vaga-emb { font-size:.55rem;color:var(--ink-500);max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center; }
+.vaga-tag { position:absolute;top:3px;right:4px;font-size:.46rem;letter-spacing:.06em;text-transform:uppercase;opacity:.4; }
 
-.empty-mapa{display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:.5rem;color:rgba(255,255,255,.3);}
-.empty-mapa svg{opacity:.2;}
+/* ── Em passeio ──────────────────────────────── */
+.passeio-grid { display:flex;flex-wrap:wrap;gap:.5rem; }
+.passeio-card {
+    width:160px;border:1px solid rgba(74,138,92,.22);border-radius:4px;
+    padding:.65rem .8rem;background:rgba(74,138,92,.04);
+    text-decoration:none;transition:box-shadow .12s,transform .1s;
+}
+.passeio-card:hover { box-shadow:0 4px 10px rgba(0,0,0,.08);transform:translateY(-1px); }
+.passeio-nome    { font-size:.8rem;font-weight:600;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.18rem; }
+.passeio-cliente { font-size:.66rem;color:var(--ink-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.4rem; }
+.passeio-status  { display:flex;align-items:center;gap:.28rem;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase; }
+.passeio-dot     { width:6px;height:6px;border-radius:50%;flex-shrink:0; }
 
-/* Tipo de vaga (agua/seco) */
-.tipo-agua svg{color:#4d8fd4;}
-.tipo-seco svg{color:#c9a84c;}
+.empty-blk { font-size:.68rem;color:var(--ink-300);letter-spacing:.1em;text-transform:uppercase;padding:.35rem 0; }
 </style>
 
 <div class="dash">
 
-  <div class="dash-header">
-    <div>
-      <div class="dash-title">Marina — Visao Geral</div>
-      <div class="dash-sub">@DateTime.Now.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("pt-BR"))</div>
-    </div>
-    <div class="dash-actions">
-      <a href="/corredores" class="btn-dash outline">Corredores</a>
-      <a href="/vagas" class="btn-dash outline">Listar Vagas</a>
-      <a href="/vagas/layout" class="btn-dash teal">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-        Mapa Completo
-      </a>
-      <a href="/vagas/nova" class="btn-dash coral">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Nova Vaga
-      </a>
-    </div>
-  </div>
-
-  <div class="metrics">
-    <div class="mc g">
-      <div class="mc-bar"></div>
-      <div class="mc-ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-      </div>
-      <div>
-        <div class="mc-lbl">Vagas Livres</div>
-        <div class="mc-val">@_livres</div>
-      </div>
-    </div>
-    <div class="mc b">
-      <div class="mc-bar"></div>
-      <div class="mc-ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20c0-4.4 2.24-8 5-8s5 3.6 5 8"/><path d="M12 12V3"/></svg>
-      </div>
-      <div>
-        <div class="mc-lbl">Ocupadas</div>
-        <div class="mc-val">@_ocupadas</div>
-      </div>
-    </div>
-    <div class="mc y">
-      <div class="mc-bar"></div>
-      <div class="mc-ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </div>
-      <div>
-        <div class="mc-lbl">Em Movimentacao</div>
-        <div class="mc-val">@_mov</div>
-      </div>
-    </div>
-    <div class="mc r">
-      <div class="mc-bar"></div>
-      <div class="mc-ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-      </div>
-      <div>
-        <div class="mc-lbl">Manutencao</div>
-        <div class="mc-val">@_manut</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="mapa-wrap">
-    <div class="mapa-top">
-      <div class="mapa-title">
-        <div class="live-dot"></div>
-        Mapa da Marina
-      </div>
-      <div class="leg">
-        <div class="leg-i"><div class="leg-d" style="background:#1ab3a6"></div>Livre</div>
-        <div class="leg-i"><div class="leg-d" style="background:#1d4785"></div>Ocupada</div>
-        <div class="leg-i"><div class="leg-d" style="background:#c9a84c"></div>Movimentacao</div>
-        <div class="leg-i"><div class="leg-d" style="background:#e8453c"></div>Manutencao</div>
-      </div>
-    </div>
-
-    <div class="mapa-body" id="marina-canvas" @onclick="DeselecionarVaga">
-      @if (_load)
-      {
-        <div class="empty-mapa">
-          <div style="width:28px;height:28px;border:3px solid rgba(0,200,255,.15);border-top-color:#1ab3a6;border-radius:50%;animation:spin .7s linear infinite;"></div>
-          <span style="font-size:.8rem">Carregando mapa...</span>
+    <!-- Header -->
+    <div class="dash-header">
+        <div>
+            <div class="dash-title">Marina — Visão Geral</div>
+            <div class="dash-sub">@DateTime.Now.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("pt-BR"))</div>
         </div>
-      }
-      else if (!_vagas.Any())
-      {
-        <div class="empty-mapa">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20c0-4.4 2.24-8 5-8s5 3.6 5 8"/><path d="M12 12V3"/></svg>
-          <span>Nenhuma vaga cadastrada ainda.</span>
-          <a href="/vagas/nova" class="btn-dash coral" style="margin-top:.5rem">+ Criar primeira vaga</a>
+        <div class="dash-actions">
+            <a href="/movimentacoes/nova" class="btn btn-ghost btn-sm">+ Movimentação</a>
+            <a href="/vagas/layout" class="btn btn-ghost btn-sm">Mapa completo</a>
+            <a href="/vagas/nova" class="btn btn-primary btn-sm">+ Nova Vaga</a>
         </div>
-      }
-      else
-      {
-        <div class="canvas-inner" style="transform:translate(@(_px)px,@(_py)px) scale(@(_sc.ToString("F3",System.Globalization.CultureInfo.InvariantCulture)))">
-          @foreach (var v in _vagas)
-          {
-            var sc   = v.Status switch { StatusVaga.Livre=>"livre", StatusVaga.Ocupada=>"ocupada", StatusVaga.EmMovimentacao=>"emmovimentacao", StatusVaga.Manutencao=>"manutencao", _=>"livre" };
-            var embs = v.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
-            var embJson = System.Text.Json.JsonSerializer.Serialize(embs.Select(e => new {
-              id   = e.EmbarcacaoId,
-              nome = e.Embarcacao?.Nome ?? "",
-              tipo = e.Embarcacao?.Tipo.ToString() ?? "Outro",
-            }));
-            <div class="vaga-item @sc"
-                 data-vaga-id="@v.Id"
-                 data-embarcacoes="@embJson"
-                 style="left:@(v.PosX)px;top:@(v.PosY)px;width:@(v.Largura)px;height:@(v.Altura)px;"
-                 @onclick="()=>Sel(v)"
-                 @onclick:stopPropagation="true">
-              <div class="vcod">@v.Codigo</div>
-              @if (v.Status == StatusVaga.Manutencao)
-              {
-                <span class="vaga-tipo-txt">Manut.</span>
-              }
-              <div class="vaga-tipo @(v.Tipo==TipoVaga.Agua?"tipo-agua":"tipo-seco")">
-                @if (v.Tipo == TipoVaga.Agua)
-                {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c1.5-2 3-3 6-3s4.5 1 6 3 3 3 6 3"/></svg>
-                }
+    </div>
+
+    @if (_load)
+    {
+        <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+            <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+            <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+        </div>
+    }
+    else
+    {
+        <!-- Métricas -->
+        <div class="metrics">
+            <div class="mc g">
+                <div class="mc-bar"></div>
+                <div class="mc-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </div>
+                <div>
+                    <div class="mc-lbl">Livres</div>
+                    <div class="mc-val">@_livres</div>
+                </div>
+            </div>
+            <div class="mc b">
+                <div class="mc-bar"></div>
+                <div class="mc-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20c0-4.4 2.24-8 5-8s5 3.6 5 8"/><path d="M12 12V3"/></svg>
+                </div>
+                <div>
+                    <div class="mc-lbl">Ocupadas</div>
+                    <div class="mc-val">@_ocupadas</div>
+                </div>
+            </div>
+            <div class="mc y">
+                <div class="mc-bar"></div>
+                <div class="mc-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div>
+                    <div class="mc-lbl">Movimentação</div>
+                    <div class="mc-val">@_emMov</div>
+                </div>
+            </div>
+            <div class="mc r">
+                <div class="mc-bar"></div>
+                <div class="mc-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </div>
+                <div>
+                    <div class="mc-lbl">Manutenção</div>
+                    <div class="mc-val">@_manut</div>
+                </div>
+            </div>
+            <div class="mc p">
+                <div class="mc-bar"></div>
+                <div class="mc-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div>
+                    <div class="mc-lbl">Em Passeio</div>
+                    <div class="mc-val">@_passeio.Count</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ Vagas Molhadas ══ -->
+        <div class="marina-block block-molhada">
+            <div class="marina-block-head">
+                <div class="marina-block-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20c0-4.4 2.24-8 5-8s5 3.6 5 8"/><path d="M12 12V3"/>
+                    </svg>
+                </div>
+                <span class="marina-block-title">Vagas Molhadas</span>
+                <span class="marina-block-count">@_molhadas.Sum(g => g.Vagas.Count) vagas</span>
+            </div>
+            <div class="marina-block-body">
+                @if (!_molhadas.Any())
+                { <div class="empty-blk">Nenhuma vaga molhada cadastrada</div> }
                 else
                 {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    @foreach (var g in _molhadas)
+                    {
+                        <div class="corredor-row">
+                            <div class="corredor-lbl">@(g.Key?.Nome ?? "Sem corredor")</div>
+                            <div class="vagas-grid">@foreach (var v in g.Vagas) { @VagaCard(v) }</div>
+                        </div>
+                    }
                 }
-              </div>
             </div>
-          }
         </div>
 
-        <div class="ctrls">
-          <div class="ctrls-row">
-            <button class="cbtn" @onclick="ZIn" title="Zoom +">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-            <button class="cbtn" @onclick="ZOut" title="Zoom -">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-            <button class="cbtn" @onclick="ZReset" title="Centralizar">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-            </button>
-          </div>
+        <!-- ══ Vagas Secas ══ -->
+        <div class="marina-block block-seca">
+            <div class="marina-block-head">
+                <div class="marina-block-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/>
+                    </svg>
+                </div>
+                <span class="marina-block-title">Vagas Secas</span>
+                <span class="marina-block-count">@_secas.Sum(g => g.Vagas.Count) vagas</span>
+            </div>
+            <div class="marina-block-body">
+                @if (!_secas.Any())
+                { <div class="empty-blk">Nenhuma vaga seca cadastrada</div> }
+                else
+                {
+                    @foreach (var g in _secas)
+                    {
+                        <div class="corredor-row">
+                            <div class="corredor-lbl">@(g.Key?.Nome ?? "Sem corredor")</div>
+                            <div class="vagas-grid">@foreach (var v in g.Vagas) { @VagaCard(v) }</div>
+                        </div>
+                    }
+                }
+            </div>
         </div>
-        <div class="hint-txt">Scroll para zoom · Arrastar para mover</div>
-      }
 
-      @if (_sel != null)
-      {
-        var sc2 = _sel.Status switch { StatusVaga.Livre=>"livre", StatusVaga.Ocupada=>"ocupada", StatusVaga.EmMovimentacao=>"emmovimentacao", StatusVaga.Manutencao=>"manutencao", _=>"livre" };
-        var lb  = _sel.Status switch { StatusVaga.Livre=>"Livre", StatusVaga.Ocupada=>"Ocupada", StatusVaga.EmMovimentacao=>"Em Movimentacao", StatusVaga.Manutencao=>"Manutencao", _=>"" };
-        <div class="det-panel" @onclick:stopPropagation="true">
-          <div class="det-top">
-            <div class="det-cod">Vaga @_sel.Codigo</div>
-            <button class="det-x" @onclick="()=>_sel=null">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <span class="det-badge @sc2">@lb</span>
-          <div class="det-row"><span class="det-key">Tipo</span><span class="det-val">@(_sel.Tipo==TipoVaga.Agua?"Molhada":"Seca")</span></div>
-          <div class="det-row"><span class="det-key">Corredor</span><span class="det-val">@(_sel.Corredor?.Nome??"--")</span></div>
-          <div class="det-row"><span class="det-key">Tamanho</span><span class="det-val">@_sel.TamanhoMaxPes pes</span></div>
-          <div class="det-row"><span class="det-key">Dimensoes</span><span class="det-val">@_sel.Largura x @_sel.Altura px</span></div>
-          <div class="det-emb-lbl">Embarcacoes</div>
-          @if (!_sel.EmbarcacoesNaVaga.Any(e=>e.Ativa))
-          { <span style="font-size:.78rem;color:rgba(255,255,255,.35)">Nenhuma alocada</span> }
-          else
-          { @foreach(var ve in _sel.EmbarcacoesNaVaga.Where(e=>e.Ativa)) { <span class="det-emb-tag">@ve.Embarcacao?.Nome</span> } }
-          <a href="/vagas/@_sel.Id" class="det-link">Editar vaga</a>
+        <!-- ══ Em Passeio ══ -->
+        <div class="marina-block block-passeio">
+            <div class="marina-block-head">
+                <div class="marina-block-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 17l4-8 4 4 4-6 4 10"/><path d="M3 21h18"/>
+                    </svg>
+                </div>
+                <span class="marina-block-title">Em Passeio — Fora da Marina</span>
+                <span class="marina-block-count">@_passeio.Count embarcação@(_passeio.Count != 1 ? "ões" : "")</span>
+            </div>
+            <div class="marina-block-body">
+                @if (!_passeio.Any())
+                { <div class="empty-blk">Nenhuma embarcação fora da marina agora</div> }
+                else
+                {
+                    <div class="passeio-grid">
+                        @foreach (var m in _passeio)
+                        {
+                            var (dotCor, stLabel) = m.Status switch
+                            {
+                                StatusMovimentacao.Descendo   => ("#9a7420",        "Descendo"),
+                                StatusMovimentacao.NaAgua     => ("var(--s-free)",  "Na água"),
+                                StatusMovimentacao.Retornando => ("#9a7420",        "Retornando"),
+                                _                             => ("var(--ink-300)", m.Status.ToString()),
+                            };
+                            <a href="/movimentacoes/@m.Id" class="passeio-card">
+                                <div class="passeio-nome" title="@m.Embarcacao?.Nome">@(m.Embarcacao?.Nome ?? "—")</div>
+                                <div class="passeio-cliente">@(m.Embarcacao?.Cliente?.Nome ?? "—")</div>
+                                <div class="passeio-status">
+                                    <div class="passeio-dot" style="background:@dotCor;"></div>
+                                    <span style="color:@dotCor;">@stLabel</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
         </div>
-      }
-    </div>
-  </div>
+    }
+
 </div>
 
 @code {
-    private List<Vaga> _vagas = new();
+    record GrupoVagas(Corredor? Key, List<Vaga> Vagas);
+
+    private List<GrupoVagas>    _molhadas = new();
+    private List<GrupoVagas>    _secas    = new();
+    private List<Movimentacao>  _passeio  = new();
     private bool _load = true;
-    private Vaga? _sel;
-    private int _livres, _ocupadas, _mov, _manut;
-    private double _px, _py, _sc = 1;
+    private int  _livres, _ocupadas, _emMov, _manut;
 
     protected override async Task OnInitializedAsync()
     {
         await UserCtx.InitAsync();
-        _vagas    = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
-        _livres   = _vagas.Count(v => v.Status == StatusVaga.Livre);
-        _ocupadas = _vagas.Count(v => v.Status == StatusVaga.Ocupada);
-        _mov      = _vagas.Count(v => v.Status == StatusVaga.EmMovimentacao);
-        _manut    = _vagas.Count(v => v.Status == StatusVaga.Manutencao);
-        _load     = false;
+
+        var vagas = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _livres   = vagas.Count(v => v.Status == StatusVaga.Livre);
+        _ocupadas = vagas.Count(v => v.Status == StatusVaga.Ocupada);
+        _emMov    = vagas.Count(v => v.Status == StatusVaga.EmMovimentacao);
+        _manut    = vagas.Count(v => v.Status == StatusVaga.Manutencao);
+
+        _molhadas = Agrupar(vagas.Where(v => v.Tipo == TipoVaga.Agua));
+        _secas    = Agrupar(vagas.Where(v => v.Tipo == TipoVaga.Seco));
+
+        var movs  = await MovService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _passeio  = movs.Where(m =>
+            m.Status == StatusMovimentacao.Descendo  ||
+            m.Status == StatusMovimentacao.NaAgua    ||
+            m.Status == StatusMovimentacao.Retornando).ToList();
+
+        _load = false;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private static List<GrupoVagas> Agrupar(IEnumerable<Vaga> vagas)
+        => vagas
+            .GroupBy(v => v.Corredor, new CorredorComparer())
+            .Select(g => new GrupoVagas(g.Key, g.OrderBy(v => v.Codigo).ToList()))
+            .OrderBy(g => g.Key?.Ordem ?? int.MaxValue)
+            .ToList();
+
+    private RenderFragment VagaCard(Vaga v) => __builder =>
     {
-        if (!firstRender || _load) return;
-        // Inicia o JS do mapa apos render — sem DotNetRef por enquanto
-        await JS.InvokeVoidAsync("layoutMarina.init", null, "marina-canvas").AsTask()
-               .ContinueWith(_ => { });
-    }
+        var css = v.Status switch
+        {
+            StatusVaga.Livre          => "livre",
+            StatusVaga.Ocupada        => "ocupada",
+            StatusVaga.EmMovimentacao => "movimentacao",
+            StatusVaga.Manutencao     => "manutencao",
+            _                         => "livre",
+        };
+        var emb = v.EmbarcacoesNaVaga.FirstOrDefault(e => e.Ativa)?.Embarcacao?.Nome;
+        __builder.OpenElement(0, "a");
+        __builder.AddAttribute(1, "href", $"/vagas/{v.Id}");
+        __builder.AddAttribute(2, "class", $"vaga-card {css}");
+        __builder.AddAttribute(3, "title", $"{v.Codigo}{(emb != null ? " — " + emb : "")}");
+        __builder.OpenElement(4, "div");
+        __builder.AddAttribute(5, "class", "vaga-tag");
+        __builder.AddContent(6, v.Tipo == TipoVaga.Agua ? "A" : "S");
+        __builder.CloseElement();
+        __builder.OpenElement(7, "div");
+        __builder.AddAttribute(8, "class", "vaga-cod");
+        __builder.AddContent(9, v.Codigo);
+        __builder.CloseElement();
+        if (emb != null)
+        {
+            __builder.OpenElement(10, "div");
+            __builder.AddAttribute(11, "class", "vaga-emb");
+            __builder.AddContent(12, emb);
+            __builder.CloseElement();
+        }
+        __builder.CloseElement();
+    };
 
-    private void Sel(Vaga v) => _sel = _sel?.Id == v.Id ? null : v;
-    private void DeselecionarVaga() => _sel = null;
-    private void ZIn()    => _sc = Math.Min(3, _sc + .15);
-    private void ZOut()   => _sc = Math.Max(.25, _sc - .15);
-    private void ZReset() => (_sc, _px, _py) = (1, 0, 0);
+    class CorredorComparer : IEqualityComparer<Corredor?>
+    {
+        public bool Equals(Corredor? x, Corredor? y) =>
+            (x == null && y == null) || (x != null && y != null && x.Id == y.Id);
+        public int GetHashCode(Corredor? obj) => obj?.Id.GetHashCode() ?? 0;
+    }
 }
