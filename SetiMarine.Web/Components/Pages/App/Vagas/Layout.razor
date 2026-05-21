@@ -5,102 +5,118 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject VagaService VagaService
-@inject CorredorService CorredorService
+@inject MovimentacaoService MovService
 @inject UsuarioContextService UserCtx
 
 <PageTitle>Mapa da Marina — SetiMarine</PageTitle>
 
 <style>
-.layout-counters { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-.layout-counter  { padding: .6rem 1rem; border: 1px solid var(--line); border-radius: 3px; min-width: 110px; }
-.layout-counter-val { font-size: 1.4rem; font-weight: 700; line-height: 1; }
-.layout-counter-lbl { font-size: .65rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-400); margin-top: .15rem; }
+/* ── Contadores topo ─────────────────────────── */
+.lm-counters { display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.75rem; }
+.lm-counter  { padding:.55rem .9rem;border:1px solid var(--line);border-radius:3px;min-width:100px; }
+.lm-counter-val { font-size:1.3rem;font-weight:700;line-height:1; }
+.lm-counter-lbl { font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);margin-top:.15rem; }
 
-.layout-legend { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-.layout-legend-item { display: flex; align-items: center; gap: .35rem; font-size: .72rem; color: var(--ink-500); }
-.layout-legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-
-.corredor-section { margin-bottom: 2rem; }
-.corredor-header {
-    display: flex; align-items: center; gap: .75rem;
-    margin-bottom: .85rem; padding-bottom: .5rem;
-    border-bottom: 1px solid var(--line);
+/* ── Blocos de seção ─────────────────────────── */
+.marina-block { margin-bottom:2rem;border-radius:4px;overflow:hidden; }
+.marina-block-head {
+    display:flex;align-items:center;gap:.75rem;
+    padding:.75rem 1.1rem;
 }
-.corredor-nome { font-size: .72rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-500); }
-.corredor-count { font-size: .65rem; color: var(--ink-300); }
+.marina-block-icon { width:30px;height:30px;border-radius:3px;display:grid;place-items:center;flex-shrink:0; }
+.marina-block-title { font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase; }
+.marina-block-count {
+    margin-left:auto;font-size:.65rem;font-weight:600;
+    padding:.2rem .55rem;border-radius:20px;letter-spacing:.06em;
+}
+.marina-block-body { padding:.9rem 1.1rem 1.1rem; }
 
-.vagas-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
+/* molhada */
+.block-molhada .marina-block-head { background:rgba(36,53,149,.06);border-bottom:1px solid rgba(36,53,149,.12); }
+.block-molhada .marina-block-icon { background:rgba(36,53,149,.1);color:var(--navy-700); }
+.block-molhada .marina-block-title { color:var(--navy-700); }
+.block-molhada .marina-block-count { background:rgba(36,53,149,.1);color:var(--navy-700); }
+.block-molhada { border:1px solid rgba(36,53,149,.14); }
+
+/* seca */
+.block-seca .marina-block-head { background:rgba(184,138,46,.06);border-bottom:1px solid rgba(184,138,46,.14); }
+.block-seca .marina-block-icon { background:rgba(184,138,46,.12);color:#7a5e10; }
+.block-seca .marina-block-title { color:#7a5e10; }
+.block-seca .marina-block-count { background:rgba(184,138,46,.12);color:#7a5e10; }
+.block-seca { border:1px solid rgba(184,138,46,.2); }
+
+/* passeio */
+.block-passeio .marina-block-head { background:rgba(74,138,92,.06);border-bottom:1px solid rgba(74,138,92,.14); }
+.block-passeio .marina-block-icon { background:rgba(74,138,92,.12);color:var(--s-free); }
+.block-passeio .marina-block-title { color:var(--s-free); }
+.block-passeio .marina-block-count { background:rgba(74,138,92,.12);color:var(--s-free); }
+.block-passeio { border:1px solid rgba(74,138,92,.2); }
+
+/* ── Corredor sub-header ─────────────────────── */
+.corredor-row { margin-bottom:1rem; }
+.corredor-lbl {
+    font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-400);margin-bottom:.55rem;
+    display:flex;align-items:center;gap:.5rem;
+}
+.corredor-lbl::after { content:'';flex:1;height:1px;background:var(--line); }
+
+/* ── Vaga card ───────────────────────────────── */
+.vagas-grid { display:flex;flex-wrap:wrap;gap:.45rem; }
 
 .vaga-card {
-    width: 88px; height: 64px;
-    border-radius: 4px;
-    border: 1.5px solid;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: .2rem;
-    cursor: pointer;
-    text-decoration: none;
-    transition: transform .1s, box-shadow .12s;
-    padding: 4px;
-    position: relative;
-    overflow: hidden;
+    width:88px;height:62px;border-radius:4px;border:1.5px solid;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:.18rem;cursor:pointer;text-decoration:none;
+    transition:transform .1s,box-shadow .12s;
+    padding:4px;position:relative;overflow:hidden;
 }
-.vaga-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.vaga-card:hover { transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1); }
 
-.vaga-card.livre       { background: rgba(74,138,92,.09);  border-color: rgba(74,138,92,.4); }
-.vaga-card.ocupada     { background: rgba(36,53,149,.09);  border-color: rgba(36,53,149,.35); }
-.vaga-card.movimentacao { background: rgba(184,138,46,.1); border-color: rgba(184,138,46,.4); }
-.vaga-card.manutencao  { background: rgba(164,68,54,.08);  border-color: rgba(164,68,54,.3); }
+.vaga-card.livre        { background:rgba(74,138,92,.08); border-color:rgba(74,138,92,.35); }
+.vaga-card.ocupada      { background:rgba(36,53,149,.08); border-color:rgba(36,53,149,.3); }
+.vaga-card.movimentacao { background:rgba(184,138,46,.09);border-color:rgba(184,138,46,.38); }
+.vaga-card.manutencao   { background:rgba(164,68,54,.07); border-color:rgba(164,68,54,.28); }
 
-.vaga-cod {
-    font-size: .72rem; font-weight: 700;
-    letter-spacing: .06em; text-transform: uppercase;
-    line-height: 1;
+.vaga-cod { font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1; }
+.vaga-card.livre        .vaga-cod { color:var(--s-free); }
+.vaga-card.ocupada      .vaga-cod { color:var(--navy-700); }
+.vaga-card.movimentacao .vaga-cod { color:#9a7420; }
+.vaga-card.manutencao   .vaga-cod { color:var(--s-maint); }
+
+.vaga-emb { font-size:.57rem;color:var(--ink-500);max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center; }
+.vaga-tag { position:absolute;top:3px;right:4px;font-size:.48rem;letter-spacing:.06em;text-transform:uppercase;opacity:.45; }
+
+/* ── Passeio cards ───────────────────────────── */
+.passeio-grid { display:flex;flex-wrap:wrap;gap:.6rem; }
+.passeio-card {
+    width:170px;border:1px solid rgba(74,138,92,.25);border-radius:4px;
+    padding:.7rem .85rem;background:rgba(74,138,92,.04);
+    text-decoration:none;transition:box-shadow .12s,transform .1s;
 }
-.vaga-card.livre       .vaga-cod { color: var(--s-free); }
-.vaga-card.ocupada     .vaga-cod { color: var(--navy-700); }
-.vaga-card.movimentacao .vaga-cod { color: #9a7420; }
-.vaga-card.manutencao  .vaga-cod { color: var(--s-maint); }
+.passeio-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.09);transform:translateY(-1px); }
+.passeio-nome { font-size:.82rem;font-weight:600;color:var(--ink-900);line-height:1.2;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.passeio-cliente { font-size:.68rem;color:var(--ink-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.45rem; }
+.passeio-status { display:flex;align-items:center;gap:.3rem;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase; }
+.passeio-dot { width:7px;height:7px;border-radius:50%; }
 
-.vaga-emb {
-    font-size: .58rem; color: var(--ink-500);
-    max-width: 76px; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap;
-    text-align: center; line-height: 1.2;
-}
-
-.vaga-tipo-tag {
-    position: absolute; top: 3px; right: 4px;
-    font-size: .5rem; letter-spacing: .08em; text-transform: uppercase;
-    opacity: .55;
-}
-.vaga-card.livre .vaga-tipo-tag       { color: var(--s-free); }
-.vaga-card.ocupada .vaga-tipo-tag     { color: var(--navy-700); }
-.vaga-card.movimentacao .vaga-tipo-tag { color: #9a7420; }
-.vaga-card.manutencao .vaga-tipo-tag  { color: var(--s-maint); }
-
-.sem-corredor-lbl { font-size: .68rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-300); }
+.empty-block { font-size:.72rem;color:var(--ink-300);letter-spacing:.1em;text-transform:uppercase;padding:.5rem 0; }
 </style>
 
 <div class="page-head">
     <div>
-        <span class="eyebrow">Vagas</span>
+        <span class="eyebrow">Operações</span>
         <h1>Mapa da Marina</h1>
     </div>
     <div class="page-head-actions">
-        <div class="layout-legend">
-            <div class="layout-legend-item">
-                <div class="layout-legend-dot" style="background:rgba(74,138,92,.5);border:1.5px solid rgba(74,138,92,.6);"></div>Livre
-            </div>
-            <div class="layout-legend-item">
-                <div class="layout-legend-dot" style="background:rgba(36,53,149,.35);border:1.5px solid rgba(36,53,149,.5);"></div>Ocupada
-            </div>
-            <div class="layout-legend-item">
-                <div class="layout-legend-dot" style="background:rgba(184,138,46,.4);border:1.5px solid rgba(184,138,46,.55);"></div>Movimentação
-            </div>
-            <div class="layout-legend-item">
-                <div class="layout-legend-dot" style="background:rgba(164,68,54,.3);border:1.5px solid rgba(164,68,54,.45);"></div>Manutenção
-            </div>
+        <!-- legenda -->
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+            @foreach (var (cor, label) in _legenda)
+            {
+                <div style="display:flex;align-items:center;gap:.3rem;font-size:.68rem;color:var(--ink-500);">
+                    <div style="width:9px;height:9px;border-radius:2px;background:@cor;"></div>@label
+                </div>
+            }
         </div>
         <a href="/vagas" class="btn btn-ghost btn-sm">Lista</a>
         <a href="/vagas/nova" class="btn btn-primary btn-sm">+ Nova Vaga</a>
@@ -117,121 +133,215 @@
 else
 {
     <!-- Contadores -->
-    <div class="layout-counters">
-        <div class="layout-counter">
-            <div class="layout-counter-val" style="color:var(--s-free);">@_livres</div>
-            <div class="layout-counter-lbl">Livres</div>
+    <div class="lm-counters">
+        <div class="lm-counter">
+            <div class="lm-counter-val" style="color:var(--s-free);">@_livres</div>
+            <div class="lm-counter-lbl">Livres</div>
         </div>
-        <div class="layout-counter">
-            <div class="layout-counter-val" style="color:var(--navy-700);">@_ocupadas</div>
-            <div class="layout-counter-lbl">Ocupadas</div>
+        <div class="lm-counter">
+            <div class="lm-counter-val" style="color:var(--navy-700);">@_ocupadas</div>
+            <div class="lm-counter-lbl">Ocupadas</div>
         </div>
-        <div class="layout-counter">
-            <div class="layout-counter-val" style="color:#9a7420;">@_emMov</div>
-            <div class="layout-counter-lbl">Em Movimentação</div>
+        <div class="lm-counter">
+            <div class="lm-counter-val" style="color:#9a7420;">@_emMov</div>
+            <div class="lm-counter-lbl">Movimentação</div>
         </div>
-        <div class="layout-counter">
-            <div class="layout-counter-val" style="color:var(--s-maint);">@_manut</div>
-            <div class="layout-counter-lbl">Manutenção</div>
+        <div class="lm-counter">
+            <div class="lm-counter-val" style="color:var(--s-maint);">@_manut</div>
+            <div class="lm-counter-lbl">Manutenção</div>
         </div>
-        <div class="layout-counter" style="border-color:rgba(36,53,149,.15);">
-            <div class="layout-counter-val" style="color:var(--ink-600);">@_total</div>
-            <div class="layout-counter-lbl">Total de vagas</div>
+        <div class="lm-counter">
+            <div class="lm-counter-val" style="color:var(--s-free);">@_passeio.Count</div>
+            <div class="lm-counter-lbl">Em Passeio</div>
         </div>
     </div>
 
-    <!-- Vagas agrupadas por corredor -->
-    @foreach (var grupo in _grupos)
-    {
-        <div class="corredor-section">
-            <div class="corredor-header">
-                @if (grupo.Key != null)
+    <!-- ══ BLOCO: VAGAS MOLHADAS ══ -->
+    <div class="marina-block block-molhada">
+        <div class="marina-block-head">
+            <div class="marina-block-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20c0-4.4 2.24-8 5-8s5 3.6 5 8"/><path d="M12 12V3"/>
+                </svg>
+            </div>
+            <span class="marina-block-title">Vagas Molhadas</span>
+            <span class="marina-block-count">@_molhadas.Sum(g => g.Vagas.Count) vagas</span>
+        </div>
+        <div class="marina-block-body">
+            @if (!_molhadas.Any())
+            {
+                <div class="empty-block">Nenhuma vaga molhada cadastrada</div>
+            }
+            else
+            {
+                @foreach (var g in _molhadas)
                 {
-                    <span class="corredor-nome">@grupo.Key.Nome</span>
-                    @if (!string.IsNullOrEmpty(grupo.Key.Descricao))
+                    <div class="corredor-row">
+                        <div class="corredor-lbl">@(g.Key?.Nome ?? "Sem corredor")</div>
+                        <div class="vagas-grid">
+                            @foreach (var v in g.Vagas) { @VagaCard(v) }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- ══ BLOCO: VAGAS SECAS ══ -->
+    <div class="marina-block block-seca">
+        <div class="marina-block-head">
+            <div class="marina-block-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/>
+                </svg>
+            </div>
+            <span class="marina-block-title">Vagas Secas</span>
+            <span class="marina-block-count">@_secas.Sum(g => g.Vagas.Count) vagas</span>
+        </div>
+        <div class="marina-block-body">
+            @if (!_secas.Any())
+            {
+                <div class="empty-block">Nenhuma vaga seca cadastrada</div>
+            }
+            else
+            {
+                @foreach (var g in _secas)
+                {
+                    <div class="corredor-row">
+                        <div class="corredor-lbl">@(g.Key?.Nome ?? "Sem corredor")</div>
+                        <div class="vagas-grid">
+                            @foreach (var v in g.Vagas) { @VagaCard(v) }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- ══ BLOCO: EM PASSEIO ══ -->
+    <div class="marina-block block-passeio">
+        <div class="marina-block-head">
+            <div class="marina-block-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </div>
+            <span class="marina-block-title">Em Passeio — Fora da Marina</span>
+            <span class="marina-block-count">@_passeio.Count embarcação@(_passeio.Count != 1 ? "ões" : "")</span>
+        </div>
+        <div class="marina-block-body">
+            @if (!_passeio.Any())
+            {
+                <div class="empty-block">Nenhuma embarcação fora da marina no momento</div>
+            }
+            else
+            {
+                <div class="passeio-grid">
+                    @foreach (var m in _passeio)
                     {
-                        <span class="corredor-count">— @grupo.Key.Descricao</span>
+                        var (dotCor, stLabel) = m.Status switch
+                        {
+                            StatusMovimentacao.Descendo    => ("#9a7420", "Descendo"),
+                            StatusMovimentacao.NaAgua      => ("var(--s-free)", "Na água"),
+                            StatusMovimentacao.Retornando  => ("#9a7420", "Retornando"),
+                            _                              => ("var(--ink-300)", m.Status.ToString()),
+                        };
+                        <a href="/movimentacoes/@m.Id" class="passeio-card">
+                            <div class="passeio-nome" title="@(m.Embarcacao?.Nome)">@(m.Embarcacao?.Nome ?? "—")</div>
+                            <div class="passeio-cliente">@(m.Embarcacao?.Cliente?.Nome ?? "—")</div>
+                            <div class="passeio-status">
+                                <div class="passeio-dot" style="background:@dotCor;"></div>
+                                <span style="color:@dotCor;">@stLabel</span>
+                            </div>
+                        </a>
                     }
-                }
-                else
-                {
-                    <span class="sem-corredor-lbl">Sem corredor</span>
-                }
-                <span class="corredor-count">@grupo.Vagas.Count vaga@(grupo.Vagas.Count != 1 ? "s" : "")</span>
-            </div>
-
-            <div class="vagas-grid">
-                @foreach (var v in grupo.Vagas)
-                {
-                    var cssClass = v.Status switch
-                    {
-                        StatusVaga.Livre          => "livre",
-                        StatusVaga.Ocupada        => "ocupada",
-                        StatusVaga.EmMovimentacao => "movimentacao",
-                        StatusVaga.Manutencao     => "manutencao",
-                        _                         => "livre",
-                    };
-                    var embNome = v.EmbarcacoesNaVaga.FirstOrDefault(e => e.Ativa)?.Embarcacao?.Nome;
-                    <a href="/vagas/@v.Id" class="vaga-card @cssClass" title="@v.Codigo — @(embNome ?? StatusLabel(v.Status))">
-                        <div class="vaga-tipo-tag">@(v.Tipo == TipoVaga.Agua ? "A" : "S")</div>
-                        <div class="vaga-cod">@v.Codigo</div>
-                        @if (embNome != null)
-                        {
-                            <div class="vaga-emb">@embNome</div>
-                        }
-                        else if (v.Status == StatusVaga.Manutencao)
-                        {
-                            <div class="vaga-emb" style="color:var(--s-maint);opacity:.7;">manutenção</div>
-                        }
-                    </a>
-                }
-            </div>
+                </div>
+            }
         </div>
-    }
-
-    @if (!_grupos.Any())
-    {
-        <div style="padding:3rem 2rem;text-align:center;color:var(--ink-300);">
-            <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhuma vaga cadastrada</p>
-            <a href="/vagas/nova" class="btn btn-primary btn-sm">Cadastrar Vaga</a>
-        </div>
-    }
+    </div>
 }
 
 @code {
     record GrupoVagas(Corredor? Key, List<Vaga> Vagas);
 
-    private List<GrupoVagas> _grupos = new();
+    private List<GrupoVagas> _molhadas = new();
+    private List<GrupoVagas> _secas    = new();
+    private List<Movimentacao> _passeio = new();
+
     private bool _carregando = true;
-    private int _livres, _ocupadas, _emMov, _manut, _total;
+    private int _livres, _ocupadas, _emMov, _manut;
+
+    private static readonly (string Cor, string Label)[] _legenda =
+    {
+        ("rgba(74,138,92,.5)",   "Livre"),
+        ("rgba(36,53,149,.45)",  "Ocupada"),
+        ("rgba(184,138,46,.5)",  "Movimentação"),
+        ("rgba(164,68,54,.4)",   "Manutenção"),
+    };
 
     protected override async Task OnInitializedAsync()
     {
         await UserCtx.InitAsync();
+
         var vagas = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
 
-        _total    = vagas.Count;
         _livres   = vagas.Count(v => v.Status == StatusVaga.Livre);
         _ocupadas = vagas.Count(v => v.Status == StatusVaga.Ocupada);
         _emMov    = vagas.Count(v => v.Status == StatusVaga.EmMovimentacao);
         _manut    = vagas.Count(v => v.Status == StatusVaga.Manutencao);
 
-        _grupos = vagas
+        _molhadas = Agrupar(vagas.Where(v => v.Tipo == TipoVaga.Agua));
+        _secas    = Agrupar(vagas.Where(v => v.Tipo == TipoVaga.Seco));
+
+        // Embarcações fora: Descendo, NaAgua ou Retornando
+        var todas = await MovService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _passeio  = todas.Where(m =>
+            m.Status == StatusMovimentacao.Descendo  ||
+            m.Status == StatusMovimentacao.NaAgua    ||
+            m.Status == StatusMovimentacao.Retornando
+        ).ToList();
+
+        _carregando = false;
+    }
+
+    private static List<GrupoVagas> Agrupar(IEnumerable<Vaga> vagas)
+        => vagas
             .GroupBy(v => v.Corredor, new CorredorComparer())
             .Select(g => new GrupoVagas(g.Key, g.OrderBy(v => v.Codigo).ToList()))
             .OrderBy(g => g.Key?.Ordem ?? int.MaxValue)
             .ToList();
 
-        _carregando = false;
-    }
-
-    private static string StatusLabel(StatusVaga s) => s switch
+    private RenderFragment VagaCard(Vaga v) => __builder =>
     {
-        StatusVaga.Livre          => "Livre",
-        StatusVaga.Ocupada        => "Ocupada",
-        StatusVaga.EmMovimentacao => "Em Movimentação",
-        StatusVaga.Manutencao     => "Manutenção",
-        _                         => s.ToString(),
+        var css = v.Status switch
+        {
+            StatusVaga.Livre          => "livre",
+            StatusVaga.Ocupada        => "ocupada",
+            StatusVaga.EmMovimentacao => "movimentacao",
+            StatusVaga.Manutencao     => "manutencao",
+            _                         => "livre",
+        };
+        var emb = v.EmbarcacoesNaVaga.FirstOrDefault(e => e.Ativa)?.Embarcacao?.Nome;
+        __builder.OpenElement(0, "a");
+        __builder.AddAttribute(1, "href", $"/vagas/{v.Id}");
+        __builder.AddAttribute(2, "class", $"vaga-card {css}");
+        __builder.AddAttribute(3, "title", $"{v.Codigo}{(emb != null ? " — " + emb : "")}");
+        __builder.OpenElement(4, "div");
+        __builder.AddAttribute(5, "class", "vaga-tag");
+        __builder.AddContent(6, v.Tipo == TipoVaga.Agua ? "A" : "S");
+        __builder.CloseElement();
+        __builder.OpenElement(7, "div");
+        __builder.AddAttribute(8, "class", "vaga-cod");
+        __builder.AddContent(9, v.Codigo);
+        __builder.CloseElement();
+        if (emb != null)
+        {
+            __builder.OpenElement(10, "div");
+            __builder.AddAttribute(11, "class", "vaga-emb");
+            __builder.AddContent(12, emb);
+            __builder.CloseElement();
+        }
+        __builder.CloseElement();
     };
 
     class CorredorComparer : IEqualityComparer<Corredor?>
