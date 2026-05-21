@@ -161,6 +161,7 @@ else
 
 @code {
     [Parameter] public int? Id { get; set; }
+    [SupplyParameterFromQuery] public int? Tipo { get; set; }
 
     private Vaga _vaga = new();
     private List<Corredor> _corredores = new();
@@ -190,6 +191,8 @@ else
         else
         {
             _vaga = new Vaga { EmpresaId = UserCtx.EmpresaId, Ativa = true, Largura = 60, Altura = 40 };
+            if (Tipo.HasValue && Enum.IsDefined(typeof(TipoVaga), Tipo.Value))
+                _tipoStr = ((TipoVaga)Tipo.Value).ToString();
         }
         _carregando = false;
     }

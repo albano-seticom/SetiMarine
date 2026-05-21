@@ -12,31 +12,30 @@
 <PageTitle>Mapa da Marina — SetiMarine</PageTitle>
 
 <style>
-/* ── Canvas ──────────────────────────────────── */
-.mapa-outer { display:flex;flex-direction:column;gap:0;border:1px solid rgba(22,53,103,.14);border-radius:6px;overflow:hidden;min-height:520px;box-shadow:0 2px 12px rgba(0,0,0,.08); }
-.mapa-bar   { display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;background:var(--ocean-900,#060f1e);flex-shrink:0; }
+.mapa-outer { border:1px solid rgba(22,53,103,.14);border-radius:6px;overflow:hidden;margin-bottom:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.08); }
+.mapa-bar   { display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;background:#060f1e;flex-shrink:0; }
 .mapa-title { font-size:.78rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#fff;display:flex;align-items:center;gap:.5rem; }
+.mapa-count { font-size:.65rem;font-weight:400;color:rgba(255,255,255,.35);margin-left:.25rem; }
 .live-dot   { width:7px;height:7px;border-radius:50%;background:#1ab3a6;animation:pulse 2s ease-in-out infinite; }
 @@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
-.leg        { display:flex;gap:.8rem;align-items:center; }
-.leg-i      { display:flex;align-items:center;gap:.3rem;font-size:.68rem;color:rgba(255,255,255,.5); }
+.leg        { display:flex;gap:.75rem;align-items:center; }
+.leg-i      { display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:rgba(255,255,255,.4); }
 .leg-d      { width:9px;height:9px;border-radius:2px; }
 
-.mapa-body  {
-    flex:1;position:relative;
-    background:#050d1a;
+.mapa-body  { position:relative;background:#050d1a;
     background-image:linear-gradient(rgba(0,212,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.02) 1px,transparent 1px);
-    background-size:40px 40px;
-    overflow:hidden;cursor:default;
-    min-height:480px;
-}
-.canvas-inner { position:absolute;width:2400px;height:1600px;transform-origin:0 0; }
+    background-size:40px 40px;overflow:hidden;cursor:default;height:320px; }
+.canvas-inner { position:absolute;width:3200px;height:1200px;transform-origin:0 0; }
 
-/* ── Vagas ───────────────────────────────────── */
-.vi { position:absolute;border-radius:5px;border:1.5px solid;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;cursor:pointer;user-select:none;transition:border-color .15s,box-shadow .15s,transform .1s;overflow:hidden;padding:3px; }
-.vi:hover { z-index:20;transform:scale(1.05);box-shadow:0 0 0 3px rgba(255,255,255,.1); }
-.vi.sel   { z-index:30;box-shadow:0 0 0 3px rgba(255,255,255,.35) !important; }
-.vi.livre        { background:rgba(26,179,166,.1); border-color:rgba(26,179,166,.45); }
+/* ── vaga card (todos igual tamanho) ── */
+.vi { position:absolute;width:90px;height:56px;border-radius:5px;border:1.5px solid;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      cursor:pointer;user-select:none;
+      transition:border-color .15s,box-shadow .15s,transform .12s;
+      overflow:hidden;gap:2px; }
+.vi:hover { z-index:20;transform:scale(1.07);box-shadow:0 0 0 3px rgba(255,255,255,.1); }
+.vi.sel   { z-index:30;box-shadow:0 0 0 3px rgba(255,255,255,.38) !important; }
+.vi.livre        { background:rgba(26,179,166,.1);  border-color:rgba(26,179,166,.45); }
 .vi.ocupada      { background:rgba(22,53,103,.22);  border-color:rgba(29,71,133,.55); }
 .vi.movimentacao { background:rgba(201,168,76,.15); border-color:rgba(201,168,76,.5); }
 .vi.manutencao   { background:rgba(232,69,60,.12);  border-color:rgba(232,69,60,.45); }
@@ -44,78 +43,65 @@
 .vi.sel.ocupada      { border-color:#4d8fd4; }
 .vi.sel.movimentacao { border-color:#c9a84c; }
 .vi.sel.manutencao   { border-color:#e8453c; }
-.vcod { font-size:.65rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);letter-spacing:.5px;line-height:1;margin-bottom:2px;width:100%;text-align:center; }
-.vtipo { position:absolute;bottom:3px;right:4px;opacity:.3; }
-.vtipo svg { width:9px;height:9px; }
 
-/* ── Controles zoom ──────────────────────────── */
-.ctrls { position:absolute;bottom:12px;left:12px;z-index:50;display:flex;gap:.3rem;flex-direction:column; }
-.ctrls-row { display:flex;gap:.3rem; }
-.cbtn { width:30px;height:30px;border-radius:6px;background:rgba(5,13,26,.85);border:1px solid rgba(0,200,255,.12);color:rgba(255,255,255,.65);cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(8px);transition:all .15s; }
+.vcod { font-size:.7rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);letter-spacing:.5px;line-height:1;text-align:center; }
+.vcor { font-size:.55rem;color:rgba(255,255,255,.32);line-height:1;text-align:center;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+
+/* indicator de embarcações na vaga */
+.vi-embs { position:absolute;top:3px;right:4px;min-width:15px;height:15px;border-radius:8px;
+           background:#1ab3a6;color:#060f1e;font-size:.58rem;font-weight:800;
+           display:flex;align-items:center;justify-content:center;padding:0 3px;
+           box-shadow:0 0 0 2px rgba(5,13,26,.6); }
+
+/* botão "+" (adicionar vaga dentro do canvas) */
+.vi-add { position:absolute;width:90px;height:56px;border-radius:5px;
+          border:1.5px dashed rgba(255,255,255,.14);
+          display:flex;align-items:center;justify-content:center;
+          cursor:pointer;color:rgba(255,255,255,.22);
+          transition:border-color .15s,color .15s,background .15s;text-decoration:none; }
+.vi-add:hover { border-color:rgba(26,179,166,.5);color:#1ab3a6;background:rgba(26,179,166,.05); }
+
+/* controles zoom */
+.ctrls { position:absolute;bottom:10px;left:10px;z-index:50;display:flex;gap:.3rem; }
+.cbtn  { width:28px;height:28px;border-radius:5px;background:rgba(5,13,26,.85);
+         border:1px solid rgba(0,200,255,.12);color:rgba(255,255,255,.6);
+         cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(8px);transition:all .15s; }
 .cbtn:hover { border-color:rgba(0,212,255,.35);color:#fff; }
-.hint { position:absolute;bottom:12px;right:14px;font-size:.65rem;color:rgba(255,255,255,.25); }
+.hint { position:absolute;bottom:10px;right:12px;font-size:.62rem;color:rgba(255,255,255,.18); }
 
-/* ── Estado vazio ────────────────────────────── */
 .empty-mapa { display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:.5rem;color:rgba(255,255,255,.3); }
 
-/* ── Painel lateral ──────────────────────────── */
-.det-panel {
-    position:absolute;right:14px;top:50%;transform:translateY(-50%);
-    width:240px;background:#071525;
-    border:1px solid rgba(0,200,255,.1);border-radius:10px;
-    padding:1.1rem;z-index:100;
-    animation:slin .18s ease;
-    box-shadow:0 8px 40px rgba(0,0,0,.55);
-}
+/* ── painel lateral ── */
+.det-panel { position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    width:244px;background:#071525;border:1px solid rgba(0,200,255,.1);
+    border-radius:10px;padding:1.1rem;z-index:100;
+    animation:slin .18s ease;box-shadow:0 8px 40px rgba(0,0,0,.6); }
 @@keyframes slin{from{opacity:0;transform:translateY(-50%) translateX(12px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
 .det-head { display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem; }
 .det-cod  { font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:.5px;text-transform:uppercase; }
-.det-x    { background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:1rem;line-height:1;padding:2px;transition:color .15s; }
+.det-x    { background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:1rem;padding:2px;line-height:1;transition:color .15s; }
 .det-x:hover { color:#fff; }
-.det-badge { display:inline-flex;align-items:center;gap:.3rem;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.65rem; }
+.det-badge { display:inline-flex;align-items:center;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.65rem; }
 .det-badge.livre        { background:rgba(26,179,166,.15);color:#1ab3a6; }
 .det-badge.ocupada      { background:rgba(29,71,133,.2);  color:#4d8fd4; }
 .det-badge.movimentacao { background:rgba(201,168,76,.15);color:#c9a84c; }
 .det-badge.manutencao   { background:rgba(232,69,60,.12); color:#e8453c; }
 .det-row { display:flex;justify-content:space-between;font-size:.75rem;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.05); }
-.det-row:last-of-type { border-bottom:none; }
 .det-key { color:rgba(255,255,255,.4); }
 .det-val { color:rgba(255,255,255,.8);text-align:right; }
-
-/* Embarcações vinculadas */
 .det-sec-lbl { font-size:.62rem;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em;margin:1rem 0 .45rem; }
-.emb-tag {
-    display:flex;align-items:center;justify-content:space-between;
-    background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);
-    color:#00d4ff;border-radius:4px;padding:3px 7px 3px 9px;
-    font-size:.72rem;margin-bottom:.3rem;
-}
+.emb-tag { display:flex;align-items:center;justify-content:space-between;
+           background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);
+           color:#00d4ff;border-radius:4px;padding:3px 7px 3px 9px;font-size:.72rem;margin-bottom:.3rem; }
 .emb-tag-nome { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.emb-rm { background:none;border:none;color:rgba(0,212,255,.4);cursor:pointer;font-size:.9rem;line-height:1;padding:0 2px;transition:color .15s;flex-shrink:0; }
+.emb-rm { background:none;border:none;color:rgba(0,212,255,.4);cursor:pointer;font-size:.9rem;line-height:1;padding:0 2px;flex-shrink:0;transition:color .15s; }
 .emb-rm:hover { color:#e8453c; }
-
-/* Adicionar embarcação */
-.det-add { margin-top:.55rem; }
-.det-add select {
-    width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-    color:rgba(255,255,255,.7);border-radius:4px;padding:.35rem .5rem;
-    font-size:.75rem;outline:none;margin-bottom:.4rem;
-}
+.det-add select { width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);border-radius:4px;padding:.35rem .5rem;font-size:.75rem;outline:none;margin-bottom:.4rem; }
 .det-add select option { background:#071525; }
-.det-add-btn {
-    width:100%;padding:.35rem;border-radius:4px;border:1px solid rgba(26,179,166,.3);
-    background:rgba(26,179,166,.1);color:#1ab3a6;cursor:pointer;font-size:.75rem;
-    font-weight:600;transition:background .15s;
-}
+.det-add-btn { width:100%;padding:.35rem;border-radius:4px;border:1px solid rgba(26,179,166,.3);background:rgba(26,179,166,.1);color:#1ab3a6;cursor:pointer;font-size:.75rem;font-weight:600;transition:background .15s; }
 .det-add-btn:hover { background:rgba(26,179,166,.2); }
 .det-add-btn:disabled { opacity:.4;cursor:not-allowed; }
-
-.det-link {
-    display:block;margin-top:.85rem;text-align:center;
-    background:rgba(22,53,103,.2);border:1px solid rgba(22,53,103,.35);
-    color:#4d8fd4;border-radius:5px;padding:.4rem;font-size:.75rem;
-    text-decoration:none;transition:background .15s;font-weight:600;
-}
+.det-link { display:block;margin-top:.85rem;text-align:center;background:rgba(22,53,103,.2);border:1px solid rgba(22,53,103,.35);color:#4d8fd4;border-radius:5px;padding:.4rem;font-size:.75rem;text-decoration:none;font-weight:600;transition:background .15s; }
 .det-link:hover { background:rgba(22,53,103,.35); }
 .det-err { font-size:.72rem;color:#e8453c;margin-top:.35rem;text-align:center; }
 </style>
@@ -126,193 +112,174 @@
         <h1>Mapa da Marina</h1>
     </div>
     <div class="page-head-actions">
-        <div style="display:flex;gap:.8rem;align-items:center;">
-            @foreach (var (cor, lbl) in _legenda)
-            {
-                <div style="display:flex;align-items:center;gap:.3rem;font-size:.68rem;color:var(--ink-500);">
-                    <div style="width:9px;height:9px;border-radius:2px;background:@cor;"></div>@lbl
-                </div>
-            }
-        </div>
-        <button class="btn btn-ghost btn-sm" @onclick="ZReset">Centralizar</button>
-        <a href="/vagas" class="btn btn-ghost btn-sm">Lista</a>
-        <a href="/vagas/nova" class="btn btn-primary btn-sm">+ Nova Vaga</a>
+        <a href="/vagas" class="btn btn-ghost btn-sm">Lista de Vagas</a>
     </div>
 </div>
 
+@if (_load)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando mapa...</span>
+    </div>
+}
+else
+{
+
+<!-- ═══════════════════ VAGAS MOLHADAS ═══════════════════ -->
 <div class="mapa-outer">
     <div class="mapa-bar">
         <div class="mapa-title">
             <div class="live-dot"></div>
-            Mapa Interativo
+            Vagas Molhadas
+            <span class="mapa-count">@_vagasMol.Count vagas</span>
         </div>
         <div class="leg">
             <div class="leg-i"><div class="leg-d" style="background:#1ab3a6"></div>Livre</div>
             <div class="leg-i"><div class="leg-d" style="background:#1d4785"></div>Ocupada</div>
-            <div class="leg-i"><div class="leg-d" style="background:#c9a84c"></div>Movimentação</div>
-            <div class="leg-i"><div class="leg-d" style="background:#e8453c"></div>Manutenção</div>
+            <div class="leg-i"><div class="leg-d" style="background:#c9a84c"></div>Mov.</div>
+            <div class="leg-i"><div class="leg-d" style="background:#e8453c"></div>Manut.</div>
         </div>
     </div>
 
     <div class="mapa-body" @onclick="Deselecionar">
 
-        @if (_load)
+        @if (!_vagasMol.Any())
         {
             <div class="empty-mapa">
-                <div style="width:26px;height:26px;border:3px solid rgba(0,200,255,.12);border-top-color:#1ab3a6;border-radius:50%;animation:spin .7s linear infinite;"></div>
-                <span style="font-size:.78rem">Carregando mapa...</span>
-            </div>
-        }
-        else if (!_vagas.Any())
-        {
-            <div class="empty-mapa">
-                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20c0-4.4 2.24-8 5-8s5 3.6 5 8"/><path d="M12 12V3"/></svg>
-                <span>Nenhuma vaga cadastrada.</span>
-                <a href="/vagas/nova" style="margin-top:.5rem;padding:.4rem 1rem;background:#e8453c;color:#fff;border-radius:5px;font-size:.8rem;text-decoration:none;font-weight:600;">+ Criar vaga</a>
+                <span style="font-size:.8rem;">Nenhuma vaga molhada cadastrada</span>
+                <a href="/vagas/nova?tipo=0" style="margin-top:.5rem;padding:.4rem 1rem;background:rgba(26,179,166,.2);color:#1ab3a6;border:1px solid rgba(26,179,166,.3);border-radius:5px;font-size:.8rem;text-decoration:none;font-weight:600;">+ Criar vaga</a>
             </div>
         }
         else
         {
-            <div class="canvas-inner" style="transform:translate(@(_px.ToString("F1",System.Globalization.CultureInfo.InvariantCulture))px,@(_py.ToString("F1",System.Globalization.CultureInfo.InvariantCulture))px) scale(@(_sc.ToString("F3",System.Globalization.CultureInfo.InvariantCulture)))">
-                @foreach (var v in _vagas)
+            <div class="canvas-inner"
+                 style="transform:translate(@(_pxM.ToString("F1",_ci))px,@(_pyM.ToString("F1",_ci))px) scale(@(_scM.ToString("F3",_ci)))">
+
+                @foreach (var (v, idx) in _vagasMol.Select((v, i) => (v, i)))
                 {
-                    var css = v.Status switch
-                    {
-                        StatusVaga.Livre          => "livre",
-                        StatusVaga.Ocupada        => "ocupada",
-                        StatusVaga.EmMovimentacao => "movimentacao",
-                        StatusVaga.Manutencao     => "manutencao",
-                        _                         => "livre",
-                    };
-                    var isSel = _sel?.Id == v.Id;
+                    var (vx, vy) = AutoPos(idx);
+                    var css    = StatusCss(v.Status);
+                    var isSel  = _sel?.Id == v.Id;
+                    var embCnt = v.EmbarcacoesNaVaga.Count(e => e.Ativa);
                     <div class="vi @css @(isSel ? "sel" : "")"
-                         style="left:@(v.PosX)px;top:@(v.PosY)px;width:@(v.Largura)px;height:@(v.Altura)px;"
-                         @onclick="() => Selecionar(v)"
-                         @onclick:stopPropagation="true">
+                         style="left:@(vx)px;top:@(vy)px;"
+                         @onclick="() => Selecionar(v)" @onclick:stopPropagation="true">
+                        @if (embCnt > 0)
+                        { <div class="vi-embs">@embCnt</div> }
                         <div class="vcod">@v.Codigo</div>
-                        <div class="vtipo">
-                            @if (v.Tipo == TipoVaga.Agua)
-                            { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c1.5-2 3-3 6-3s4.5 1 6 3 3 3 6 3"/></svg> }
-                            else
-                            { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> }
-                        </div>
+                        <div class="vcor">@(v.Corredor?.Nome ?? "")</div>
                     </div>
                 }
+
+                @{ var (apx, apy) = AutoPos(_vagasMol.Count); }
+                <a href="/vagas/nova?tipo=0" class="vi-add" style="left:@(apx)px;top:@(apy)px;"
+                   title="Nova vaga molhada" @onclick:stopPropagation="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </a>
             </div>
 
             <div class="ctrls">
-                <div class="ctrls-row">
-                    <button class="cbtn" @onclick="ZIn"    title="Zoom +"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-                    <button class="cbtn" @onclick="ZOut"   title="Zoom -"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-                    <button class="cbtn" @onclick="ZReset" title="Centralizar"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
-                </div>
+                <button class="cbtn" @onclick="ZInM"    title="Zoom +"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                <button class="cbtn" @onclick="ZOutM"   title="Zoom -"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                <button class="cbtn" @onclick="ZResetM" title="Centralizar"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
             </div>
-            <div class="hint">Clique em uma vaga para ver detalhes</div>
+            <div class="hint">Clique na vaga · + para nova</div>
         }
 
-        <!-- Painel lateral de detalhes + vínculo -->
-        @if (_sel != null)
+        @if (_sel?.Tipo == TipoVaga.Agua)
         {
-            var badgeCss = _sel.Status switch
-            {
-                StatusVaga.Livre          => "livre",
-                StatusVaga.Ocupada        => "ocupada",
-                StatusVaga.EmMovimentacao => "movimentacao",
-                StatusVaga.Manutencao     => "manutencao",
-                _                         => "livre",
-            };
-            var badgeLbl = _sel.Status switch
-            {
-                StatusVaga.Livre          => "Livre",
-                StatusVaga.Ocupada        => "Ocupada",
-                StatusVaga.EmMovimentacao => "Em Movimentação",
-                StatusVaga.Manutencao     => "Manutenção",
-                _                         => "",
-            };
-            var embsAtivas = _sel.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
-            var disponiveis = _todasEmb.Where(e => embsAtivas.All(ea => ea.EmbarcacaoId != e.Id)).ToList();
-
-            <div class="det-panel" @onclick:stopPropagation="true">
-                <div class="det-head">
-                    <div class="det-cod">Vaga @_sel.Codigo</div>
-                    <button class="det-x" @onclick="Deselecionar">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                </div>
-
-                <span class="det-badge @badgeCss">@badgeLbl</span>
-
-                <div class="det-row"><span class="det-key">Tipo</span><span class="det-val">@(_sel.Tipo == TipoVaga.Agua ? "Molhada" : "Seca")</span></div>
-                <div class="det-row"><span class="det-key">Corredor</span><span class="det-val">@(_sel.Corredor?.Nome ?? "—")</span></div>
-                @if (_sel.TamanhoMaxPes > 0)
-                {
-                    <div class="det-row"><span class="det-key">Tamanho máx.</span><span class="det-val">@_sel.TamanhoMaxPes pes</span></div>
-                }
-
-                <!-- Embarcações vinculadas -->
-                <div class="det-sec-lbl">Embarcações na vaga</div>
-
-                @if (!embsAtivas.Any())
-                {
-                    <div style="font-size:.72rem;color:rgba(255,255,255,.3);margin-bottom:.5rem;">Nenhuma alocada</div>
-                }
-                else
-                {
-                    @foreach (var ve in embsAtivas)
-                    {
-                        <div class="emb-tag">
-                            <span class="emb-tag-nome" title="@ve.Embarcacao?.Nome">@(ve.Embarcacao?.Nome ?? "—")</span>
-                            <button class="emb-rm" title="Remover embarcação" @onclick="() => DesalocarAsync(ve.Id)" @onclick:stopPropagation="true">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
-                        </div>
-                    }
-                }
-
-                <!-- Adicionar embarcação -->
-                @if (disponiveis.Any() && _sel.Status != StatusVaga.Manutencao)
-                {
-                    <div class="det-add">
-                        <select @bind="_embIdStr">
-                            <option value="">Vincular embarcação...</option>
-                            @foreach (var e in disponiveis)
-                            { <option value="@e.Id">@e.Nome@(e.Cliente != null ? $" ({e.Cliente.Nome})" : "")</option> }
-                        </select>
-                        <button class="det-add-btn" @onclick="AlocarAsync" disabled="@(_embIdStr == "" || _alocando)">
-                            @(_alocando ? "Vinculando..." : "+ Vincular")
-                        </button>
-                    </div>
-                }
-
-                @if (_erroPanel != null)
-                {
-                    <div class="det-err">@_erroPanel</div>
-                }
-
-                <a href="/vagas/@_sel.Id" class="det-link">Editar vaga →</a>
-            </div>
+            @DetPanel()
         }
-
     </div>
 </div>
 
+<!-- ═══════════════════ VAGAS SECAS ═══════════════════ -->
+<div class="mapa-outer">
+    <div class="mapa-bar">
+        <div class="mapa-title">
+            <div class="live-dot" style="background:#c9a84c;"></div>
+            Vagas Secas
+            <span class="mapa-count">@_vagasSec.Count vagas</span>
+        </div>
+        <div class="leg">
+            <div class="leg-i"><div class="leg-d" style="background:#1ab3a6"></div>Livre</div>
+            <div class="leg-i"><div class="leg-d" style="background:#1d4785"></div>Ocupada</div>
+            <div class="leg-i"><div class="leg-d" style="background:#c9a84c"></div>Mov.</div>
+            <div class="leg-i"><div class="leg-d" style="background:#e8453c"></div>Manut.</div>
+        </div>
+    </div>
+
+    <div class="mapa-body" @onclick="Deselecionar">
+
+        @if (!_vagasSec.Any())
+        {
+            <div class="empty-mapa">
+                <span style="font-size:.8rem;">Nenhuma vaga seca cadastrada</span>
+                <a href="/vagas/nova?tipo=1" style="margin-top:.5rem;padding:.4rem 1rem;background:rgba(201,168,76,.2);color:#c9a84c;border:1px solid rgba(201,168,76,.3);border-radius:5px;font-size:.8rem;text-decoration:none;font-weight:600;">+ Criar vaga</a>
+            </div>
+        }
+        else
+        {
+            <div class="canvas-inner"
+                 style="transform:translate(@(_pxS.ToString("F1",_ci))px,@(_pyS.ToString("F1",_ci))px) scale(@(_scS.ToString("F3",_ci)))">
+
+                @foreach (var (v, idx) in _vagasSec.Select((v, i) => (v, i)))
+                {
+                    var (vx, vy) = AutoPos(idx);
+                    var css    = StatusCss(v.Status);
+                    var isSel  = _sel?.Id == v.Id;
+                    var embCnt = v.EmbarcacoesNaVaga.Count(e => e.Ativa);
+                    <div class="vi @css @(isSel ? "sel" : "")"
+                         style="left:@(vx)px;top:@(vy)px;"
+                         @onclick="() => Selecionar(v)" @onclick:stopPropagation="true">
+                        @if (embCnt > 0)
+                        { <div class="vi-embs">@embCnt</div> }
+                        <div class="vcod">@v.Codigo</div>
+                        <div class="vcor">@(v.Corredor?.Nome ?? "")</div>
+                    </div>
+                }
+
+                @{ var (bpx, bpy) = AutoPos(_vagasSec.Count); }
+                <a href="/vagas/nova?tipo=1" class="vi-add" style="left:@(bpx)px;top:@(bpy)px;"
+                   title="Nova vaga seca" @onclick:stopPropagation="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </a>
+            </div>
+
+            <div class="ctrls">
+                <button class="cbtn" @onclick="ZInS"    title="Zoom +"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                <button class="cbtn" @onclick="ZOutS"   title="Zoom -"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                <button class="cbtn" @onclick="ZResetS" title="Centralizar"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+            </div>
+            <div class="hint">Clique na vaga · + para nova</div>
+        }
+
+        @if (_sel?.Tipo == TipoVaga.Seco)
+        {
+            @DetPanel()
+        }
+    </div>
+</div>
+
+}
+
 @code {
-    private List<Vaga>       _vagas    = new();
+    private static readonly System.Globalization.CultureInfo _ci = System.Globalization.CultureInfo.InvariantCulture;
+
+    private List<Vaga>       _vagasMol = new();
+    private List<Vaga>       _vagasSec = new();
     private List<Embarcacao> _todasEmb = new();
     private Vaga?            _sel;
-    private bool             _load = true;
+    private bool             _load     = true;
     private bool             _alocando;
     private string           _embIdStr  = "";
     private string?          _erroPanel;
-    private double           _px, _py, _sc = 1;
 
-    private static readonly (string Cor, string Label)[] _legenda =
-    {
-        ("rgba(26,179,166,.55)",   "Livre"),
-        ("rgba(29,71,133,.6)",     "Ocupada"),
-        ("rgba(201,168,76,.55)",   "Movimentação"),
-        ("rgba(232,69,60,.5)",     "Manutenção"),
-    };
+    // zoom molhadas
+    private double _scM = 1, _pxM, _pyM;
+    // zoom secas
+    private double _scS = 1, _pxS, _pyS;
 
     protected override async Task OnInitializedAsync()
     {
@@ -322,34 +289,27 @@
 
     private async Task RecarregarAsync()
     {
-        _vagas    = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
-        _todasEmb = await MovimentacaoService_ListarEmbarcacoes();
+        var todas  = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _vagasMol  = todas.Where(v => v.Tipo == TipoVaga.Agua).OrderBy(v => v.Codigo).ToList();
+        _vagasSec  = todas.Where(v => v.Tipo == TipoVaga.Seco).OrderBy(v => v.Codigo).ToList();
+        _todasEmb  = await MovService.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
 
-        // Atualiza _sel se havia vaga selecionada
         if (_sel != null)
-            _sel = _vagas.FirstOrDefault(v => v.Id == _sel.Id);
-
+        {
+            var fresh = await VagaService.ObterPorIdAsync(_sel.Id, UserCtx.EmpresaId);
+            _sel = fresh;
+        }
         _load = false;
-    }
-
-    private async Task<List<Embarcacao>> MovimentacaoService_ListarEmbarcacoes()
-    {
-        // Reutiliza o mesmo método do MovService para embarcações da empresa
-        return await MovService.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
     }
 
     private async Task Selecionar(Vaga v)
     {
         _erroPanel = null;
         _embIdStr  = "";
-        _sel       = _sel?.Id == v.Id ? null : v;
+        if (_sel?.Id == v.Id) { _sel = null; return; }
 
-        // Recarrega a vaga para ter dados frescos de EmbarcacoesNaVaga
-        if (_sel != null)
-        {
-            var fresh = await VagaService.ObterPorIdAsync(_sel.Id, UserCtx.EmpresaId);
-            if (fresh != null) _sel = fresh;
-        }
+        var fresh = await VagaService.ObterPorIdAsync(v.Id, UserCtx.EmpresaId);
+        _sel = fresh ?? v;
     }
 
     private void Deselecionar()
@@ -385,7 +345,103 @@
         catch (Exception ex) { _erroPanel = ex.Message; }
     }
 
-    private void ZIn()    => _sc = Math.Min(3,    _sc + .15);
-    private void ZOut()   => _sc = Math.Max(.2,   _sc - .15);
-    private void ZReset() => (_sc, _px, _py) = (1, 0, 0);
+    private static (int x, int y) AutoPos(int i, int cols = 10)
+    {
+        const int W = 90, H = 56, GAP = 10, OX = 20, OY = 20;
+        return (OX + i % cols * (W + GAP), OY + i / cols * (H + GAP));
+    }
+
+    private static string StatusCss(StatusVaga s) => s switch
+    {
+        StatusVaga.Livre          => "livre",
+        StatusVaga.Ocupada        => "ocupada",
+        StatusVaga.EmMovimentacao => "movimentacao",
+        StatusVaga.Manutencao     => "manutencao",
+        _                         => "livre",
+    };
+
+    // ── Zoom Molhadas ──
+    private void ZInM()    => _scM = Math.Min(3,  _scM + .15);
+    private void ZOutM()   => _scM = Math.Max(.2, _scM - .15);
+    private void ZResetM() => (_scM, _pxM, _pyM) = (1, 0, 0);
+
+    // ── Zoom Secas ──
+    private void ZInS()    => _scS = Math.Min(3,  _scS + .15);
+    private void ZOutS()   => _scS = Math.Max(.2, _scS - .15);
+    private void ZResetS() => (_scS, _pxS, _pyS) = (1, 0, 0);
+
+    // ── Painel lateral (compartilhado pelos dois canvases) ──
+    private RenderFragment DetPanel() => __builder =>
+    {
+        if (_sel == null) return;
+        var badgeCss = StatusCss(_sel.Status);
+        var badgeLbl = _sel.Status switch
+        {
+            StatusVaga.Livre          => "Livre",
+            StatusVaga.Ocupada        => "Ocupada",
+            StatusVaga.EmMovimentacao => "Em Movimentação",
+            StatusVaga.Manutencao     => "Manutenção",
+            _                         => "",
+        };
+        var embsAtivas   = _sel.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
+        var disponiveis  = _todasEmb.Where(e => embsAtivas.All(ea => ea.EmbarcacaoId != e.Id)).ToList();
+
+        <div class="det-panel" @onclick:stopPropagation="true">
+            <div class="det-head">
+                <div class="det-cod">Vaga @_sel.Codigo</div>
+                <button class="det-x" @onclick="Deselecionar">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <span class="det-badge @badgeCss">@badgeLbl</span>
+
+            <div class="det-row"><span class="det-key">Tipo</span><span class="det-val">@(_sel.Tipo == TipoVaga.Agua ? "Molhada" : "Seca")</span></div>
+            <div class="det-row"><span class="det-key">Corredor</span><span class="det-val">@(_sel.Corredor?.Nome ?? "—")</span></div>
+            @if (_sel.TamanhoMaxPes > 0)
+            {
+                <div class="det-row"><span class="det-key">Tamanho máx.</span><span class="det-val">@_sel.TamanhoMaxPes pes</span></div>
+            }
+
+            <div class="det-sec-lbl">Embarcações na vaga</div>
+
+            @if (!embsAtivas.Any())
+            {
+                <div style="font-size:.72rem;color:rgba(255,255,255,.28);margin-bottom:.5rem;">Nenhuma alocada</div>
+            }
+            else
+            {
+                @foreach (var ve in embsAtivas)
+                {
+                    <div class="emb-tag">
+                        <span class="emb-tag-nome" title="@ve.Embarcacao?.Nome">@(ve.Embarcacao?.Nome ?? "—")</span>
+                        <button class="emb-rm" title="Remover" @onclick="() => DesalocarAsync(ve.Id)" @onclick:stopPropagation="true">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                }
+            }
+
+            @if (disponiveis.Any() && _sel.Status != StatusVaga.Manutencao)
+            {
+                <div class="det-add">
+                    <select @bind="_embIdStr">
+                        <option value="">Vincular embarcação...</option>
+                        @foreach (var e in disponiveis)
+                        { <option value="@e.Id">@e.Nome@(e.Cliente != null ? $" ({e.Cliente.Nome})" : "")</option> }
+                    </select>
+                    <button class="det-add-btn" @onclick="AlocarAsync" disabled="@(_embIdStr == "" || _alocando)">
+                        @(_alocando ? "Vinculando..." : "+ Vincular")
+                    </button>
+                </div>
+            }
+
+            @if (_erroPanel != null)
+            {
+                <div class="det-err">@_erroPanel</div>
+            }
+
+            <a href="/vagas/@_sel.Id" class="det-link">Editar vaga →</a>
+        </div>
+    };
 }
