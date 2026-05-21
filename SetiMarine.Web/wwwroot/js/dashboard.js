@@ -3,6 +3,56 @@
   const mount = document.getElementById('dashboard-mount');
   if (!mount) return;
 
+  // Ícones SVG por tipo de embarcação (vista lateral, viewBox 0 0 24 24)
+  const boatPaths = {
+    veleiro: `
+      <path d="M3 18c0-3 3-4 9-4s9 1 9 4" stroke-linecap="round"/>
+      <path d="M5 18l1 3h12l1-3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 14V3" stroke-linecap="round"/>
+      <path d="M12 3L5 14" stroke-linecap="round"/>
+      <path d="M12 6l6 8" stroke-linecap="round"/>`,
+
+    lancha: `
+      <path d="M3 18c0-3 3-4 9-4s9 1 9 4" stroke-linecap="round"/>
+      <path d="M5 18l1 3h12l1-3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9.5 18l1.5-6h4l1.5 6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9.5 12h7" stroke-linecap="round"/>`,
+
+    catamara: `
+      <path d="M2 19c0-1.8 1-2.4 5-2.4s5 .6 5 2.4" stroke-linecap="round"/>
+      <path d="M3.5 19l.5 2.5h6.5l.5-2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 19c0-1.8 1-2.4 5-2.4s5 .6 5 2.4" stroke-linecap="round"/>
+      <path d="M13.5 19l.5 2.5h6.5l.5-2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M7.5 19h9" stroke-linecap="round"/>
+      <path d="M12 19V9" stroke-linecap="round"/>
+      <path d="M12 10L7 19" stroke-linecap="round"/>`,
+
+    jetski: `
+      <path d="M5 18c0-2 2-2.5 7-2.5s7 .5 7 2.5" stroke-linecap="round"/>
+      <path d="M7 18l1 3h9l1-3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M8 18l2-5h5l1 5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M11 13V9" stroke-linecap="round"/>
+      <path d="M8.5 9h6" stroke-linecap="round" stroke-width="1.8"/>`
+  };
+
+  const TIPO_POOL = ['veleiro', 'lancha', 'lancha', 'catamara', 'lancha', 'veleiro', 'jetski', 'lancha'];
+
+  function boatSVG(tipo, size) {
+    const paths = boatPaths[tipo] || boatPaths.lancha;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="rgba(250,245,232,.9)" stroke-width="1.35" class="slip-boat">${paths}</svg>`;
+  }
+
+  function slipContent(status, idx, pi) {
+    if (status === 'livre') return '';
+    const tipo1 = TIPO_POOL[(pi * 7 + idx) % TIPO_POOL.length];
+    const isDouble = (pi * 3 + idx) % 11 === 0 && status === 'ocupada';
+    if (isDouble) {
+      const tipo2 = TIPO_POOL[(pi * 7 + idx + 4) % TIPO_POOL.length];
+      return `<div class="slip-boats-row">${boatSVG(tipo1, 16)}${boatSVG(tipo2, 16)}</div>`;
+    }
+    return `<div class="slip-boats-row">${boatSVG(tipo1, 22)}</div>`;
+  }
+
   // Slips gerados programaticamente — piers + status
   const piers = [
     { label: 'PIER A', y: 120, slips: [
@@ -19,26 +69,32 @@
     ]}
   ];
 
-  const slipsHtml = piers.map(p => {
-    const dock = `<div class="pier" style="left:60px;top:${p.y+22}px;width:720px;height:14px;"></div>`;
+  const slipsHtml = piers.map((p, pi) => {
+    const dock  = `<div class="pier" style="left:60px;top:${p.y+22}px;width:720px;height:14px;"></div>`;
     const label = `<div class="zone-lbl" style="left:60px;top:${p.y}px;">${p.label}</div>`;
-    const up = p.slips.slice(0,4).map((s,i) =>
-      `<div class="slip ${s[1]}" style="left:${120 + i*90}px;top:${p.y-30}px;width:70px;height:48px;" data-code="${s[0]}" data-status="${s[1]}">
-         <span class="slip-code">${s[0]}</span>
-       </div>`).join('');
-    const down = p.slips.slice(4,8).map((s,i) =>
-      `<div class="slip ${s[1]}" style="left:${120 + i*90}px;top:${p.y+42}px;width:70px;height:48px;" data-code="${s[0]}" data-status="${s[1]}">
-         <span class="slip-code">${s[0]}</span>
-       </div>`).join('');
+    const up = p.slips.slice(0,4).map((s,i) => {
+      const boats = slipContent(s[1], i, pi);
+      return `<div class="slip ${s[1]}${boats ? ' slip--boats' : ''}" style="left:${120 + i*90}px;top:${p.y-30}px;width:70px;height:48px;" data-code="${s[0]}" data-status="${s[1]}">
+        ${boats}<span class="slip-code">${s[0]}</span>
+      </div>`;
+    }).join('');
+    const down = p.slips.slice(4,8).map((s,i) => {
+      const boats = slipContent(s[1], 4 + i, pi);
+      return `<div class="slip ${s[1]}${boats ? ' slip--boats' : ''}" style="left:${120 + i*90}px;top:${p.y+42}px;width:70px;height:48px;" data-code="${s[0]}" data-status="${s[1]}">
+        ${boats}<span class="slip-code">${s[0]}</span>
+      </div>`;
+    }).join('');
     return label + dock + up + down;
   }).join('');
 
   const dryLabel = `<div class="zone-lbl" style="left:60px;top:490px;">DRY STACK</div>`;
   const dry = Array.from({length:12}).map((_,i) => {
     const statuses = ['ocupada','ocupada','livre','ocupada','mov','ocupada','livre','ocupada','ocupada','manutencao','livre','ocupada'];
-    const col = i % 6, row = Math.floor(i/6);
-    return `<div class="slip ${statuses[i]}" style="left:${120 + col*90}px;top:${520 + row*46}px;width:70px;height:38px;" data-code="S${i+1}" data-status="${statuses[i]}">
-      <span class="slip-code">S${i+1}</span>
+    const st    = statuses[i];
+    const col   = i % 6, row = Math.floor(i/6);
+    const boats = slipContent(st, i, 4);
+    return `<div class="slip ${st}${boats ? ' slip--boats' : ''}" style="left:${120 + col*90}px;top:${520 + row*46}px;width:70px;height:38px;" data-code="S${i+1}" data-status="${st}">
+      ${boats}<span class="slip-code">S${i+1}</span>
     </div>`;
   }).join('');
 

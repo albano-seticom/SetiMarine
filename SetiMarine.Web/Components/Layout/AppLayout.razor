@@ -12,8 +12,8 @@
 
     <div class="sb-logo">
       <a href="/dashboard" class="sb-logo-left">
-        <div class="sb-logo-icon">S</div>
-        <span class="sb-logo-name">Seti<b>Marine</b></span>
+        <img src="/images/marina/Logo_Setimarine_horizontal.png" alt="SetiMarine" class="sb-logo-h" />
+        <img src="/images/marina/Logo_Setimarine.png" alt="" class="sb-logo-icon-img" aria-hidden="true" />
       </a>
       <button class="sb-collapse-btn" @onclick="ToggleCollapse" title="Recolher menu">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
@@ -42,6 +42,18 @@
           </svg>
         </span>
         Mapa da Marina
+      </NavLink>
+
+      <NavLink href="/pedidos">
+        <span class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <line x1="9" y1="12" x2="15" y2="12"/>
+            <line x1="9" y1="16" x2="13" y2="16"/>
+          </svg>
+        </span>
+        Pedidos
       </NavLink>
 
       <NavLink href="/movimentacoes">

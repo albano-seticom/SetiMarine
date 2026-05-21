@@ -1,0 +1,194 @@
+@page "/pedidos"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject PedidoService PedidoSvc
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Pedidos — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Operações</span>
+        <h1>Pedidos</h1>
+    </div>
+    <div class="page-head-actions">
+        <div class="field" style="margin:0;">
+            <select @bind="_filtroTipo" @bind:after="CarregarAsync" style="height:34px;">
+                <option value="">Todos os tipos</option>
+                <option value="OrdemServico">Ordem de Serviço</option>
+                <option value="Venda">Venda</option>
+                <option value="Emprestimo">Empréstimo</option>
+            </select>
+        </div>
+        <div class="field" style="margin:0;">
+            <select @bind="_filtroStatus" @bind:after="CarregarAsync" style="height:34px;">
+                <option value="">Todos os status</option>
+                <option value="Rascunho">Rascunho</option>
+                <option value="Aberto">Aberto</option>
+                <option value="EmAndamento">Em Andamento</option>
+                <option value="Concluido">Concluído</option>
+                <option value="Cancelado">Cancelado</option>
+            </select>
+        </div>
+        <a href="/pedidos/novo" class="btn btn-primary btn-sm">+ Novo Pedido</a>
+    </div>
+</div>
+
+<div style="display:flex;gap:.75rem;margin-bottom:1.75rem;flex-wrap:wrap;">
+    @foreach (var (label, count, cor) in _contadores)
+    {
+        <div style="padding:.65rem 1rem;border:1px solid var(--line);border-radius:3px;min-width:120px;">
+            <div style="font-size:1.4rem;font-weight:700;color:@cor;line-height:1;">@count</div>
+            <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);margin-top:.15rem;">@label</div>
+        </div>
+    }
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_pedidos.Any())
+{
+    <div style="padding:4rem 2rem;text-align:center;color:var(--ink-300);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto 1rem;display:block;opacity:.4;">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+        </svg>
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhum pedido encontrado</p>
+        <a href="/pedidos/novo" class="btn btn-primary btn-sm">Criar Primeiro Pedido</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:56px">#</th>
+                    <th>Tipo</th>
+                    <th>Cliente</th>
+                    <th>Embarcação</th>
+                    <th>Responsável</th>
+                    <th style="width:60px">Itens</th>
+                    <th>Total</th>
+                    <th>Criado em</th>
+                    <th>Status</th>
+                    <th style="width:100px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in _pedidos)
+                {
+                    <tr>
+                        <td style="color:var(--ink-300);font-size:.8rem;font-family:monospace;">#@p.Id</td>
+                        <td>
+                            <span class="badge @BadgeTipo(p.Tipo)">@LabelTipo(p.Tipo)</span>
+                        </td>
+                        <td><strong style="font-weight:500;">@(p.Cliente?.Nome ?? "—")</strong></td>
+                        <td style="color:var(--ink-500);">@(p.Embarcacao?.Nome ?? "—")</td>
+                        <td style="color:var(--ink-500);">@(p.Responsavel?.Nome ?? "—")</td>
+                        <td style="color:var(--ink-500);text-align:center;">@p.Itens.Count</td>
+                        <td style="font-weight:500;">@p.Itens.Sum(i => i.Quantidade * i.PrecoUnitario).ToString("C2")</td>
+                        <td style="color:var(--ink-500);font-size:.8rem;">@p.CriadoEm.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <span class="badge @BadgeStatus(p.Status)">@LabelStatus(p.Status)</span>
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                <a href="/pedidos/@p.Id" class="btn btn-ghost btn-sm" title="Editar">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                                @if (p.Status != StatusPedido.Concluido && p.Status != StatusPedido.Cancelado)
+                                {
+                                    <button class="btn btn-ghost btn-sm" title="Avançar status"
+                                            @onclick="() => AvancarStatus(p)"
+                                            style="color:var(--s-free);">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Pedido> _pedidos = new();
+    private string _filtroTipo   = "";
+    private string _filtroStatus = "";
+    private bool _carregando = true;
+    private List<(string, int, string)> _contadores = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        TipoPedido?   tipo   = Enum.TryParse<TipoPedido>(_filtroTipo,     out var tv) ? tv : null;
+        StatusPedido? status = Enum.TryParse<StatusPedido>(_filtroStatus, out var sv) ? sv : null;
+        _pedidos = await PedidoSvc.ListarPorEmpresaAsync(UserCtx.EmpresaId, tipo, status);
+        _contadores = new()
+        {
+            ("OS",          _pedidos.Count(p => p.Tipo == TipoPedido.OrdemServico),                                    "var(--navy-700)"),
+            ("Vendas",      _pedidos.Count(p => p.Tipo == TipoPedido.Venda),                                          "var(--s-free)"),
+            ("Empréstimos", _pedidos.Count(p => p.Tipo == TipoPedido.Emprestimo),                                     "var(--ink-600)"),
+            ("Em aberto",   _pedidos.Count(p => p.Status == StatusPedido.Aberto || p.Status == StatusPedido.EmAndamento), "var(--s-maint)"),
+        };
+        _carregando = false;
+    }
+
+    private async Task AvancarStatus(Pedido p)
+    {
+        try { await PedidoSvc.AvancarStatusAsync(p.Id, UserCtx.EmpresaId); await CarregarAsync(); }
+        catch { }
+    }
+
+    private static string LabelTipo(TipoPedido t) => t switch
+    {
+        TipoPedido.Venda        => "Venda",
+        TipoPedido.Emprestimo   => "Empréstimo",
+        TipoPedido.OrdemServico => "OS",
+        _                       => t.ToString()
+    };
+
+    private static string LabelStatus(StatusPedido s) => s switch
+    {
+        StatusPedido.Rascunho    => "Rascunho",
+        StatusPedido.Aberto      => "Aberto",
+        StatusPedido.EmAndamento => "Em Andamento",
+        StatusPedido.Concluido   => "Concluído",
+        StatusPedido.Cancelado   => "Cancelado",
+        _                        => s.ToString()
+    };
+
+    private static string BadgeTipo(TipoPedido t) => t switch
+    {
+        TipoPedido.OrdemServico => "badge-mov",
+        TipoPedido.Venda        => "badge-free",
+        TipoPedido.Emprestimo   => "badge-occ",
+        _                       => ""
+    };
+
+    private static string BadgeStatus(StatusPedido s) => s switch
+    {
+        StatusPedido.Aberto      => "badge-free",
+        StatusPedido.EmAndamento => "badge-mov",
+        StatusPedido.Concluido   => "badge",
+        StatusPedido.Cancelado   => "badge-maint",
+        _                        => "badge"
+    };
+}

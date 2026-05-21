@@ -57,6 +57,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Produto> Produtos { get; set; }
     public DbSet<VendaProduto> VendasProduto { get; set; }
 
+    // ============================================================
+    // MARINA - Pedidos
+    // ============================================================
+    public DbSet<Pedido> Pedidos { get; set; }
+    public DbSet<PedidoItem> PedidoItens { get; set; }
+    public DbSet<PedidoServico> PedidoServicos { get; set; }
+
     protected override void OnModelCreating(ModelBuilder mb)
     {
         base.OnModelCreating(mb);
@@ -96,6 +103,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         mb.Entity<VendaProduto>()
             .Ignore(v => v.ValorTotal);
+
+        mb.Entity<Pedido>().ToTable("mar_pedidos");
+        mb.Entity<PedidoItem>().ToTable("mar_pedido_itens");
+        mb.Entity<PedidoServico>().ToTable("mar_pedido_servicos");
+
+        mb.Entity<PedidoItem>().Ignore(i => i.ValorTotal);
 
         // ============================================================
         // Indices unicos
@@ -157,6 +170,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasMany(t => t.Itens)
             .WithOne(i => i.ChecklistTemplate)
             .HasForeignKey(i => i.ChecklistTemplateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // ============================================================
+        // Relacionamentos - Pedido
+        // ============================================================
+        mb.Entity<Pedido>()
+            .HasMany(p => p.Itens)
+            .WithOne(i => i.Pedido)
+            .HasForeignKey(i => i.PedidoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        mb.Entity<Pedido>()
+            .HasMany(p => p.Servicos)
+            .WithOne(s => s.Pedido)
+            .HasForeignKey(s => s.PedidoId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

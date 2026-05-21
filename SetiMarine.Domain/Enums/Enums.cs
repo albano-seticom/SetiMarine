@@ -70,3 +70,14 @@ public enum CategoriaProduto
 public enum TipoTransacao { Venda = 0, Aluguel = 1 }
 
 public enum StatusAluguel { Ativo = 0, Devolvido = 1, Atrasado = 2 }
+
+public enum TipoPedido    { Venda = 0, Emprestimo = 1, OrdemServico = 2 }
+public enum TipoItemPedido { Venda = 0, Emprestimo = 1 }
+public enum StatusPedido
+{
+    Rascunho    = 0,
+    Aberto      = 1,
+    EmAndamento = 2,
+    Concluido   = 3,
+    Cancelado   = 4,
+}

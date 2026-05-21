@@ -5,6 +5,7 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject ProdutoService ProdService
+@inject SeederService Seeder
 @inject UsuarioContextService UserCtx
 
 <PageTitle>Produtos — SetiMarine</PageTitle>
@@ -29,8 +30,19 @@
         </div>
         <a href="/produtos/novo" class="btn btn-primary btn-sm">+ Novo Produto</a>
         <a href="/produtos/vendas" class="btn btn-ghost btn-sm">Ver Transações</a>
+        <button class="btn btn-ghost btn-sm" @onclick="SeedAsync" disabled="@_seeding" title="Popular catálogo com produtos e serviços base de marina">
+            @(_seeding ? "Importando..." : "Catálogo Padrão")
+        </button>
     </div>
 </div>
+
+@if (_seedMsg != null)
+{
+    <div style="margin-bottom:1.25rem;padding:.75rem 1rem;background:rgba(34,139,34,.08);border:1px solid rgba(34,139,34,.25);color:#2a7a2a;font-size:.84rem;border-radius:4px;display:flex;justify-content:space-between;align-items:center;">
+        @_seedMsg
+        <button @onclick="() => _seedMsg = null" style="background:none;border:none;cursor:pointer;color:inherit;font-size:1.1rem;line-height:1;padding:0 0 0 1rem;">×</button>
+    </div>
+}
 
 <!-- Contadores -->
 <div style="display:flex;gap:.75rem;margin-bottom:1.75rem;flex-wrap:wrap;">
@@ -61,8 +73,16 @@
 else if (!_produtos.Any())
 {
     <div style="padding:3rem 2rem;text-align:center;color:var(--ink-300);">
-        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhum produto cadastrado</p>
-        <a href="/produtos/novo" class="btn btn-primary btn-sm">Cadastrar Produto</a>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto 1rem;display:block;opacity:.35;">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.5rem;">Nenhum produto cadastrado</p>
+        <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" @onclick="SeedAsync" disabled="@_seeding">
+                @(_seeding ? "Importando..." : "Importar Catálogo Padrão de Marina")
+            </button>
+            <a href="/produtos/novo" class="btn btn-ghost btn-sm">Cadastrar Manualmente</a>
+        </div>
     </div>
 }
 else
@@ -130,7 +150,9 @@ else
     private List<Produto> _produtos = new();
     private string _filtroCategoria = "";
     private bool _carregando = true;
+    private bool _seeding;
     private int _semEstoque;
+    private string? _seedMsg;
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,6 +167,22 @@ else
         _produtos   = await ProdService.ListarAsync(UserCtx.EmpresaId, apenasAtivos: null, categoria: cat);
         _semEstoque = _produtos.Count(p => p.Estoque == 0 && p.Ativo);
         _carregando = false;
+    }
+
+    private async Task SeedAsync()
+    {
+        _seeding  = true;
+        _seedMsg  = null;
+        var prods = await Seeder.SeedProdutosAsync(UserCtx.EmpresaId);
+        var servs = await Seeder.SeedServicosAsync(UserCtx.EmpresaId);
+
+        if (prods == 0 && servs == 0)
+            _seedMsg = "O catálogo já foi populado anteriormente.";
+        else
+            _seedMsg = $"{prods} produto(s) e {servs} tipo(s) de serviço importados com sucesso.";
+
+        _seeding = false;
+        await CarregarAsync();
     }
 
     private static string CategoriaLabel(CategoriaProduto c) => c switch

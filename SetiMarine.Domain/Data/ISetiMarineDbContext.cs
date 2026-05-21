@@ -28,6 +28,9 @@ namespace SetiMarine.Domain.Data
         DbSet<OrdemServico> OrdensServico { get; set; }
         DbSet<Produto> Produtos { get; set; }
         DbSet<VendaProduto> VendasProduto { get; set; }
+        DbSet<Pedido> Pedidos { get; set; }
+        DbSet<PedidoItem> PedidoItens { get; set; }
+        DbSet<PedidoServico> PedidoServicos { get; set; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
         int SaveChanges();
     }

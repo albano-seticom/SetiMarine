@@ -1,0 +1,645 @@
+@page "/pedidos/novo"
+@page "/pedidos/{Id:int}"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject PedidoService PedidoSvc
+@inject UsuarioContextService UserCtx
+@inject NavigationManager Nav
+
+<PageTitle>@(_isNovo ? "Novo Pedido" : $"Pedido #{Id}") — SetiMarine</PageTitle>
+
+<style>
+.pdv-wrap {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+.pdv-catalog {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--paper);
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 160px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+/* Abas */
+.pdv-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+}
+.pdv-tab {
+    flex: 1;
+    padding: .5rem .5rem;
+    font-size: .75rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink-400);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: .12s;
+}
+.pdv-tab.ativa {
+    color: var(--navy-700);
+    border-bottom-color: var(--navy-700);
+    background: rgba(0,53,128,.03);
+}
+/* Busca */
+.pdv-search {
+    padding: .4rem .6rem;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+}
+.pdv-search input { width: 100%; height: 30px; font-size: .83rem; }
+/* Lista */
+.pdv-list { overflow-y: auto; flex: 1; }
+.pdv-row {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .48rem .7rem;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: background .1s;
+    user-select: none;
+}
+.pdv-row:hover { background: rgba(0,53,128,.04); }
+.pdv-row:last-child { border-bottom: none; }
+.pdv-row-nome { flex: 1; font-size: .83rem; color: var(--ink-700); font-weight: 500; line-height: 1.3; }
+.pdv-row-sub  { font-size: .7rem; color: var(--ink-400); font-weight: 400; display: block; }
+.pdv-row-preco { font-size: .78rem; color: var(--ink-500); white-space: nowrap; margin-right: .2rem; }
+.pdv-add-btn {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1px solid var(--line); background: transparent;
+    color: var(--navy-700); font-size: .9rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: .12s; line-height: 1;
+}
+.pdv-add-btn:hover { background: var(--navy-700); color: #fff; border-color: var(--navy-700); }
+/* Painel direito */
+.pdv-panel { display: flex; flex-direction: column; gap: .85rem; }
+.pdv-items {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--paper);
+}
+.pdv-items table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+.pdv-items th {
+    padding: .45rem .55rem;
+    font-size: .67rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-400); font-weight: 600;
+    border-bottom: 2px solid var(--line);
+    background: rgba(0,0,0,.015);
+    text-align: left; white-space: nowrap;
+}
+.pdv-items td { padding: .32rem .55rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.pdv-items tr:last-child td { border-bottom: none; }
+.pdv-items tr.dev-row td { background: rgba(0,0,0,.012); padding-top: .2rem; padding-bottom: .3rem; }
+.pdv-items input[type=number] { width: 68px; height: 26px; text-align: right; font-size: .82rem; padding: 0 .35rem; }
+.pdv-items input[type=text]   { height: 26px; font-size: .82rem; padding: 0 .4rem; width: 100%; }
+.pdv-items select { height: 26px; font-size: .8rem; padding: 0 .25rem; }
+.pdv-empty {
+    padding: 3rem 1rem; text-align: center; color: var(--ink-300);
+    border: 1px dashed var(--line); border-radius: 6px;
+}
+.pdv-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .65rem 1rem;
+    background: var(--navy-700); color: #fff; border-radius: 4px;
+}
+.pdv-total strong { font-size: 1.05rem; }
+.badge-svc { background: rgba(120,80,220,.1); color: #6040c0; }
+</style>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow"><a href="/pedidos" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line);">Pedidos</a> /</span>
+        <h1>@(_isNovo ? "Novo Pedido" : $"Pedido #{Id}")</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    @* ── Cabeçalho compacto ────────────────────────── *@
+    <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-end;margin-bottom:1rem;padding:.75rem 1rem;background:var(--paper);border:1px solid var(--line);border-radius:6px;">
+
+        @if (_isNovo)
+        {
+            <div style="display:flex;gap:.3rem;flex-shrink:0;align-self:flex-end;margin-bottom:2px;">
+                @foreach (var t in new[] { TipoPedido.OrdemServico, TipoPedido.Venda, TipoPedido.Emprestimo })
+                {
+                    <button type="button"
+                            style="padding:.35rem .8rem;border-radius:4px;font-size:.8rem;cursor:pointer;border:1px solid @(_pedido.Tipo==t?"var(--navy-700)":"var(--line)");background:@(_pedido.Tipo==t?"var(--navy-700)":"transparent");color:@(_pedido.Tipo==t?"#fff":"var(--ink-600)");transition:.12s;white-space:nowrap;"
+                            @onclick="() => SelecionarTipo(t)">
+                        @LabelTipo(t)
+                    </button>
+                }
+            </div>
+            <div style="width:1px;background:var(--line);height:30px;flex-shrink:0;align-self:center;"></div>
+        }
+        else
+        {
+            <span class="badge @BadgeTipo(_pedido.Tipo)" style="align-self:center;">@LabelTipo(_pedido.Tipo)</span>
+            <div style="width:1px;background:var(--line);height:30px;flex-shrink:0;align-self:center;"></div>
+        }
+
+        <div class="field" style="margin:0;flex:2;min-width:160px;">
+            <label>Cliente</label>
+            <select @bind="_clienteIdStr" @bind:after="AtualizarEmbarcacoes" style="height:30px;">
+                <option value="">Selecione...</option>
+                @foreach (var c in _clientes)
+                { <option value="@c.Id">@c.Nome</option> }
+            </select>
+        </div>
+
+        <div class="field" style="margin:0;flex:2;min-width:140px;">
+            <label>Embarcação</label>
+            <select @bind="_embarcacaoIdStr" style="height:30px;">
+                <option value="">—</option>
+                @foreach (var e in _embarcacoesFiltradas)
+                { <option value="@e.Id">@e.Nome</option> }
+            </select>
+        </div>
+
+        @if (_pedido.Tipo == TipoPedido.OrdemServico)
+        {
+            <div class="field" style="margin:0;flex:2;min-width:150px;">
+                <label>Responsável</label>
+                <select @bind="_responsavelIdStr" style="height:30px;">
+                    <option value="">Não atribuído</option>
+                    @foreach (var u in _colaboradores)
+                    { <option value="@u.Id">@u.Nome</option> }
+                </select>
+            </div>
+        }
+
+        <div class="field" style="margin:0;min-width:130px;">
+            <label>Previsão</label>
+            <input type="date" @bind="_pedido.PrevisaoConclusao" @bind:format="yyyy-MM-dd" style="height:30px;" />
+        </div>
+
+        @if (!_isNovo)
+        {
+            <div class="field" style="margin:0;min-width:120px;">
+                <label>Status</label>
+                <select @bind="_statusStr" style="height:30px;">
+                    <option value="Rascunho">Rascunho</option>
+                    <option value="Aberto">Aberto</option>
+                    <option value="EmAndamento">Em Andamento</option>
+                    <option value="Concluido">Concluído</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+        }
+    </div>
+
+    @* ── PDV ──────────────────────────────────────── *@
+    <div class="pdv-wrap">
+
+        @* Catálogo com abas *@
+        <div class="pdv-catalog">
+
+            <div class="pdv-tabs">
+                <button class="pdv-tab @(_tabAtiva == "produtos" ? "ativa" : "")"
+                        type="button" @onclick='() => { _tabAtiva = "produtos"; _busca = ""; }'>
+                    Produtos
+                </button>
+                @if (_pedido.Tipo == TipoPedido.OrdemServico)
+                {
+                    <button class="pdv-tab @(_tabAtiva == "servicos" ? "ativa" : "")"
+                            type="button" @onclick='() => { _tabAtiva = "servicos"; _busca = ""; }'>
+                        Serviços
+                    </button>
+                }
+            </div>
+
+            <div class="pdv-search">
+                <input type="search" @bind="_busca" @bind:event="oninput"
+                       placeholder="@(_tabAtiva == "produtos" ? "Buscar produto..." : "Buscar serviço...")" />
+            </div>
+
+            <div class="pdv-list">
+                @if (_tabAtiva == "produtos")
+                {
+                    @foreach (var p in ProdutosFiltrados())
+                    {
+                        <div class="pdv-row" @onclick="() => AdicionarProduto(p)">
+                            <div class="pdv-row-nome">
+                                @p.Nome
+                                <span class="pdv-row-sub">@p.Unidade · @CategoriaLabel(p.Categoria)</span>
+                            </div>
+                            <div class="pdv-row-preco">
+                                @if (_pedido.Tipo == TipoPedido.Emprestimo && p.PrecoAluguelDia.HasValue)
+                                { <text>@p.PrecoAluguelDia.Value.ToString("C2")/dia</text> }
+                                else if (p.PrecoVenda.HasValue)
+                                { <text>@p.PrecoVenda.Value.ToString("C2")</text> }
+                            </div>
+                            <button type="button" class="pdv-add-btn" tabindex="-1">+</button>
+                        </div>
+                    }
+                    @if (!ProdutosFiltrados().Any())
+                    {
+                        <div style="padding:1.5rem;text-align:center;color:var(--ink-300);font-size:.78rem;">
+                            Nenhum produto encontrado
+                        </div>
+                    }
+                }
+                else
+                {
+                    @foreach (var s in ServicosFiltrados())
+                    {
+                        <div class="pdv-row" @onclick="() => AdicionarServico(s.Nome)">
+                            <div class="pdv-row-nome">
+                                @s.Nome
+                                <span class="pdv-row-sub">A cada @s.FrequenciaDias dia(s)</span>
+                            </div>
+                            <button type="button" class="pdv-add-btn" tabindex="-1">+</button>
+                        </div>
+                    }
+                    @* Linha para serviço personalizado *@
+                    <div class="pdv-row" style="background:rgba(0,0,0,.015);" @onclick='() => AdicionarServico("")'>
+                        <div class="pdv-row-nome" style="color:var(--ink-400);font-style:italic;">
+                            Serviço personalizado...
+                        </div>
+                        <button type="button" class="pdv-add-btn" tabindex="-1">+</button>
+                    </div>
+                    @if (!_tiposServico.Any())
+                    {
+                        <div style="padding:1rem .75rem;font-size:.75rem;color:var(--ink-300);">
+                            Nenhum serviço configurado.<br/>
+                            <a href="/servicos/nova" style="color:var(--navy-700);">Configure em Ordens de Serviço</a>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        @* Painel do pedido *@
+        <div class="pdv-panel">
+
+            @if (_linhas.Any())
+            {
+                <div class="pdv-items">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:22px;">#</th>
+                                <th style="width:60px;">Tipo</th>
+                                <th>Descrição</th>
+                                <th style="width:76px;text-align:right;">Qtd</th>
+                                <th style="width:106px;text-align:right;">R$ Unit.</th>
+                                @if (_pedido.Tipo == TipoPedido.OrdemServico)
+                                { <th style="width:116px;">Modalidade</th> }
+                                <th style="width:96px;text-align:right;">Total</th>
+                                <th style="width:28px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var (ln, i) in _linhas.Select((ln, i) => (ln, i)))
+                            {
+                                <tr>
+                                    <td style="color:var(--ink-300);font-size:.74rem;">@(i+1)</td>
+                                    <td>
+                                        @if (ln.EhServico)
+                                        { <span class="badge badge-svc" style="font-size:.68rem;">Serviço</span> }
+                                        else
+                                        { <span class="badge badge-occ" style="font-size:.68rem;">Prod.</span> }
+                                    </td>
+                                    <td>
+                                        @if (ln.EhServico)
+                                        {
+                                            <input type="text" @bind="ln.Nome" placeholder="Descrição do serviço..." />
+                                        }
+                                        else
+                                        {
+                                            <span style="font-weight:500;">@ln.Nome</span>
+                                        }
+                                    </td>
+                                    <td style="text-align:right;">
+                                        @if (!ln.EhServico)
+                                        { <input type="number" @bind="ln.Quantidade" min="1" /> }
+                                        else
+                                        { <span style="color:var(--ink-300);font-size:.8rem;">—</span> }
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <input type="number" @bind="ln.Preco" min="0" step="0.01" />
+                                    </td>
+                                    @if (_pedido.Tipo == TipoPedido.OrdemServico)
+                                    {
+                                        <td>
+                                            @if (!ln.EhServico)
+                                            {
+                                                <select @bind="ln.TipoStr">
+                                                    <option value="Venda">Venda</option>
+                                                    <option value="Emprestimo">Empréstimo</option>
+                                                </select>
+                                            }
+                                        </td>
+                                    }
+                                    <td style="text-align:right;font-weight:600;color:var(--navy-700);white-space:nowrap;">
+                                        @ln.Total.ToString("C2")
+                                    </td>
+                                    <td>
+                                        <button type="button" @onclick="() => _linhas.RemoveAt(i)"
+                                                style="background:none;border:none;cursor:pointer;color:var(--ink-300);padding:2px;display:flex;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                @* Linha de devolução para itens empréstimo *@
+                                @if (!ln.EhServico && (ln.TipoStr == "Emprestimo" || _pedido.Tipo == TipoPedido.Emprestimo))
+                                {
+                                    <tr class="dev-row">
+                                        <td></td>
+                                        <td></td>
+                                        <td colspan="@(_pedido.Tipo == TipoPedido.OrdemServico ? 4 : 3)">
+                                            <div style="display:flex;gap:.5rem;align-items:center;">
+                                                <span style="font-size:.7rem;color:var(--ink-400);">Devolução:</span>
+                                                <span style="font-size:.7rem;color:var(--ink-300);">Prevista</span>
+                                                <input type="date" @bind="ln.DataDevolucaoPrevista" @bind:format="yyyy-MM-dd"
+                                                       style="height:24px;font-size:.76rem;width:128px;" />
+                                                <span style="font-size:.7rem;color:var(--ink-300);">Real</span>
+                                                <input type="date" @bind="ln.DataDevolucaoReal" @bind:format="yyyy-MM-dd"
+                                                       style="height:24px;font-size:.76rem;width:128px;" />
+                                            </div>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pdv-total">
+                    <span style="font-size:.82rem;letter-spacing:.06em;">
+                        @_linhas.Count item@(_linhas.Count != 1 ? "s" : "")
+                        @if (_linhas.Any(l => l.EhServico))
+                        { <text> · @_linhas.Count(l => !l.EhServico) prod. · @_linhas.Count(l => l.EhServico) serv.</text> }
+                    </span>
+                    <strong>@_linhas.Sum(l => l.Total).ToString("C2")</strong>
+                </div>
+            }
+            else
+            {
+                <div class="pdv-empty">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto .6rem;display:block;opacity:.35;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    <span style="font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;">Clique em um item para adicionar</span>
+                </div>
+            }
+
+            <div class="field" style="margin:0;">
+                <InputTextArea @bind-Value="_pedido.Observacoes" rows="2" style="resize:vertical;width:100%;" placeholder="Observações do pedido..." />
+            </div>
+
+            @if (_erro != null)
+            {
+                <div style="padding:.75rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
+            }
+
+            <div class="form-actions" style="margin-top:0;">
+                <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
+                <button type="button" class="btn btn-primary" @onclick="SalvarAsync" disabled="@_salvando">
+                    @(_salvando ? "Salvando..." : "Salvar Pedido")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Pedido _pedido = new() { Tipo = TipoPedido.OrdemServico };
+    private List<LinhaRow> _linhas = new();
+
+    private List<Cliente>           _clientes             = new();
+    private List<Embarcacao>        _embarcacoes          = new();
+    private List<Embarcacao>        _embarcacoesFiltradas = new();
+    private List<Produto>           _produtos             = new();
+    private List<Usuario>           _colaboradores        = new();
+    private List<TipoServicoConfig> _tiposServico         = new();
+
+    private string _clienteIdStr     = "";
+    private string _embarcacaoIdStr  = "";
+    private string _responsavelIdStr = "";
+    private string _statusStr        = "Aberto";
+    private string _busca            = "";
+    private string _tabAtiva         = "produtos";
+
+    private bool _isNovo     => Id is null;
+    private bool _carregando  = true;
+    private bool _salvando;
+    private string? _erro;
+
+    private class LinhaRow
+    {
+        public bool      EhServico             { get; set; }
+        public string    ProdutoIdStr          { get; set; } = "";
+        public string    Nome                  { get; set; } = "";
+        public int       Quantidade            { get; set; } = 1;
+        public decimal   Preco                 { get; set; }
+        public string    TipoStr               { get; set; } = "Venda";
+        public DateTime? DataDevolucaoPrevista { get; set; }
+        public DateTime? DataDevolucaoReal     { get; set; }
+
+        public decimal Total => EhServico ? Preco : Quantidade * Preco;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _clientes      = await PedidoSvc.ListarClientesAsync(UserCtx.EmpresaId);
+        _embarcacoes   = await PedidoSvc.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
+        _produtos      = await PedidoSvc.ListarProdutosAsync(UserCtx.EmpresaId);
+        _colaboradores = await PedidoSvc.ListarColaboradoresAsync(UserCtx.EmpresaId);
+        _tiposServico  = await PedidoSvc.ListarTiposServicoAsync(UserCtx.EmpresaId);
+        _embarcacoesFiltradas = _embarcacoes;
+
+        if (!_isNovo)
+        {
+            var existente = await PedidoSvc.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
+            if (existente == null) { Nav.NavigateTo("/pedidos"); return; }
+
+            _pedido           = existente;
+            _clienteIdStr     = existente.ClienteId?.ToString() ?? "";
+            _embarcacaoIdStr  = existente.EmbarcacaoId?.ToString() ?? "";
+            _responsavelIdStr = existente.ResponsavelId?.ToString() ?? "";
+            _statusStr        = existente.Status.ToString();
+
+            _linhas = existente.Itens.Select(i => new LinhaRow
+            {
+                EhServico             = false,
+                ProdutoIdStr          = i.ProdutoId.ToString(),
+                Nome                  = _produtos.FirstOrDefault(p => p.Id == i.ProdutoId)?.Nome ?? "",
+                Quantidade            = i.Quantidade,
+                Preco                 = i.PrecoUnitario,
+                TipoStr               = i.Tipo.ToString(),
+                DataDevolucaoPrevista = i.DataDevolucaoPrevista,
+                DataDevolucaoReal     = i.DataDevolucaoReal,
+            })
+            .Concat(existente.Servicos.Select(s => new LinhaRow
+            {
+                EhServico = true,
+                Nome      = s.Descricao,
+                Preco     = s.Valor ?? 0,
+            }))
+            .ToList();
+
+            AtualizarEmbarcacoes();
+        }
+        else
+        {
+            _pedido = new Pedido { EmpresaId = UserCtx.EmpresaId, Tipo = TipoPedido.OrdemServico };
+        }
+
+        _carregando = false;
+    }
+
+    private void SelecionarTipo(TipoPedido tipo)
+    {
+        _pedido.Tipo = tipo;
+        _linhas.Clear();
+        _busca   = "";
+        _tabAtiva = "produtos";
+    }
+
+    private void AtualizarEmbarcacoes()
+    {
+        _embarcacoesFiltradas = int.TryParse(_clienteIdStr, out var cid) && cid > 0
+            ? _embarcacoes.Where(e => e.ClienteId == cid).ToList()
+            : _embarcacoes;
+    }
+
+    private IEnumerable<Produto> ProdutosFiltrados()
+    {
+        var lista = _pedido.Tipo == TipoPedido.Emprestimo
+            ? _produtos.Where(p => p.Alugavel)
+            : (IEnumerable<Produto>)_produtos;
+
+        if (!string.IsNullOrWhiteSpace(_busca))
+            lista = lista.Where(p => p.Nome.Contains(_busca, StringComparison.OrdinalIgnoreCase));
+
+        return lista;
+    }
+
+    private IEnumerable<TipoServicoConfig> ServicosFiltrados()
+    {
+        var lista = (IEnumerable<TipoServicoConfig>)_tiposServico;
+        if (!string.IsNullOrWhiteSpace(_busca))
+            lista = lista.Where(s => s.Nome.Contains(_busca, StringComparison.OrdinalIgnoreCase));
+        return lista;
+    }
+
+    private void AdicionarProduto(Produto p)
+    {
+        var tipoStr = _pedido.Tipo == TipoPedido.Emprestimo ? "Emprestimo" : "Venda";
+        var existente = _linhas.FirstOrDefault(l => !l.EhServico && l.ProdutoIdStr == p.Id.ToString() && l.TipoStr == tipoStr);
+        if (existente != null) { existente.Quantidade++; return; }
+
+        _linhas.Add(new LinhaRow
+        {
+            EhServico    = false,
+            ProdutoIdStr = p.Id.ToString(),
+            Nome         = p.Nome,
+            Quantidade   = 1,
+            Preco        = tipoStr == "Emprestimo"
+                ? (p.PrecoAluguelDia ?? p.PrecoVenda ?? 0)
+                : (p.PrecoVenda ?? 0),
+            TipoStr = tipoStr,
+        });
+    }
+
+    private void AdicionarServico(string nome)
+    {
+        _linhas.Add(new LinhaRow { EhServico = true, Nome = nome, Preco = 0 });
+    }
+
+    private static string LabelTipo(TipoPedido t) => t switch
+    {
+        TipoPedido.Venda        => "Venda",
+        TipoPedido.Emprestimo   => "Empréstimo",
+        TipoPedido.OrdemServico => "Ordem de Serviço",
+        _                       => t.ToString()
+    };
+
+    private static string BadgeTipo(TipoPedido t) => t switch
+    {
+        TipoPedido.OrdemServico => "badge-mov",
+        TipoPedido.Venda        => "badge-free",
+        TipoPedido.Emprestimo   => "badge-occ",
+        _                       => "badge"
+    };
+
+    private static string CategoriaLabel(CategoriaProduto c) => c switch
+    {
+        CategoriaProduto.Combustivel  => "Combustível",
+        CategoriaProduto.Lubrificante => "Lubrificante",
+        CategoriaProduto.Peca         => "Peça",
+        CategoriaProduto.Equipamento  => "Equipamento",
+        CategoriaProduto.Alimento     => "Alimento",
+        CategoriaProduto.Acessorio    => "Acessório",
+        _                             => "Outro",
+    };
+
+    private async Task SalvarAsync()
+    {
+        _salvando = true;
+        _erro     = null;
+        try
+        {
+            _pedido.ClienteId     = int.TryParse(_clienteIdStr,     out var cid) && cid > 0 ? cid : null;
+            _pedido.EmbarcacaoId  = int.TryParse(_embarcacaoIdStr,  out var eid) && eid > 0 ? eid : null;
+            _pedido.ResponsavelId = int.TryParse(_responsavelIdStr, out var rid) && rid > 0 ? rid : null;
+
+            var itens = _linhas
+                .Where(l => !l.EhServico && int.TryParse(l.ProdutoIdStr, out _))
+                .Select(l => new PedidoItem
+                {
+                    ProdutoId             = int.Parse(l.ProdutoIdStr),
+                    Tipo                  = Enum.Parse<TipoItemPedido>(l.TipoStr),
+                    Quantidade            = l.Quantidade,
+                    PrecoUnitario         = l.Preco,
+                    DataDevolucaoPrevista = l.DataDevolucaoPrevista,
+                    DataDevolucaoReal     = l.DataDevolucaoReal,
+                    StatusEmprestimo      = l.TipoStr == "Emprestimo" ? StatusAluguel.Ativo : null,
+                }).ToList();
+
+            var servicos = _linhas
+                .Where(l => l.EhServico && !string.IsNullOrWhiteSpace(l.Nome))
+                .Select(l => new PedidoServico { Descricao = l.Nome, Valor = l.Preco > 0 ? l.Preco : null })
+                .ToList();
+
+            if (_isNovo)
+                await PedidoSvc.CriarAsync(_pedido, itens, servicos);
+            else
+            {
+                _pedido.Status = Enum.Parse<StatusPedido>(_statusStr);
+                await PedidoSvc.EditarAsync(_pedido, itens, servicos);
+            }
+
+            Nav.NavigateTo("/pedidos");
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+}

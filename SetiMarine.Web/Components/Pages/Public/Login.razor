@@ -29,14 +29,8 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
 }
 @@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
-.logo { display:flex; align-items:center; gap:10px; margin-bottom:2rem; text-decoration:none; }
-.logo-icon {
-  width:36px; height:36px; background:linear-gradient(135deg,#00d4ff,#00a8cc);
-  border-radius:10px; display:grid; place-items:center;
-  box-shadow:0 0 18px rgba(0,212,255,.3); font-size:1.1rem;
-}
-.logo-text { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--text); }
-.logo-text b { color:var(--cyan); }
+.logo { display:flex; align-items:center; justify-content:center; margin-bottom:2rem; text-decoration:none; }
+.logo-img { height:96px; width:auto; display:block; border-radius:14px; }
 
 h2 { font-size:1.4rem; font-weight:500; margin-bottom:.4rem; }
 .sub { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
@@ -74,9 +68,8 @@ h2 { font-size:1.4rem; font-weight:500; margin-bottom:.4rem; }
 <div class="login-wrap">
   <div class="login-card">
 
-    <a href="/" class="logo">
-      <div class="logo-icon">âš“</div>
-      <span class="logo-text">Seti<b>Marine</b></span>
+    <a href=”/” class=”logo”>
+      <img src=”/images/marina/Logo_Setimarine.png?v=2” alt=”SetiMarine” class=”logo-img” />
     </a>
 
     <h2>Bem-vindo de volta</h2>
