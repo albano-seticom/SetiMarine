@@ -93,6 +93,24 @@ public class PedidoService(ISetiMarineDbContext ctx)
         await ctx.SaveChangesAsync();
     }
 
+    public async Task ReabrirAsync(int id, int empresaId)
+    {
+        var p = await ctx.Pedidos
+            .Include(p => p.Servicos)
+            .FirstOrDefaultAsync(p => p.Id == id && p.EmpresaId == empresaId)
+            ?? throw new InvalidOperationException("Pedido não encontrado.");
+
+        var concluidos = p.Servicos.Count(s => s.Concluido);
+        if (concluidos > 0)
+            throw new InvalidOperationException(
+                $"Este pedido tem {concluidos} serviço(s) já concluído(s). " +
+                $"Cancele-os na página de Tarefas antes de reabrir.");
+
+        p.Status      = StatusPedido.EmAndamento;
+        p.ConcluidoEm = null;
+        await ctx.SaveChangesAsync();
+    }
+
     public async Task<List<Cliente>> ListarClientesAsync(int empresaId)
         => await ctx.Clientes
             .Where(c => c.EmpresaId == empresaId && c.Ativo)

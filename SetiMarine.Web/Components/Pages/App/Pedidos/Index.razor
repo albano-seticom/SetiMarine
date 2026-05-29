@@ -47,6 +47,16 @@
     }
 </div>
 
+@if (_aviso != null)
+{
+    <div style="margin-bottom:1rem;padding:.7rem 1rem;background:rgba(154,116,32,.08);border:1px solid rgba(154,116,32,.35);border-radius:4px;display:flex;align-items:center;gap:.75rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a7420" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="flex:1;font-size:.83rem;color:#7a5c10;">@_aviso</span>
+        <a href="/tarefas" style="font-size:.8rem;font-weight:600;color:#7a5c10;white-space:nowrap;">Ir para Tarefas →</a>
+        <button @onclick="() => _aviso = null" style="background:none;border:none;cursor:pointer;color:#9a7420;font-size:1.1rem;line-height:1;padding:0 0 0 .5rem;">×</button>
+    </div>
+}
+
 @if (_carregando)
 {
     <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
@@ -122,6 +132,14 @@ else
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                                     </button>
                                 }
+                                @if (p.Status == StatusPedido.Concluido)
+                                {
+                                    <button class="btn btn-ghost btn-sm" title="Reabrir pedido"
+                                            @onclick="() => ReabrirPedido(p)"
+                                            style="color:var(--s-mov);">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+                                    </button>
+                                }
                             </div>
                         </td>
                     </tr>
@@ -136,6 +154,7 @@ else
     private string _filtroTipo   = "";
     private string _filtroStatus = "";
     private bool _carregando = true;
+    private string? _aviso;
     private List<(string, int, string)> _contadores = new();
 
     protected override async Task OnInitializedAsync()
@@ -164,6 +183,20 @@ else
     {
         try { await PedidoSvc.AvancarStatusAsync(p.Id, UserCtx.EmpresaId); await CarregarAsync(); }
         catch { }
+    }
+
+    private async Task ReabrirPedido(Pedido p)
+    {
+        _aviso = null;
+        try
+        {
+            await PedidoSvc.ReabrirAsync(p.Id, UserCtx.EmpresaId);
+            await CarregarAsync();
+        }
+        catch (Exception ex)
+        {
+            _aviso = ex.Message;
+        }
     }
 
     private static string LabelTipo(TipoPedido t) => t switch
