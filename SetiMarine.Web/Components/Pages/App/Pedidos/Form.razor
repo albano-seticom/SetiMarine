@@ -145,25 +145,17 @@ else
     @* ── Cabeçalho compacto ─────────────────────────────────────────── *@
     <div class="pdv-header" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:flex-end;margin-bottom:.75rem;padding:.45rem .75rem;background:var(--paper);border:1px solid var(--line);border-radius:6px;">
 
-        @if (_isNovo)
-        {
-            <div style="display:flex;gap:.25rem;flex-shrink:0;align-self:center;">
-                @foreach (var t in new[] { TipoPedido.OrdemServico, TipoPedido.Venda, TipoPedido.Emprestimo })
-                {
-                    <button type="button"
-                            style="padding:.26rem .6rem;border-radius:3px;font-size:.76rem;cursor:pointer;border:1px solid @(_pedido.Tipo==t?"var(--navy-700)":"var(--line)");background:@(_pedido.Tipo==t?"var(--navy-700)":"transparent");color:@(_pedido.Tipo==t?"#fff":"var(--ink-600)");transition:.12s;white-space:nowrap;"
-                            @onclick="() => SelecionarTipo(t)">
-                        @LabelTipo(t)
-                    </button>
-                }
-            </div>
-            <div style="width:1px;background:var(--line);height:22px;flex-shrink:0;align-self:center;"></div>
-        }
-        else
-        {
-            <span class="badge @BadgeTipo(_pedido.Tipo)" style="align-self:center;flex-shrink:0;">@LabelTipo(_pedido.Tipo)</span>
-            <div style="width:1px;background:var(--line);height:22px;flex-shrink:0;align-self:center;"></div>
-        }
+        <div style="display:flex;gap:.25rem;flex-shrink:0;align-self:center;">
+            @foreach (var t in new[] { TipoPedido.OrdemServico, TipoPedido.Venda, TipoPedido.Emprestimo })
+            {
+                <button type="button"
+                        style="padding:.26rem .6rem;border-radius:3px;font-size:.76rem;cursor:pointer;border:1px solid @(_pedido.Tipo==t?"var(--navy-700)":"var(--line)");background:@(_pedido.Tipo==t?"var(--navy-700)":"transparent");color:@(_pedido.Tipo==t?"#fff":"var(--ink-600)");transition:.12s;white-space:nowrap;"
+                        @onclick="() => SelecionarTipo(t)">
+                    @LabelTipo(t)
+                </button>
+            }
+        </div>
+        <div style="width:1px;background:var(--line);height:22px;flex-shrink:0;align-self:center;"></div>
 
         <div class="field" style="margin:0;flex:2;min-width:140px;">
             <label style="font-size:.66rem;">Cliente</label>
@@ -225,13 +217,10 @@ else
                         type="button" @onclick='() => { _tabAtiva = "produtos"; _busca = ""; }'>
                     Produtos
                 </button>
-                @if (_pedido.Tipo == TipoPedido.OrdemServico)
-                {
-                    <button class="pdv-tab @(_tabAtiva == "servicos" ? "ativa" : "")"
-                            type="button" @onclick='() => { _tabAtiva = "servicos"; _busca = ""; }'>
-                        Serviços
-                    </button>
-                }
+                <button class="pdv-tab @(_tabAtiva == "servicos" ? "ativa" : "")"
+                        type="button" @onclick='() => { _tabAtiva = "servicos"; _busca = ""; }'>
+                    Serviços
+                </button>
             </div>
 
             <div class="pdv-search">
@@ -267,10 +256,15 @@ else
                 {
                     @foreach (var s in ServicosFiltrados())
                     {
-                        <div class="pdv-row" @onclick="() => AdicionarServico(s.Nome)">
+                        <div class="pdv-row" @onclick="() => AdicionarServico(s.Nome, s.ValorPadrao)">
                             <div class="pdv-row-nome">
                                 @s.Nome
-                                <span class="pdv-row-sub">A cada @s.FrequenciaDias dia(s)</span>
+                                <span class="pdv-row-sub">
+                                    @(s.DuracaoHoras.HasValue ? $"{s.DuracaoHoras:0.#}h · " : "")A cada @s.FrequenciaDias dia(s)
+                                </span>
+                            </div>
+                            <div class="pdv-row-preco">
+                                @(s.ValorPadrao.HasValue ? s.ValorPadrao.Value.ToString("C2") : "")
                             </div>
                             <button type="button" class="pdv-add-btn" tabindex="-1">+</button>
                         </div>
@@ -306,8 +300,7 @@ else
                                     <th>Descrição</th>
                                     <th style="width:76px;text-align:right;">Qtd</th>
                                     <th style="width:106px;text-align:right;">R$ Unit.</th>
-                                    @if (_pedido.Tipo == TipoPedido.OrdemServico)
-                                    { <th style="width:140px;">Modalidade / Responsável</th> }
+                                    <th style="width:140px;">Modalidade / Responsável</th>
                                     <th style="width:96px;text-align:right;">Total</th>
                                     <th style="width:28px;"></th>
                                 </tr>
@@ -338,27 +331,24 @@ else
                                         <td style="text-align:right;">
                                             <input type="number" @bind="ln.Preco" min="0" step="0.01" />
                                         </td>
-                                        @if (_pedido.Tipo == TipoPedido.OrdemServico)
-                                        {
-                                            <td>
-                                                @if (!ln.EhServico)
-                                                {
-                                                    <select @bind="ln.TipoStr">
-                                                        <option value="Venda">Venda</option>
-                                                        <option value="Emprestimo">Empréstimo</option>
-                                                    </select>
-                                                }
-                                                else
-                                                {
-                                                    <select value="@ln.ResponsavelIdStr"
-                                                            @onchange="@(ev => ln.ResponsavelIdStr = ev.Value?.ToString() ?? "")">
-                                                        <option value="">— Responsável —</option>
-                                                        @foreach (var u in _colaboradores)
-                                                        { <option value="@u.Id" selected="@(ln.ResponsavelIdStr == u.Id.ToString())">@u.Nome</option> }
-                                                    </select>
-                                                }
-                                            </td>
-                                        }
+                                        <td>
+                                            @if (!ln.EhServico)
+                                            {
+                                                <select @bind="ln.TipoStr">
+                                                    <option value="Venda">Venda</option>
+                                                    <option value="Emprestimo">Empréstimo</option>
+                                                </select>
+                                            }
+                                            else
+                                            {
+                                                <select value="@ln.ResponsavelIdStr"
+                                                        @onchange="@(ev => ln.ResponsavelIdStr = ev.Value?.ToString() ?? "")">
+                                                    <option value="">— Responsável —</option>
+                                                    @foreach (var u in _colaboradores)
+                                                    { <option value="@u.Id" selected="@(ln.ResponsavelIdStr == u.Id.ToString())">@u.Nome</option> }
+                                                </select>
+                                            }
+                                        </td>
                                         <td style="text-align:right;font-weight:600;color:var(--navy-700);white-space:nowrap;">
                                             @ln.Total.ToString("C2")
                                         </td>
@@ -369,11 +359,11 @@ else
                                             </button>
                                         </td>
                                     </tr>
-                                    @if (!ln.EhServico && (ln.TipoStr == "Emprestimo" || _pedido.Tipo == TipoPedido.Emprestimo))
+                                    @if (!ln.EhServico && ln.TipoStr == "Emprestimo")
                                     {
                                         <tr class="dev-row">
                                             <td></td><td></td>
-                                            <td colspan="@(_pedido.Tipo == TipoPedido.OrdemServico ? 4 : 3)">
+                                            <td colspan="4">
                                                 <div style="display:flex;gap:.5rem;align-items:center;">
                                                     <span style="font-size:.7rem;color:var(--ink-400);">Devolução:</span>
                                                     <span style="font-size:.7rem;color:var(--ink-300);">Prevista</span>
@@ -532,9 +522,8 @@ else
     private void SelecionarTipo(TipoPedido tipo)
     {
         _pedido.Tipo = tipo;
-        _linhas.Clear();
-        _busca    = "";
-        _tabAtiva = "produtos";
+        _busca       = "";
+        _tabAtiva    = "produtos";
     }
 
     private void AtualizarEmbarcacoes()
@@ -583,8 +572,8 @@ else
         });
     }
 
-    private void AdicionarServico(string nome)
-        => _linhas.Add(new LinhaRow { EhServico = true, Nome = nome, Preco = 0 });
+    private void AdicionarServico(string nome, decimal? valorPadrao = null)
+        => _linhas.Add(new LinhaRow { EhServico = true, Nome = nome, Preco = valorPadrao ?? 0 });
 
     private static string LabelTipo(TipoPedido t) => t switch
     {

@@ -89,7 +89,16 @@ else
                     <tr>
                         <td style="color:var(--ink-300);font-size:.8rem;font-family:monospace;">#@p.Id</td>
                         <td>
-                            <span class="badge @BadgeTipo(p.Tipo)">@LabelTipo(p.Tipo)</span>
+                            <div style="display:flex;flex-wrap:wrap;gap:.25rem;">
+                                @if (p.Servicos.Any())
+                                { <span class="badge badge-mov" style="font-size:.68rem;">OS</span> }
+                                @if (p.Itens.Any(i => i.Tipo == TipoItemPedido.Venda))
+                                { <span class="badge badge-free" style="font-size:.68rem;">Venda</span> }
+                                @if (p.Itens.Any(i => i.Tipo == TipoItemPedido.Emprestimo))
+                                { <span class="badge badge-occ" style="font-size:.68rem;">Emp.</span> }
+                                @if (!p.Servicos.Any() && !p.Itens.Any())
+                                { <span class="badge" style="font-size:.68rem;">@LabelTipo(p.Tipo)</span> }
+                            </div>
                         </td>
                         <td><strong style="font-weight:500;">@(p.Cliente?.Nome ?? "—")</strong></td>
                         <td style="color:var(--ink-500);">@(p.Embarcacao?.Nome ?? "—")</td>

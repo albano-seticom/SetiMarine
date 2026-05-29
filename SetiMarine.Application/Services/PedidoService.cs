@@ -118,11 +118,43 @@ public class PedidoService(ISetiMarineDbContext ctx)
             .OrderBy(u => u.Nome)
             .ToListAsync();
 
-    public async Task<List<TipoServicoConfig>> ListarTiposServicoAsync(int empresaId)
-        => await ctx.TiposServicoConfig
-            .Where(s => s.EmpresaId == empresaId && s.Ativo)
-            .OrderBy(s => s.Nome)
-            .ToListAsync();
+    public async Task<List<TipoServicoConfig>> ListarTiposServicoAsync(int empresaId, bool apenasAtivos = true)
+    {
+        var q = ctx.TiposServicoConfig.Where(s => s.EmpresaId == empresaId);
+        if (apenasAtivos) q = q.Where(s => s.Ativo);
+        return await q.OrderBy(s => s.Nome).ToListAsync();
+    }
+
+    public async Task SalvarTipoServicoAsync(TipoServicoConfig tipo)
+    {
+        if (tipo.Id == 0)
+        {
+            tipo.CriadoEm = DateTime.UtcNow;
+            ctx.TiposServicoConfig.Add(tipo);
+        }
+        else
+        {
+            var existente = await ctx.TiposServicoConfig.FindAsync(tipo.Id)
+                ?? throw new InvalidOperationException("Tipo não encontrado.");
+            existente.Nome         = tipo.Nome;
+            existente.ValorPadrao  = tipo.ValorPadrao;
+            existente.DuracaoHoras = tipo.DuracaoHoras;
+            existente.FrequenciaDias = tipo.FrequenciaDias;
+            existente.Ativo        = tipo.Ativo;
+        }
+        await ctx.SaveChangesAsync();
+    }
+
+    public async Task ExcluirTipoServicoAsync(int id, int empresaId)
+    {
+        var tipo = await ctx.TiposServicoConfig
+            .FirstOrDefaultAsync(t => t.Id == id && t.EmpresaId == empresaId);
+        if (tipo != null)
+        {
+            tipo.Ativo = false;
+            await ctx.SaveChangesAsync();
+        }
+    }
 
     public async Task<List<PedidoServico>> ListarServicosAsync(int empresaId, int? responsavelId = null)
     {

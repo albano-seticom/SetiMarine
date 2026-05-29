@@ -10,6 +10,8 @@ public class TipoServicoConfig
     public string Nome { get; set; } = string.Empty;
     public TipoServico Tipo { get; set; }
     public int FrequenciaDias { get; set; } = 15;
+    public decimal? ValorPadrao { get; set; }
+    public decimal? DuracaoHoras { get; set; }
     public int? ChecklistTemplateId { get; set; }
     public ChecklistTemplate? ChecklistTemplate { get; set; }
     public bool Ativo { get; set; } = true;

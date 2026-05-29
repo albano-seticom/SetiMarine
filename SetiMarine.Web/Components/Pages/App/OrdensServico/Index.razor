@@ -4,52 +4,68 @@
 @using SetiMarine.Application.Services
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
-@inject OrdemServicoService OSService
+@inject PedidoService PedidoSvc
 @inject UsuarioContextService UserCtx
 
-<PageTitle>Ordens de Serviço — SetiMarine</PageTitle>
+<PageTitle>Catálogo de Serviços — SetiMarine</PageTitle>
 
 <div class="page-head">
     <div>
-        <span class="eyebrow">Operações</span>
-        <h1>Ordens de Serviço</h1>
-    </div>
-    <div class="page-head-actions">
-        <div class="field" style="margin:0;min-width:150px;">
-            <select @bind="_filtroStatus" @bind:after="CarregarAsync" style="height:34px;">
-                <option value="">Todos os status</option>
-                <option value="Pendente">Pendente</option>
-                <option value="EmExecucao">Em Execução</option>
-                <option value="Finalizado">Finalizado</option>
-            </select>
-        </div>
-        <a href="/servicos/nova" class="btn btn-primary btn-sm">+ Nova OS</a>
+        <span class="eyebrow">Configuração</span>
+        <h1>Catálogo de Serviços</h1>
     </div>
 </div>
 
-<!-- Contadores por status -->
-<div style="display:flex;gap:.75rem;margin-bottom:1.75rem;flex-wrap:wrap;">
-    @foreach (var (label, count, cor) in _contadores)
-    {
-        <div style="padding:.65rem 1rem;border:1px solid var(--line);border-radius:3px;min-width:120px;">
-            <div style="font-size:1.4rem;font-weight:700;color:@cor;line-height:1;">@count</div>
-            <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);margin-top:.15rem;">@label</div>
+@* Formulário de adição / edição *@
+<div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
+    <p style="font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.75rem;">
+        @(_editando?.Id > 0 ? "Editar serviço" : "Novo serviço")
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
+        <div class="field" style="margin:0;flex:3;min-width:180px;">
+            <label>Nome do serviço</label>
+            <input type="text" @bind="_editando!.Nome" placeholder="Ex: Limpeza Pós-Passeio" />
         </div>
+        <div class="field" style="margin:0;min-width:110px;">
+            <label>Valor padrão (R$)</label>
+            <input type="number" @bind="_editando.ValorPadrao" min="0" step="0.01" placeholder="0,00" />
+        </div>
+        <div class="field" style="margin:0;min-width:100px;">
+            <label>Duração (horas)</label>
+            <input type="number" @bind="_editando.DuracaoHoras" min="0" step="0.5" placeholder="0" />
+        </div>
+        <div class="field" style="margin:0;min-width:100px;">
+            <label>Frequência (dias)</label>
+            <input type="number" @bind="_editando.FrequenciaDias" min="1" />
+        </div>
+        <div style="display:flex;gap:.5rem;padding-bottom:.1rem;">
+            <button class="btn btn-primary btn-sm" @onclick="SalvarAsync">
+                @(_editando.Id > 0 ? "Salvar" : "Adicionar")
+            </button>
+            @if (_editando.Id > 0)
+            {
+                <button class="btn btn-ghost btn-sm" @onclick="CancelarEdicao">Cancelar</button>
+            }
+        </div>
+    </div>
+    @if (_erro != null)
+    {
+        <p style="color:var(--s-maint);font-size:.82rem;margin-top:.5rem;">@_erro</p>
     }
 </div>
 
+@* Lista *@
 @if (_carregando)
 {
-    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+    <div style="padding:2rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
         <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
         <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
     </div>
 }
-else if (!_os.Any())
+else if (!_tipos.Any())
 {
     <div style="padding:3rem 2rem;text-align:center;color:var(--ink-300);">
-        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhuma ordem de serviço encontrada</p>
-        <a href="/servicos/nova" class="btn btn-primary btn-sm">Criar Primeira OS</a>
+        <p style="font-size:.8rem;">Nenhum serviço cadastrado. Use o formulário acima para começar.</p>
     </div>
 }
 else
@@ -58,45 +74,51 @@ else
         <table>
             <thead>
                 <tr>
-                    <th style="width:56px">#</th>
-                    <th>Embarcação</th>
-                    <th>Cliente</th>
-                    <th>Tipo de Serviço</th>
-                    <th>Responsável</th>
-                    <th>Valor</th>
-                    <th>Criada em</th>
-                    <th>Status</th>
-                    <th style="width:120px"></th>
+                    <th>Nome</th>
+                    <th style="width:130px;text-align:right;">Valor Padrão</th>
+                    <th style="width:110px;text-align:right;">Duração</th>
+                    <th style="width:130px;text-align:right;">Frequência</th>
+                    <th style="width:80px;text-align:center;">Ativo</th>
+                    <th style="width:80px;"></th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var o in _os)
+                @foreach (var t in _tipos)
                 {
-                    <tr>
-                        <td style="color:var(--ink-300);font-size:.8rem;font-family:monospace;">#@o.Id</td>
-                        <td><strong style="font-weight:500;">@(o.Embarcacao?.Nome ?? "—")</strong></td>
-                        <td style="color:var(--ink-500);">@(o.Embarcacao?.Cliente?.Nome ?? "—")</td>
-                        <td style="color:var(--ink-500);">@o.TipoServico</td>
-                        <td style="color:var(--ink-500);">@(o.Responsavel?.Nome ?? "—")</td>
-                        <td style="font-weight:500;">@(o.ValorFinal.HasValue ? o.ValorFinal.Value.ToString("C2") : o.ValorEstimado.HasValue ? $"~{o.ValorEstimado.Value:C2}" : "—")</td>
-                        <td style="color:var(--ink-500);font-size:.8rem;">@o.CriadaEm.ToLocalTime().ToString("dd/MM/yyyy")</td>
-                        <td><OsStatusBadge Status="@o.Status" /></td>
+                    <tr style="@(!t.Ativo ? "opacity:.45;" : "")">
+                        <td style="font-weight:500;">@t.Nome</td>
+                        <td style="text-align:right;color:var(--ink-600);">
+                            @(t.ValorPadrao.HasValue ? t.ValorPadrao.Value.ToString("C2") : "—")
+                        </td>
+                        <td style="text-align:right;color:var(--ink-600);">
+                            @(t.DuracaoHoras.HasValue ? $"{t.DuracaoHoras:0.#} h" : "—")
+                        </td>
+                        <td style="text-align:right;color:var(--ink-400);font-size:.82rem;">
+                            A cada @t.FrequenciaDias dia@(t.FrequenciaDias != 1 ? "s" : "")
+                        </td>
+                        <td style="text-align:center;">
+                            <span class="badge @(t.Ativo ? "badge-free" : "badge-maint")">
+                                @(t.Ativo ? "Ativo" : "Inativo")
+                            </span>
+                        </td>
                         <td>
-                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
-                                <a href="/servicos/@o.Id" class="btn btn-ghost btn-sm" title="Editar">
+                            <div style="display:flex;gap:.35rem;justify-content:flex-end;">
+                                <button class="btn btn-ghost btn-sm" title="Editar"
+                                        @onclick="() => IniciarEdicao(t)">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                </a>
-                                <a href="/servicos/@o.Id/imprimir" target="_blank" class="btn btn-ghost btn-sm" title="Imprimir OS">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                                </a>
-                                @if (o.Status != StatusOS.Finalizado)
-                                {
-                                    <button class="btn btn-ghost btn-sm" title="Avançar status"
-                                            @onclick="() => AvancarStatus(o)"
-                                            style="color:var(--s-free);">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                                    </button>
-                                }
+                                </button>
+                                <button class="btn btn-ghost btn-sm" title="@(t.Ativo ? "Desativar" : "Ativar")"
+                                        @onclick="() => ToggleAtivoAsync(t)"
+                                        style="color:@(t.Ativo ? "var(--s-maint)" : "var(--s-free)");">
+                                    @if (t.Ativo)
+                                    {
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    }
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -107,10 +129,10 @@ else
 }
 
 @code {
-    private List<OrdemServico> _os = new();
-    private string _filtroStatus = "";
+    private List<TipoServicoConfig> _tipos = new();
+    private TipoServicoConfig _editando = new() { FrequenciaDias = 15 };
     private bool _carregando = true;
-    private List<(string, int, string)> _contadores = new();
+    private string? _erro;
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,20 +143,49 @@ else
     private async Task CarregarAsync()
     {
         _carregando = true;
-        StatusOS? st = Enum.TryParse<StatusOS>(_filtroStatus, out var sv) ? sv : null;
-        _os = await OSService.ListarPorEmpresaAsync(UserCtx.EmpresaId, st);
-        _contadores = new()
-        {
-            ("Pendentes",    _os.Count(o => o.Status == StatusOS.Pendente),    "var(--ink-900)"),
-            ("Em execução",  _os.Count(o => o.Status == StatusOS.EmExecucao),  "var(--navy-700)"),
-            ("Finalizadas",  _os.Count(o => o.Status == StatusOS.Finalizado),  "var(--s-free)"),
-        };
+        _tipos = await PedidoSvc.ListarTiposServicoAsync(UserCtx.EmpresaId, apenasAtivos: false);
         _carregando = false;
     }
 
-    private async Task AvancarStatus(OrdemServico o)
+    private void IniciarEdicao(TipoServicoConfig t)
     {
-        try { await OSService.AvancarStatusAsync(o.Id, UserCtx.EmpresaId); await CarregarAsync(); }
-        catch { }
+        _editando = new TipoServicoConfig
+        {
+            Id             = t.Id,
+            EmpresaId      = t.EmpresaId,
+            Nome           = t.Nome,
+            ValorPadrao    = t.ValorPadrao,
+            DuracaoHoras   = t.DuracaoHoras,
+            FrequenciaDias = t.FrequenciaDias,
+            Ativo          = t.Ativo,
+        };
+        _erro = null;
+    }
+
+    private void CancelarEdicao()
+    {
+        _editando = new TipoServicoConfig { FrequenciaDias = 15 };
+        _erro = null;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _erro = null;
+        if (string.IsNullOrWhiteSpace(_editando.Nome))
+        {
+            _erro = "Informe o nome do serviço.";
+            return;
+        }
+        _editando.EmpresaId = UserCtx.EmpresaId;
+        await PedidoSvc.SalvarTipoServicoAsync(_editando);
+        CancelarEdicao();
+        await CarregarAsync();
+    }
+
+    private async Task ToggleAtivoAsync(TipoServicoConfig t)
+    {
+        t.Ativo = !t.Ativo;
+        await PedidoSvc.SalvarTipoServicoAsync(t);
+        await CarregarAsync();
     }
 }
