@@ -351,9 +351,13 @@ else
                                         <td>
                                             @if (!ln.EhServico)
                                             {
-                                                <select @bind="ln.TipoStr">
+                                                <select value="@ln.TipoStr"
+                                                        @onchange="@(ev => OnTipoItemChanged(ln, ev.Value?.ToString() ?? "Venda"))">
                                                     <option value="Venda">Venda</option>
-                                                    <option value="Emprestimo">Empréstimo</option>
+                                                    @if (ln.Alugavel)
+                                                    {
+                                                        <option value="Emprestimo">Empréstimo</option>
+                                                    }
                                                 </select>
                                             }
                                             else
@@ -473,6 +477,7 @@ else
     private class LinhaRow
     {
         public bool      EhServico             { get; set; }
+        public bool      Alugavel              { get; set; }
         public string    ProdutoIdStr          { get; set; } = "";
         public string    Nome                  { get; set; } = "";
         public int       Quantidade            { get; set; } = 1;
@@ -509,6 +514,7 @@ else
             _linhas = existente.Itens.Select(i => new LinhaRow
             {
                 EhServico             = false,
+                Alugavel              = _produtos.FirstOrDefault(p => p.Id == i.ProdutoId)?.Alugavel ?? false,
                 ProdutoIdStr          = i.ProdutoId.ToString(),
                 Nome                  = _produtos.FirstOrDefault(p => p.Id == i.ProdutoId)?.Nome ?? "",
                 Quantidade            = i.Quantidade,
@@ -571,21 +577,38 @@ else
 
     private void AdicionarProduto(Produto p)
     {
-        var tipoStr   = _pedido.Tipo == TipoPedido.Emprestimo ? "Emprestimo" : "Venda";
+        var tipoStr   = _pedido.Tipo == TipoPedido.Emprestimo && p.Alugavel ? "Emprestimo" : "Venda";
         var existente = _linhas.FirstOrDefault(l => !l.EhServico && l.ProdutoIdStr == p.Id.ToString() && l.TipoStr == tipoStr);
         if (existente != null) { existente.Quantidade++; return; }
 
         _linhas.Add(new LinhaRow
         {
             EhServico    = false,
+            Alugavel     = p.Alugavel,
             ProdutoIdStr = p.Id.ToString(),
             Nome         = p.Nome,
             Quantidade   = 1,
             Preco        = tipoStr == "Emprestimo"
-                ? (p.PrecoAluguelDia ?? p.PrecoVenda ?? 0)
+                ? (p.PrecoAluguelHora ?? p.PrecoAluguelDia ?? p.PrecoVenda ?? 0)
                 : (p.PrecoVenda ?? 0),
-            TipoStr = tipoStr,
+            TipoStr               = tipoStr,
+            DataDevolucaoPrevista = tipoStr == "Emprestimo"
+                ? DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc)
+                : null,
         });
+    }
+
+    private void OnTipoItemChanged(LinhaRow ln, string novoTipo)
+    {
+        if (novoTipo == "Emprestimo" && !ln.Alugavel) return;
+        ln.TipoStr = novoTipo;
+        if (novoTipo == "Emprestimo" && ln.DataDevolucaoPrevista == null)
+            ln.DataDevolucaoPrevista = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
+        if (novoTipo == "Venda")
+        {
+            ln.DataDevolucaoPrevista = null;
+            ln.DataDevolucaoReal     = null;
+        }
     }
 
     private void AdicionarServico(string nome, decimal? valorPadrao = null)
@@ -626,6 +649,13 @@ else
         if (!_isNovo && _servicosConcluidos > 0)
         {
             _erro = $"Não é possível salvar: {_servicosConcluidos} serviço(s) já concluído(s). Cancele-os em Tarefas antes de editar o pedido.";
+            return;
+        }
+
+        var itemInvalido = _linhas.FirstOrDefault(l => !l.EhServico && l.TipoStr == "Emprestimo" && !l.Alugavel);
+        if (itemInvalido != null)
+        {
+            _erro = $"'{itemInvalido.Nome}' não está disponível para aluguel. Altere o tipo para Venda.";
             return;
         }
 

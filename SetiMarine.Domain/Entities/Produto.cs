@@ -13,8 +13,9 @@ public class Produto
     public CategoriaProduto Categoria { get; set; } = CategoriaProduto.Outro;
     public string Unidade { get; set; } = "un";
 
-    public decimal? PrecoVenda { get; set; }
-    public decimal? PrecoAluguelDia { get; set; }
+    public decimal? PrecoVenda      { get; set; }
+    public decimal? PrecoAluguelHora { get; set; }
+    public decimal? PrecoAluguelDia  { get; set; }
 
     public int Estoque { get; set; } = 0;
     public int EstoqueMinimo { get; set; } = 0;

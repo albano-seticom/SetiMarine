@@ -44,15 +44,16 @@ public class ProdutoService(ISetiMarineDbContext ctx)
         {
             var ex = await ctx.Produtos.FindAsync(produto.Id)
                 ?? throw new InvalidOperationException("Produto não encontrado.");
-            ex.Nome            = produto.Nome;
-            ex.Categoria       = produto.Categoria;
-            ex.Unidade         = produto.Unidade;
-            ex.PrecoVenda      = produto.PrecoVenda;
-            ex.PrecoAluguelDia = produto.PrecoAluguelDia;
-            ex.Estoque         = produto.Estoque;
-            ex.EstoqueMinimo   = produto.EstoqueMinimo;
-            ex.Alugavel        = produto.Alugavel;
-            ex.Ativo           = produto.Ativo;
+            ex.Nome             = produto.Nome;
+            ex.Categoria        = produto.Categoria;
+            ex.Unidade          = produto.Unidade;
+            ex.PrecoVenda       = produto.PrecoVenda;
+            ex.PrecoAluguelHora = produto.PrecoAluguelHora;
+            ex.PrecoAluguelDia  = produto.PrecoAluguelDia;
+            ex.Estoque          = produto.Estoque;
+            ex.EstoqueMinimo    = produto.EstoqueMinimo;
+            ex.Alugavel         = produto.Alugavel;
+            ex.Ativo            = produto.Ativo;
         }
         await ctx.SaveChangesAsync();
     }
