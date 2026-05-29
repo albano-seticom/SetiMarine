@@ -114,6 +114,15 @@
 }
 .pdv-total strong { font-size: 1.05rem; }
 .badge-svc { background: rgba(120,80,220,.1); color: #6040c0; }
+
+/* Força cor explícita nos selects do cabeçalho — evita invisibilidade em dark mode */
+.pdv-header .field select {
+    background-color: #fff !important;
+    color: #12172c !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 4px !important;
+    padding: 0 .4rem !important;
+}
 </style>
 
 <div class="page-head">
@@ -134,7 +143,7 @@
 else
 {
     @* ── Cabeçalho compacto ─────────────────────────────────────────── *@
-    <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:flex-end;margin-bottom:.75rem;padding:.45rem .75rem;background:var(--paper);border:1px solid var(--line);border-radius:6px;">
+    <div class="pdv-header" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:flex-end;margin-bottom:.75rem;padding:.45rem .75rem;background:var(--paper);border:1px solid var(--line);border-radius:6px;">
 
         @if (_isNovo)
         {
