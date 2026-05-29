@@ -28,9 +28,8 @@
                 <option value="Outro">Outro</option>
             </select>
         </div>
-        <a href="/produtos/novo" class="btn btn-primary btn-sm">+ Novo Produto</a>
         <a href="/produtos/vendas" class="btn btn-ghost btn-sm">Ver Transações</a>
-        <button class="btn btn-ghost btn-sm" @onclick="SeedAsync" disabled="@_seeding" title="Popular catálogo com produtos e serviços base de marina">
+        <button class="btn btn-ghost btn-sm" @onclick="SeedAsync" disabled="@_seeding" title="Popular catálogo com produtos base de marina">
             @(_seeding ? "Importando..." : "Catálogo Padrão")
         </button>
     </div>
@@ -44,7 +43,76 @@
     </div>
 }
 
-<!-- Contadores -->
+@* Formulário de adição / edição *@
+<div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
+    <p style="font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.75rem;">
+        @(_editando?.Id > 0 ? "Editar produto" : "Novo produto")
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
+        <div class="field" style="margin:0;flex:3;min-width:180px;">
+            <label>Nome do produto</label>
+            <input type="text" @bind="_editando!.Nome" placeholder="Ex: Óleo Lubrificante 1L" />
+        </div>
+        <div class="field" style="margin:0;min-width:140px;">
+            <label>Categoria</label>
+            <select @bind="_editando.Categoria">
+                <option value="@CategoriaProduto.Acessorio">Acessório</option>
+                <option value="@CategoriaProduto.Combustivel">Combustível</option>
+                <option value="@CategoriaProduto.Lubrificante">Lubrificante</option>
+                <option value="@CategoriaProduto.Peca">Peça</option>
+                <option value="@CategoriaProduto.Equipamento">Equipamento</option>
+                <option value="@CategoriaProduto.Alimento">Alimento</option>
+                <option value="@CategoriaProduto.Outro">Outro</option>
+            </select>
+        </div>
+        <div class="field" style="margin:0;min-width:80px;">
+            <label>Unidade</label>
+            <input type="text" @bind="_editando.Unidade" placeholder="un, L, kg…" style="max-width:90px;" />
+        </div>
+        <div class="field" style="margin:0;min-width:110px;">
+            <label>Preço Venda (R$)</label>
+            <input type="number" @bind="_editando.PrecoVenda" min="0" step="0.01" placeholder="0,00" />
+        </div>
+        <div class="field" style="margin:0;min-width:120px;">
+            <label>Aluguel/dia (R$)</label>
+            <input type="number" @bind="_editando.PrecoAluguelDia" min="0" step="0.01" placeholder="0,00" />
+        </div>
+        <div class="field" style="margin:0;min-width:80px;">
+            <label>Estoque</label>
+            <input type="number" @bind="_editando.Estoque" min="0" step="1" style="max-width:90px;" />
+        </div>
+        <div class="field" style="margin:0;min-width:90px;">
+            <label>Est. Mínimo</label>
+            <input type="number" @bind="_editando.EstoqueMinimo" min="0" step="1" style="max-width:90px;" />
+        </div>
+        <div style="display:flex;align-items:center;gap:.35rem;padding-bottom:.1rem;">
+            <input type="checkbox" id="chkAlugavel" @bind="_editando.Alugavel" style="width:15px;height:15px;" />
+            <label for="chkAlugavel" style="font-size:.78rem;color:var(--ink-600);cursor:pointer;white-space:nowrap;">Alugável</label>
+        </div>
+        @if (_editando.Id > 0)
+        {
+            <div style="display:flex;align-items:center;gap:.35rem;padding-bottom:.1rem;">
+                <input type="checkbox" id="chkAtivo" @bind="_editando.Ativo" style="width:15px;height:15px;" />
+                <label for="chkAtivo" style="font-size:.78rem;color:var(--ink-600);cursor:pointer;white-space:nowrap;">Ativo</label>
+            </div>
+        }
+        <div style="display:flex;gap:.5rem;padding-bottom:.1rem;">
+            <button class="btn btn-primary btn-sm" @onclick="SalvarAsync">
+                @(_editando.Id > 0 ? "Salvar" : "Adicionar")
+            </button>
+            @if (_editando.Id > 0)
+            {
+                <button class="btn btn-ghost btn-sm" @onclick="CancelarEdicao">Cancelar</button>
+            }
+        </div>
+    </div>
+    @if (_erro != null)
+    {
+        <p style="color:var(--s-maint);font-size:.82rem;margin-top:.5rem;">@_erro</p>
+    }
+</div>
+
+@* Contadores *@
 <div style="display:flex;gap:.75rem;margin-bottom:1.75rem;flex-wrap:wrap;">
     <div style="padding:.65rem 1rem;border:1px solid var(--line);border-radius:3px;min-width:110px;">
         <div style="font-size:1.4rem;font-weight:700;color:var(--navy-700);line-height:1;">@_produtos.Count</div>
@@ -63,9 +131,10 @@
     }
 </div>
 
+@* Lista *@
 @if (_carregando)
 {
-    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+    <div style="padding:2rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
         <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
         <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
     </div>
@@ -77,12 +146,9 @@ else if (!_produtos.Any())
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
         </svg>
         <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.5rem;">Nenhum produto cadastrado</p>
-        <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
-            <button class="btn btn-primary btn-sm" @onclick="SeedAsync" disabled="@_seeding">
-                @(_seeding ? "Importando..." : "Importar Catálogo Padrão de Marina")
-            </button>
-            <a href="/produtos/novo" class="btn btn-ghost btn-sm">Cadastrar Manualmente</a>
-        </div>
+        <button class="btn btn-primary btn-sm" @onclick="SeedAsync" disabled="@_seeding">
+            @(_seeding ? "Importando..." : "Importar Catálogo Padrão de Marina")
+        </button>
     </div>
 }
 else
@@ -97,17 +163,21 @@ else
                     <th>Preço Venda</th>
                     <th>Aluguel/dia</th>
                     <th>Estoque</th>
-                    <th>Status</th>
-                    <th style="width:100px"></th>
+                    <th style="width:80px;text-align:center;">Status</th>
+                    <th style="width:80px;"></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var p in _produtos)
                 {
-                    var estoqueOk = p.Estoque > p.EstoqueMinimo;
+                    var estoqueOk    = p.Estoque > p.EstoqueMinimo;
                     var estoqueBaixo = p.Estoque > 0 && p.Estoque <= p.EstoqueMinimo;
-                    <tr>
-                        <td><strong style="font-weight:500;">@p.Nome</strong></td>
+                    <tr style="@(!p.Ativo ? "opacity:.45;" : "")">
+                        <td>
+                            <strong style="font-weight:500;">@p.Nome</strong>
+                            @if (p.Alugavel)
+                            { <span class="badge badge-occ" style="margin-left:.35rem;font-size:.65rem;">Aluguel</span> }
+                        </td>
                         <td style="color:var(--ink-500);">@CategoriaLabel(p.Categoria)</td>
                         <td style="color:var(--ink-400);font-size:.8rem;">@p.Unidade</td>
                         <td style="font-weight:500;">@(p.PrecoVenda.HasValue ? p.PrecoVenda.Value.ToString("C2") : "—")</td>
@@ -121,22 +191,29 @@ else
                                 <span style="font-size:.72rem;color:var(--ink-300);margin-left:.3rem;">/ mín @p.EstoqueMinimo</span>
                             }
                         </td>
-                        <td>
-                            @if (p.Ativo)
-                            { <span class="badge badge-free">Ativo</span> }
-                            else
-                            { <span class="badge" style="background:rgba(120,120,120,.1);color:var(--ink-400);">Inativo</span> }
-                            @if (p.Alugavel)
-                            { <span class="badge badge-occ" style="margin-left:.3rem;">Aluguel</span> }
+                        <td style="text-align:center;">
+                            <span class="badge @(p.Ativo ? "badge-free" : "badge-maint")">
+                                @(p.Ativo ? "Ativo" : "Inativo")
+                            </span>
                         </td>
                         <td>
-                            <div style="display:flex;gap:.4rem;justify-content:flex-end;">
-                                <a href="/produtos/@p.Id" class="btn btn-ghost btn-sm" title="Editar">
+                            <div style="display:flex;gap:.35rem;justify-content:flex-end;">
+                                <button class="btn btn-ghost btn-sm" title="Editar"
+                                        @onclick="() => IniciarEdicao(p)">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                </a>
-                                <a href="/produtos/vendas/nova?produtoId=@p.Id" class="btn btn-ghost btn-sm" title="Registrar venda/aluguel" style="color:var(--s-free);">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                </a>
+                                </button>
+                                <button class="btn btn-ghost btn-sm" title="@(p.Ativo ? "Desativar" : "Ativar")"
+                                        @onclick="() => ToggleAtivoAsync(p)"
+                                        style="color:@(p.Ativo ? "var(--s-maint)" : "var(--s-free)");">
+                                    @if (p.Ativo)
+                                    {
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    }
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -148,11 +225,13 @@ else
 
 @code {
     private List<Produto> _produtos = new();
+    private Produto _editando = new() { Ativo = true };
     private string _filtroCategoria = "";
     private bool _carregando = true;
     private bool _seeding;
     private int _semEstoque;
     private string? _seedMsg;
+    private string? _erro;
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,17 +248,61 @@ else
         _carregando = false;
     }
 
+    private void IniciarEdicao(Produto p)
+    {
+        _editando = new Produto
+        {
+            Id               = p.Id,
+            EmpresaId        = p.EmpresaId,
+            Nome             = p.Nome,
+            Categoria        = p.Categoria,
+            Unidade          = p.Unidade,
+            PrecoVenda       = p.PrecoVenda,
+            PrecoAluguelDia  = p.PrecoAluguelDia,
+            Estoque          = p.Estoque,
+            EstoqueMinimo    = p.EstoqueMinimo,
+            Alugavel         = p.Alugavel,
+            Ativo            = p.Ativo,
+        };
+        _erro = null;
+    }
+
+    private void CancelarEdicao()
+    {
+        _editando = new Produto { Ativo = true };
+        _erro = null;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _erro = null;
+        if (string.IsNullOrWhiteSpace(_editando.Nome))
+        {
+            _erro = "Informe o nome do produto.";
+            return;
+        }
+        _editando.EmpresaId = UserCtx.EmpresaId;
+        await ProdService.SalvarAsync(_editando);
+        CancelarEdicao();
+        await CarregarAsync();
+    }
+
+    private async Task ToggleAtivoAsync(Produto p)
+    {
+        await ProdService.AlternarAtivoAsync(p.Id, UserCtx.EmpresaId);
+        await CarregarAsync();
+    }
+
     private async Task SeedAsync()
     {
-        _seeding  = true;
-        _seedMsg  = null;
+        _seeding = true;
+        _seedMsg = null;
         var prods = await Seeder.SeedProdutosAsync(UserCtx.EmpresaId);
         var servs = await Seeder.SeedServicosAsync(UserCtx.EmpresaId);
 
-        if (prods == 0 && servs == 0)
-            _seedMsg = "O catálogo já foi populado anteriormente.";
-        else
-            _seedMsg = $"{prods} produto(s) e {servs} tipo(s) de serviço importados com sucesso.";
+        _seedMsg = prods == 0 && servs == 0
+            ? "O catálogo já foi populado anteriormente."
+            : $"{prods} produto(s) e {servs} tipo(s) de serviço importados com sucesso.";
 
         _seeding = false;
         await CarregarAsync();
