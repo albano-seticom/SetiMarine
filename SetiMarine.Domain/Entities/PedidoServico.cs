@@ -9,4 +9,7 @@ public class PedidoServico
     public string Descricao { get; set; } = string.Empty;
     public decimal? Valor { get; set; }
     public bool Concluido { get; set; } = false;
+
+    public int? ResponsavelId { get; set; }
+    public Usuario? Responsavel { get; set; }
 }

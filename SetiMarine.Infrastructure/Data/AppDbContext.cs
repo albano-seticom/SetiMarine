@@ -110,6 +110,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         mb.Entity<PedidoItem>().Ignore(i => i.ValorTotal);
 
+        mb.Entity<PedidoServico>()
+            .HasOne(s => s.Responsavel)
+            .WithMany()
+            .HasForeignKey(s => s.ResponsavelId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // ============================================================
         // Indices unicos
         // ============================================================

@@ -158,7 +158,7 @@ else
 
         <div class="field" style="margin:0;flex:2;min-width:140px;">
             <label style="font-size:.66rem;">Cliente</label>
-            <select @onchange="OnClienteChanged" style="height:27px;font-size:.81rem;">
+            <select value="@_clienteIdStr" @onchange="OnClienteChanged" style="height:27px;font-size:.81rem;">
                 <option value="">Selecione...</option>
                 @foreach (var c in _clientes)
                 { <option value="@c.Id" selected="@(_clienteIdStr == c.Id.ToString())">@c.Nome</option> }
@@ -167,7 +167,7 @@ else
 
         <div class="field" style="margin:0;flex:2;min-width:130px;">
             <label style="font-size:.66rem;">Embarcação</label>
-            <select @onchange="@(ev => _embarcacaoIdStr = ev.Value?.ToString() ?? "")" style="height:27px;font-size:.81rem;">
+            <select value="@_embarcacaoIdStr" @onchange="@(ev => _embarcacaoIdStr = ev.Value?.ToString() ?? "")" style="height:27px;font-size:.81rem;">
                 <option value="">—</option>
                 @foreach (var emb in _embarcacoesFiltradas)
                 { <option value="@emb.Id" selected="@(_embarcacaoIdStr == emb.Id.ToString())">@emb.Nome</option> }
@@ -178,7 +178,7 @@ else
         {
             <div class="field" style="margin:0;flex:2;min-width:140px;">
                 <label style="font-size:.66rem;">Responsável</label>
-                <select @onchange="@(ev => _responsavelIdStr = ev.Value?.ToString() ?? "")" style="height:27px;font-size:.81rem;">
+                <select value="@_responsavelIdStr" @onchange="@(ev => _responsavelIdStr = ev.Value?.ToString() ?? "")" style="height:27px;font-size:.81rem;">
                     <option value="">Não atribuído</option>
                     @foreach (var u in _colaboradores)
                     { <option value="@u.Id" selected="@(_responsavelIdStr == u.Id.ToString())">@u.Nome</option> }
@@ -195,7 +195,7 @@ else
         {
             <div class="field" style="margin:0;min-width:110px;">
                 <label style="font-size:.66rem;">Status</label>
-                <select @onchange="@(ev => _statusStr = ev.Value?.ToString() ?? "Aberto")" style="height:27px;font-size:.81rem;">
+                <select value="@_statusStr" @onchange="@(ev => _statusStr = ev.Value?.ToString() ?? "Aberto")" style="height:27px;font-size:.81rem;">
                     <option value="Rascunho" selected="@(_statusStr == "Rascunho")">Rascunho</option>
                     <option value="Aberto" selected="@(_statusStr == "Aberto")">Aberto</option>
                     <option value="EmAndamento" selected="@(_statusStr == "EmAndamento")">Em Andamento</option>
@@ -298,7 +298,7 @@ else
                                     <th style="width:76px;text-align:right;">Qtd</th>
                                     <th style="width:106px;text-align:right;">R$ Unit.</th>
                                     @if (_pedido.Tipo == TipoPedido.OrdemServico)
-                                    { <th style="width:116px;">Modalidade</th> }
+                                    { <th style="width:140px;">Modalidade / Responsável</th> }
                                     <th style="width:96px;text-align:right;">Total</th>
                                     <th style="width:28px;"></th>
                                 </tr>
@@ -337,6 +337,15 @@ else
                                                     <select @bind="ln.TipoStr">
                                                         <option value="Venda">Venda</option>
                                                         <option value="Emprestimo">Empréstimo</option>
+                                                    </select>
+                                                }
+                                                else
+                                                {
+                                                    <select value="@ln.ResponsavelIdStr"
+                                                            @onchange="@(ev => ln.ResponsavelIdStr = ev.Value?.ToString() ?? "")">
+                                                        <option value="">— Responsável —</option>
+                                                        @foreach (var u in _colaboradores)
+                                                        { <option value="@u.Id" selected="@(ln.ResponsavelIdStr == u.Id.ToString())">@u.Nome</option> }
                                                     </select>
                                                 }
                                             </td>
@@ -448,6 +457,7 @@ else
         public int       Quantidade            { get; set; } = 1;
         public decimal   Preco                 { get; set; }
         public string    TipoStr               { get; set; } = "Venda";
+        public string    ResponsavelIdStr      { get; set; } = "";
         public DateTime? DataDevolucaoPrevista { get; set; }
         public DateTime? DataDevolucaoReal     { get; set; }
         public decimal Total => EhServico ? Preco : Quantidade * Preco;
@@ -487,9 +497,10 @@ else
             })
             .Concat(existente.Servicos.Select(s => new LinhaRow
             {
-                EhServico = true,
-                Nome      = s.Descricao,
-                Preco     = s.Valor ?? 0,
+                EhServico        = true,
+                Nome             = s.Descricao,
+                Preco            = s.Valor ?? 0,
+                ResponsavelIdStr = s.ResponsavelId?.ToString() ?? "",
             }))
             .ToList();
 
@@ -618,7 +629,12 @@ else
 
             var servicos = _linhas
                 .Where(l => l.EhServico && !string.IsNullOrWhiteSpace(l.Nome))
-                .Select(l => new PedidoServico { Descricao = l.Nome, Valor = l.Preco > 0 ? l.Preco : null })
+                .Select(l => new PedidoServico
+                {
+                    Descricao     = l.Nome,
+                    Valor         = l.Preco > 0 ? l.Preco : null,
+                    ResponsavelId = int.TryParse(l.ResponsavelIdStr, out var rid) && rid > 0 ? rid : null,
+                })
                 .ToList();
 
             if (_isNovo)
