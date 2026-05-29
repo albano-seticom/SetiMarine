@@ -16,20 +16,17 @@
     display: grid;
     grid-template-columns: 300px 1fr;
     gap: 1rem;
-    align-items: start;
+    height: min(540px, calc(100vh - 220px));
+    align-items: stretch;
 }
 .pdv-catalog {
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--paper);
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 160px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
-/* Abas */
 .pdv-tabs {
     display: flex;
     border-bottom: 1px solid var(--line);
@@ -50,29 +47,14 @@
     margin-bottom: -1px;
     transition: .12s;
 }
-.pdv-tab.ativa {
-    color: var(--navy-700);
-    border-bottom-color: var(--navy-700);
-    background: rgba(0,53,128,.03);
-}
-/* Busca */
-.pdv-search {
-    padding: .4rem .6rem;
-    border-bottom: 1px solid var(--line);
-    flex-shrink: 0;
-}
+.pdv-tab.ativa { color: var(--navy-700); border-bottom-color: var(--navy-700); background: rgba(0,53,128,.03); }
+.pdv-search { padding: .4rem .6rem; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .pdv-search input { width: 100%; height: 30px; font-size: .83rem; }
-/* Lista */
-.pdv-list { overflow-y: auto; flex: 1; }
+.pdv-list { overflow-y: auto; flex: 1; min-height: 0; }
 .pdv-row {
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .48rem .7rem;
-    border-bottom: 1px solid var(--line);
-    cursor: pointer;
-    transition: background .1s;
-    user-select: none;
+    display: flex; align-items: center; gap: .4rem;
+    padding: .48rem .7rem; border-bottom: 1px solid var(--line);
+    cursor: pointer; transition: background .1s; user-select: none;
 }
 .pdv-row:hover { background: rgba(0,53,128,.04); }
 .pdv-row:last-child { border-bottom: none; }
@@ -88,20 +70,21 @@
 }
 .pdv-add-btn:hover { background: var(--navy-700); color: #fff; border-color: var(--navy-700); }
 /* Painel direito */
-.pdv-panel { display: flex; flex-direction: column; gap: .85rem; }
-.pdv-items {
-    border: 1px solid var(--line);
-    border-radius: 6px;
+.pdv-panel {
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    background: var(--paper);
+}
+.pdv-items-area { flex: 1; overflow-y: auto; min-height: 0; }
+.pdv-items {
+    border: 1px solid var(--line); border-radius: 6px;
+    overflow: hidden; background: var(--paper);
 }
 .pdv-items table { width: 100%; border-collapse: collapse; font-size: .83rem; }
 .pdv-items th {
-    padding: .45rem .55rem;
-    font-size: .67rem; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--ink-400); font-weight: 600;
-    border-bottom: 2px solid var(--line);
-    background: rgba(0,0,0,.015);
+    padding: .45rem .55rem; font-size: .67rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-400); font-weight: 600;
+    border-bottom: 2px solid var(--line); background: rgba(0,0,0,.015);
     text-align: left; white-space: nowrap;
 }
 .pdv-items td { padding: .32rem .55rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -111,12 +94,22 @@
 .pdv-items input[type=text]   { height: 26px; font-size: .82rem; padding: 0 .4rem; width: 100%; }
 .pdv-items select { height: 26px; font-size: .8rem; padding: 0 .25rem; }
 .pdv-empty {
-    padding: 3rem 1rem; text-align: center; color: var(--ink-300);
+    padding: 2.5rem 1rem; text-align: center; color: var(--ink-300);
     border: 1px dashed var(--line); border-radius: 6px;
+}
+.pdv-footer {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    border-top: 1px solid var(--line);
+    padding-top: .6rem;
+    margin-top: .5rem;
+    background: var(--paper, #fff);
 }
 .pdv-total {
     display: flex; justify-content: space-between; align-items: center;
-    padding: .65rem 1rem;
+    padding: .6rem 1rem;
     background: var(--navy-700); color: #fff; border-radius: 4px;
 }
 .pdv-total strong { font-size: 1.05rem; }
@@ -124,9 +117,10 @@
 </style>
 
 <div class="page-head">
-    <div>
-        <span class="eyebrow"><a href="/pedidos" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--line);">Pedidos</a> /</span>
-        <h1>@(_isNovo ? "Novo Pedido" : $"Pedido #{Id}")</h1>
+    <div style="display:flex;align-items:baseline;gap:.5rem;">
+        <a href="/pedidos" style="font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);text-decoration:none;border-bottom:1px solid var(--line);white-space:nowrap;">Pedidos</a>
+        <span style="color:var(--ink-300);font-size:.8rem;">/</span>
+        <h1 style="margin:0;">@(_isNovo ? "Novo Pedido" : $"Pedido #{Id}")</h1>
     </div>
 </div>
 
@@ -139,41 +133,41 @@
 }
 else
 {
-    @* ── Cabeçalho compacto ────────────────────────── *@
-    <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-end;margin-bottom:1rem;padding:.75rem 1rem;background:var(--paper);border:1px solid var(--line);border-radius:6px;">
+    @* ── Cabeçalho compacto ─────────────────────────────────────────── *@
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:flex-end;margin-bottom:.75rem;padding:.45rem .75rem;background:var(--paper);border:1px solid var(--line);border-radius:6px;">
 
         @if (_isNovo)
         {
-            <div style="display:flex;gap:.3rem;flex-shrink:0;align-self:flex-end;margin-bottom:2px;">
+            <div style="display:flex;gap:.25rem;flex-shrink:0;align-self:center;">
                 @foreach (var t in new[] { TipoPedido.OrdemServico, TipoPedido.Venda, TipoPedido.Emprestimo })
                 {
                     <button type="button"
-                            style="padding:.35rem .8rem;border-radius:4px;font-size:.8rem;cursor:pointer;border:1px solid @(_pedido.Tipo==t?"var(--navy-700)":"var(--line)");background:@(_pedido.Tipo==t?"var(--navy-700)":"transparent");color:@(_pedido.Tipo==t?"#fff":"var(--ink-600)");transition:.12s;white-space:nowrap;"
+                            style="padding:.26rem .6rem;border-radius:3px;font-size:.76rem;cursor:pointer;border:1px solid @(_pedido.Tipo==t?"var(--navy-700)":"var(--line)");background:@(_pedido.Tipo==t?"var(--navy-700)":"transparent");color:@(_pedido.Tipo==t?"#fff":"var(--ink-600)");transition:.12s;white-space:nowrap;"
                             @onclick="() => SelecionarTipo(t)">
                         @LabelTipo(t)
                     </button>
                 }
             </div>
-            <div style="width:1px;background:var(--line);height:30px;flex-shrink:0;align-self:center;"></div>
+            <div style="width:1px;background:var(--line);height:22px;flex-shrink:0;align-self:center;"></div>
         }
         else
         {
-            <span class="badge @BadgeTipo(_pedido.Tipo)" style="align-self:center;">@LabelTipo(_pedido.Tipo)</span>
-            <div style="width:1px;background:var(--line);height:30px;flex-shrink:0;align-self:center;"></div>
+            <span class="badge @BadgeTipo(_pedido.Tipo)" style="align-self:center;flex-shrink:0;">@LabelTipo(_pedido.Tipo)</span>
+            <div style="width:1px;background:var(--line);height:22px;flex-shrink:0;align-self:center;"></div>
         }
 
-        <div class="field" style="margin:0;flex:2;min-width:160px;">
-            <label>Cliente</label>
-            <select @bind="_clienteIdStr" @bind:after="AtualizarEmbarcacoes" style="height:30px;">
+        <div class="field" style="margin:0;flex:2;min-width:140px;">
+            <label style="font-size:.66rem;">Cliente</label>
+            <select value="@_clienteIdStr" @onchange="OnClienteChanged" style="height:27px;font-size:.81rem;">
                 <option value="">Selecione...</option>
                 @foreach (var c in _clientes)
                 { <option value="@c.Id">@c.Nome</option> }
             </select>
         </div>
 
-        <div class="field" style="margin:0;flex:2;min-width:140px;">
-            <label>Embarcação</label>
-            <select @bind="_embarcacaoIdStr" style="height:30px;">
+        <div class="field" style="margin:0;flex:2;min-width:130px;">
+            <label style="font-size:.66rem;">Embarcação</label>
+            <select value="@_embarcacaoIdStr" @onchange="@(e => _embarcacaoIdStr = e.Value?.ToString() ?? "")" style="height:27px;font-size:.81rem;">
                 <option value="">—</option>
                 @foreach (var e in _embarcacoesFiltradas)
                 { <option value="@e.Id">@e.Nome</option> }
@@ -182,9 +176,9 @@ else
 
         @if (_pedido.Tipo == TipoPedido.OrdemServico)
         {
-            <div class="field" style="margin:0;flex:2;min-width:150px;">
-                <label>Responsável</label>
-                <select @bind="_responsavelIdStr" style="height:30px;">
+            <div class="field" style="margin:0;flex:2;min-width:140px;">
+                <label style="font-size:.66rem;">Responsável</label>
+                <select value="@_responsavelIdStr" @onchange="@(e => _responsavelIdStr = e.Value?.ToString() ?? "")" style="height:27px;font-size:.81rem;">
                     <option value="">Não atribuído</option>
                     @foreach (var u in _colaboradores)
                     { <option value="@u.Id">@u.Nome</option> }
@@ -192,16 +186,16 @@ else
             </div>
         }
 
-        <div class="field" style="margin:0;min-width:130px;">
-            <label>Previsão</label>
-            <input type="date" @bind="_pedido.PrevisaoConclusao" @bind:format="yyyy-MM-dd" style="height:30px;" />
+        <div class="field" style="margin:0;min-width:120px;">
+            <label style="font-size:.66rem;">Previsão</label>
+            <input type="date" @bind="_pedido.PrevisaoConclusao" @bind:format="yyyy-MM-dd" style="height:27px;font-size:.81rem;" />
         </div>
 
         @if (!_isNovo)
         {
-            <div class="field" style="margin:0;min-width:120px;">
-                <label>Status</label>
-                <select @bind="_statusStr" style="height:30px;">
+            <div class="field" style="margin:0;min-width:110px;">
+                <label style="font-size:.66rem;">Status</label>
+                <select value="@_statusStr" @onchange="@(e => _statusStr = e.Value?.ToString() ?? "Aberto")" style="height:27px;font-size:.81rem;">
                     <option value="Rascunho">Rascunho</option>
                     <option value="Aberto">Aberto</option>
                     <option value="EmAndamento">Em Andamento</option>
@@ -212,12 +206,11 @@ else
         }
     </div>
 
-    @* ── PDV ──────────────────────────────────────── *@
+    @* ── PDV ─────────────────────────────────────────────────────────── *@
     <div class="pdv-wrap">
 
-        @* Catálogo com abas *@
+        @* Catálogo *@
         <div class="pdv-catalog">
-
             <div class="pdv-tabs">
                 <button class="pdv-tab @(_tabAtiva == "produtos" ? "ativa" : "")"
                         type="button" @onclick='() => { _tabAtiva = "produtos"; _busca = ""; }'>
@@ -258,9 +251,7 @@ else
                     }
                     @if (!ProdutosFiltrados().Any())
                     {
-                        <div style="padding:1.5rem;text-align:center;color:var(--ink-300);font-size:.78rem;">
-                            Nenhum produto encontrado
-                        </div>
+                        <div style="padding:1.5rem;text-align:center;color:var(--ink-300);font-size:.78rem;">Nenhum produto encontrado</div>
                     }
                 }
                 else
@@ -275,11 +266,8 @@ else
                             <button type="button" class="pdv-add-btn" tabindex="-1">+</button>
                         </div>
                     }
-                    @* Linha para serviço personalizado *@
                     <div class="pdv-row" style="background:rgba(0,0,0,.015);" @onclick='() => AdicionarServico("")'>
-                        <div class="pdv-row-nome" style="color:var(--ink-400);font-style:italic;">
-                            Serviço personalizado...
-                        </div>
+                        <div class="pdv-row-nome" style="color:var(--ink-400);font-style:italic;">Serviço personalizado...</div>
                         <button type="button" class="pdv-add-btn" tabindex="-1">+</button>
                     </div>
                     @if (!_tiposServico.Any())
@@ -296,131 +284,132 @@ else
         @* Painel do pedido *@
         <div class="pdv-panel">
 
-            @if (_linhas.Any())
-            {
-                <div class="pdv-items">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width:22px;">#</th>
-                                <th style="width:60px;">Tipo</th>
-                                <th>Descrição</th>
-                                <th style="width:76px;text-align:right;">Qtd</th>
-                                <th style="width:106px;text-align:right;">R$ Unit.</th>
-                                @if (_pedido.Tipo == TipoPedido.OrdemServico)
-                                { <th style="width:116px;">Modalidade</th> }
-                                <th style="width:96px;text-align:right;">Total</th>
-                                <th style="width:28px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var (ln, i) in _linhas.Select((ln, i) => (ln, i)))
-                            {
+            @* Itens — área scrollável *@
+            <div class="pdv-items-area">
+                @if (_linhas.Any())
+                {
+                    <div class="pdv-items">
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td style="color:var(--ink-300);font-size:.74rem;">@(i+1)</td>
-                                    <td>
-                                        @if (ln.EhServico)
-                                        { <span class="badge badge-svc" style="font-size:.68rem;">Serviço</span> }
-                                        else
-                                        { <span class="badge badge-occ" style="font-size:.68rem;">Prod.</span> }
-                                    </td>
-                                    <td>
-                                        @if (ln.EhServico)
-                                        {
-                                            <input type="text" @bind="ln.Nome" placeholder="Descrição do serviço..." />
-                                        }
-                                        else
-                                        {
-                                            <span style="font-weight:500;">@ln.Nome</span>
-                                        }
-                                    </td>
-                                    <td style="text-align:right;">
-                                        @if (!ln.EhServico)
-                                        { <input type="number" @bind="ln.Quantidade" min="1" /> }
-                                        else
-                                        { <span style="color:var(--ink-300);font-size:.8rem;">—</span> }
-                                    </td>
-                                    <td style="text-align:right;">
-                                        <input type="number" @bind="ln.Preco" min="0" step="0.01" />
-                                    </td>
+                                    <th style="width:22px;">#</th>
+                                    <th style="width:60px;">Tipo</th>
+                                    <th>Descrição</th>
+                                    <th style="width:76px;text-align:right;">Qtd</th>
+                                    <th style="width:106px;text-align:right;">R$ Unit.</th>
                                     @if (_pedido.Tipo == TipoPedido.OrdemServico)
-                                    {
-                                        <td>
-                                            @if (!ln.EhServico)
-                                            {
-                                                <select @bind="ln.TipoStr">
-                                                    <option value="Venda">Venda</option>
-                                                    <option value="Emprestimo">Empréstimo</option>
-                                                </select>
-                                            }
-                                        </td>
-                                    }
-                                    <td style="text-align:right;font-weight:600;color:var(--navy-700);white-space:nowrap;">
-                                        @ln.Total.ToString("C2")
-                                    </td>
-                                    <td>
-                                        <button type="button" @onclick="() => _linhas.RemoveAt(i)"
-                                                style="background:none;border:none;cursor:pointer;color:var(--ink-300);padding:2px;display:flex;">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                        </button>
-                                    </td>
+                                    { <th style="width:116px;">Modalidade</th> }
+                                    <th style="width:96px;text-align:right;">Total</th>
+                                    <th style="width:28px;"></th>
                                 </tr>
-                                @* Linha de devolução para itens empréstimo *@
-                                @if (!ln.EhServico && (ln.TipoStr == "Emprestimo" || _pedido.Tipo == TipoPedido.Emprestimo))
+                            </thead>
+                            <tbody>
+                                @foreach (var (ln, i) in _linhas.Select((ln, i) => (ln, i)))
                                 {
-                                    <tr class="dev-row">
-                                        <td></td>
-                                        <td></td>
-                                        <td colspan="@(_pedido.Tipo == TipoPedido.OrdemServico ? 4 : 3)">
-                                            <div style="display:flex;gap:.5rem;align-items:center;">
-                                                <span style="font-size:.7rem;color:var(--ink-400);">Devolução:</span>
-                                                <span style="font-size:.7rem;color:var(--ink-300);">Prevista</span>
-                                                <input type="date" @bind="ln.DataDevolucaoPrevista" @bind:format="yyyy-MM-dd"
-                                                       style="height:24px;font-size:.76rem;width:128px;" />
-                                                <span style="font-size:.7rem;color:var(--ink-300);">Real</span>
-                                                <input type="date" @bind="ln.DataDevolucaoReal" @bind:format="yyyy-MM-dd"
-                                                       style="height:24px;font-size:.76rem;width:128px;" />
-                                            </div>
+                                    <tr>
+                                        <td style="color:var(--ink-300);font-size:.74rem;">@(i+1)</td>
+                                        <td>
+                                            @if (ln.EhServico)
+                                            { <span class="badge badge-svc" style="font-size:.68rem;">Serviço</span> }
+                                            else
+                                            { <span class="badge badge-occ" style="font-size:.68rem;">Prod.</span> }
                                         </td>
-                                        <td></td>
+                                        <td>
+                                            @if (ln.EhServico)
+                                            { <input type="text" @bind="ln.Nome" placeholder="Descrição do serviço..." /> }
+                                            else
+                                            { <span style="font-weight:500;">@ln.Nome</span> }
+                                        </td>
+                                        <td style="text-align:right;">
+                                            @if (!ln.EhServico)
+                                            { <input type="number" @bind="ln.Quantidade" min="1" /> }
+                                            else
+                                            { <span style="color:var(--ink-300);font-size:.8rem;">—</span> }
+                                        </td>
+                                        <td style="text-align:right;">
+                                            <input type="number" @bind="ln.Preco" min="0" step="0.01" />
+                                        </td>
+                                        @if (_pedido.Tipo == TipoPedido.OrdemServico)
+                                        {
+                                            <td>
+                                                @if (!ln.EhServico)
+                                                {
+                                                    <select @bind="ln.TipoStr">
+                                                        <option value="Venda">Venda</option>
+                                                        <option value="Emprestimo">Empréstimo</option>
+                                                    </select>
+                                                }
+                                            </td>
+                                        }
+                                        <td style="text-align:right;font-weight:600;color:var(--navy-700);white-space:nowrap;">
+                                            @ln.Total.ToString("C2")
+                                        </td>
+                                        <td>
+                                            <button type="button" @onclick="() => _linhas.RemoveAt(i)"
+                                                    style="background:none;border:none;cursor:pointer;color:var(--ink-300);padding:2px;display:flex;">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                            </button>
+                                        </td>
                                     </tr>
+                                    @if (!ln.EhServico && (ln.TipoStr == "Emprestimo" || _pedido.Tipo == TipoPedido.Emprestimo))
+                                    {
+                                        <tr class="dev-row">
+                                            <td></td><td></td>
+                                            <td colspan="@(_pedido.Tipo == TipoPedido.OrdemServico ? 4 : 3)">
+                                                <div style="display:flex;gap:.5rem;align-items:center;">
+                                                    <span style="font-size:.7rem;color:var(--ink-400);">Devolução:</span>
+                                                    <span style="font-size:.7rem;color:var(--ink-300);">Prevista</span>
+                                                    <input type="date" @bind="ln.DataDevolucaoPrevista" @bind:format="yyyy-MM-dd" style="height:24px;font-size:.76rem;width:128px;" />
+                                                    <span style="font-size:.7rem;color:var(--ink-300);">Real</span>
+                                                    <input type="date" @bind="ln.DataDevolucaoReal" @bind:format="yyyy-MM-dd" style="height:24px;font-size:.76rem;width:128px;" />
+                                                </div>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    }
                                 }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="pdv-total">
-                    <span style="font-size:.82rem;letter-spacing:.06em;">
-                        @_linhas.Count item@(_linhas.Count != 1 ? "s" : "")
-                        @if (_linhas.Any(l => l.EhServico))
-                        { <text> · @_linhas.Count(l => !l.EhServico) prod. · @_linhas.Count(l => l.EhServico) serv.</text> }
-                    </span>
-                    <strong>@_linhas.Sum(l => l.Total).ToString("C2")</strong>
-                </div>
-            }
-            else
-            {
-                <div class="pdv-empty">
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto .6rem;display:block;opacity:.35;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                    <span style="font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;">Clique em um item para adicionar</span>
-                </div>
-            }
-
-            <div class="field" style="margin:0;">
-                <InputTextArea @bind-Value="_pedido.Observacoes" rows="2" style="resize:vertical;width:100%;" placeholder="Observações do pedido..." />
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="pdv-empty">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto .6rem;display:block;opacity:.3;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        <span style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;">Clique em um item para adicionar</span>
+                    </div>
+                }
             </div>
 
-            @if (_erro != null)
-            {
-                <div style="padding:.75rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
-            }
+            @* Footer fixo: totais + observações + ações *@
+            <div class="pdv-footer">
+                @if (_linhas.Any())
+                {
+                    <div class="pdv-total">
+                        <span style="font-size:.82rem;letter-spacing:.06em;">
+                            @_linhas.Count item@(_linhas.Count != 1 ? "s" : "")
+                            @if (_linhas.Any(l => l.EhServico))
+                            { <text> · @_linhas.Count(l => !l.EhServico) prod. · @_linhas.Count(l => l.EhServico) serv.</text> }
+                        </span>
+                        <strong>@_linhas.Sum(l => l.Total).ToString("C2")</strong>
+                    </div>
+                }
 
-            <div class="form-actions" style="margin-top:0;">
-                <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
-                <button type="button" class="btn btn-primary" @onclick="SalvarAsync" disabled="@_salvando">
-                    @(_salvando ? "Salvando..." : "Salvar Pedido")
-                </button>
+                <div class="field" style="margin:0;">
+                    <InputTextArea @bind-Value="_pedido.Observacoes" rows="2" style="resize:none;width:100%;" placeholder="Observações do pedido..." />
+                </div>
+
+                @if (_erro != null)
+                {
+                    <div style="padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
+                }
+
+                <div class="form-actions" style="margin-top:0;padding-bottom:.1rem;">
+                    <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
+                    <button type="button" class="btn btn-primary" @onclick="SalvarAsync" disabled="@_salvando">
+                        @(_salvando ? "Salvando..." : "Salvar Pedido")
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -446,8 +435,8 @@ else
     private string _busca            = "";
     private string _tabAtiva         = "produtos";
 
-    private bool _isNovo     => Id is null;
-    private bool _carregando  = true;
+    private bool _isNovo    => Id is null;
+    private bool _carregando = true;
     private bool _salvando;
     private string? _erro;
 
@@ -461,7 +450,6 @@ else
         public string    TipoStr               { get; set; } = "Venda";
         public DateTime? DataDevolucaoPrevista { get; set; }
         public DateTime? DataDevolucaoReal     { get; set; }
-
         public decimal Total => EhServico ? Preco : Quantidade * Preco;
     }
 
@@ -515,11 +503,17 @@ else
         _carregando = false;
     }
 
+    private void OnClienteChanged(ChangeEventArgs e)
+    {
+        _clienteIdStr = e.Value?.ToString() ?? "";
+        AtualizarEmbarcacoes();
+    }
+
     private void SelecionarTipo(TipoPedido tipo)
     {
         _pedido.Tipo = tipo;
         _linhas.Clear();
-        _busca   = "";
+        _busca    = "";
         _tabAtiva = "produtos";
     }
 
@@ -552,7 +546,7 @@ else
 
     private void AdicionarProduto(Produto p)
     {
-        var tipoStr = _pedido.Tipo == TipoPedido.Emprestimo ? "Emprestimo" : "Venda";
+        var tipoStr   = _pedido.Tipo == TipoPedido.Emprestimo ? "Emprestimo" : "Venda";
         var existente = _linhas.FirstOrDefault(l => !l.EhServico && l.ProdutoIdStr == p.Id.ToString() && l.TipoStr == tipoStr);
         if (existente != null) { existente.Quantidade++; return; }
 
@@ -570,9 +564,7 @@ else
     }
 
     private void AdicionarServico(string nome)
-    {
-        _linhas.Add(new LinhaRow { EhServico = true, Nome = nome, Preco = 0 });
-    }
+        => _linhas.Add(new LinhaRow { EhServico = true, Nome = nome, Preco = 0 });
 
     private static string LabelTipo(TipoPedido t) => t switch
     {
