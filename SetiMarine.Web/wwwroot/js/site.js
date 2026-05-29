@@ -1,3 +1,7 @@
+function toggleSidebar() {
+    document.querySelector('.shell')?.classList.toggle('collapsed');
+}
+
 // SetiMarine — Video Hero Controller
 window.SetiMarineVideo = {
     init: function () {

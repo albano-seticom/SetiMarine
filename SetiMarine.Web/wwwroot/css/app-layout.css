@@ -216,6 +216,21 @@ svg {
         display: block;
     }
 
+    /* Botão expandir no topbar — só aparece quando sidebar colapsada */
+    .topbar-toggle {
+        display: none;
+        margin-right: auto;
+        position: relative;
+    }
+    .shell.collapsed .topbar-toggle {
+        display: grid;
+    }
+
+    /* Esconde botão de colapsar quando sidebar já está colapsada */
+    .shell.collapsed .sb-logo .sb-collapse-btn {
+        display: none;
+    }
+
     /* Light theme override */
     .shell.light {
         --navy-900: #f0ece4;

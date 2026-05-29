@@ -7,6 +7,7 @@
 @inject VagaService VagaService
 @inject MovimentacaoService MovService
 @inject OrdemServicoService OSService
+@inject PedidoService PedidoSvc
 @inject UsuarioContextService UserCtx
 
 <PageTitle>Dashboard — SetiMarine</PageTitle>
@@ -19,31 +20,38 @@
 
 /* Métricas */
 .metrics { display:grid;grid-template-columns:repeat(5,1fr);gap:.7rem; }
-@@media(max-width:1000px){ .metrics{ grid-template-columns:repeat(3,1fr); } }
-@@media(max-width:600px)  { .metrics{ grid-template-columns:repeat(2,1fr); } }
+.metrics-2 { display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem; }
+@@media(max-width:1100px){ .metrics{ grid-template-columns:repeat(3,1fr); } .metrics-2{ grid-template-columns:repeat(3,1fr); } }
+@@media(max-width:700px)  { .metrics{ grid-template-columns:repeat(2,1fr); } .metrics-2{ grid-template-columns:repeat(2,1fr); } }
 .mc { background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:.85rem 1rem;
       display:flex;align-items:center;gap:.85rem;position:relative;overflow:hidden;
       transition:box-shadow .18s,transform .18s; }
 .mc:hover { box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-2px); }
 .mc-bar { position:absolute;top:0;left:0;right:0;height:3px; }
-.mc.g .mc-bar{background:var(--s-free);} .mc.b .mc-bar{background:var(--navy-700);}
-.mc.y .mc-bar{background:#c9a84c;}       .mc.r .mc-bar{background:var(--s-maint);}
-.mc.tl .mc-bar{background:#1ab3a6;}
+.mc.g .mc-bar{background:var(--s-free);}   .mc.b .mc-bar{background:var(--navy-700);}
+.mc.y .mc-bar{background:#c9a84c;}          .mc.r .mc-bar{background:var(--s-maint);}
+.mc.tl .mc-bar{background:#1ab3a6;}         .mc.p .mc-bar{background:#7c5cbf;}
+.mc.or .mc-bar{background:#d07c2e;}         .mc.sl .mc-bar{background:#3a7fd5;}
 .mc-ico { width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
-.mc.g  .mc-ico{background:rgba(74,138,92,.1); color:var(--s-free);}
-.mc.b  .mc-ico{background:rgba(36,53,149,.08);color:var(--navy-700);}
+.mc.g  .mc-ico{background:rgba(74,138,92,.1);  color:var(--s-free);}
+.mc.b  .mc-ico{background:rgba(36,53,149,.08); color:var(--navy-700);}
 .mc.y  .mc-ico{background:rgba(201,168,76,.12);color:#9a7420;}
-.mc.r  .mc-ico{background:rgba(164,68,54,.09);color:var(--s-maint);}
-.mc.tl .mc-ico{background:rgba(26,179,166,.1);color:#1ab3a6;}
+.mc.r  .mc-ico{background:rgba(164,68,54,.09); color:var(--s-maint);}
+.mc.tl .mc-ico{background:rgba(26,179,166,.1); color:#1ab3a6;}
+.mc.p  .mc-ico{background:rgba(124,92,191,.1); color:#7c5cbf;}
+.mc.or .mc-ico{background:rgba(208,124,46,.1); color:#d07c2e;}
+.mc.sl .mc-ico{background:rgba(58,127,213,.1); color:#3a7fd5;}
 .mc-lbl { font-size:.62rem;font-weight:600;color:var(--ink-400);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px; }
 .mc-val { font-size:1.8rem;font-weight:700;line-height:1; }
 .mc.g .mc-val{color:var(--s-free);}  .mc.b .mc-val{color:var(--navy-700);}
 .mc.y .mc-val{color:#9a7420;}         .mc.r .mc-val{color:var(--s-maint);}
-.mc.tl .mc-val{color:#1ab3a6;}
+.mc.tl .mc-val{color:#1ab3a6;}        .mc.p .mc-val{color:#7c5cbf;}
+.mc.or .mc-val{color:#d07c2e;}         .mc.sl .mc-val{color:#3a7fd5;}
 
 /* Linha inferior */
-.dash-bottom { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
-@@media(max-width:800px){ .dash-bottom{ grid-template-columns:1fr; } }
+.dash-bottom { display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem; }
+@@media(max-width:1100px){ .dash-bottom{ grid-template-columns:1fr 1fr; } }
+@@media(max-width:700px)  { .dash-bottom{ grid-template-columns:1fr; } }
 .dash-panel { background:var(--paper);border:1px solid var(--line);border-radius:4px; }
 .dash-panel-head { display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line); }
 .dash-panel-title { font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-600); }
@@ -66,6 +74,15 @@
 .os-info { flex:1;min-width:0; }
 .os-tipo { font-size:.82rem;font-weight:500;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .os-sub  { font-size:.68rem;color:var(--ink-400); }
+
+/* Pedidos recentes */
+.ped-item { display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid var(--line);text-decoration:none; }
+.ped-item:last-child { border-bottom:none; }
+.ped-item:hover .ped-desc { color:var(--navy-700); }
+.ped-info { flex:1;min-width:0; }
+.ped-desc { font-size:.82rem;font-weight:500;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.ped-sub  { font-size:.68rem;color:var(--ink-400); }
+.ped-val  { font-size:.82rem;font-weight:600;color:var(--ink-700);white-space:nowrap; }
 </style>
 
 <div class="dash">
@@ -78,6 +95,7 @@
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
             <a href="/vagas/layout" class="btn btn-ghost btn-sm">Mapa da Marina</a>
             <a href="/movimentacoes/nova" class="btn btn-ghost btn-sm">+ Movimentação</a>
+            <a href="/pedidos/novo" class="btn btn-ghost btn-sm">+ Pedido</a>
             <a href="/servicos/nova" class="btn btn-primary btn-sm">+ Ordem de Serviço</a>
         </div>
     </div>
@@ -91,7 +109,7 @@
     }
     else
     {
-        <!-- Métricas -->
+        <!-- Vagas -->
         <div class="metrics">
             <div class="mc g">
                 <div class="mc-bar"></div>
@@ -117,6 +135,34 @@
                 <div class="mc-bar"></div>
                 <div class="mc-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 4-6 4 10"/><path d="M3 21h18"/></svg></div>
                 <div><div class="mc-lbl">Em Passeio</div><div class="mc-val">@_passeio.Count</div></div>
+            </div>
+        </div>
+
+        <!-- Pedidos e OS -->
+        <div class="metrics-2">
+            <div class="mc p">
+                <div class="mc-bar"></div>
+                <div class="mc-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
+                <div>
+                    <div class="mc-lbl">Pedidos Abertos</div>
+                    <div class="mc-val">@_pedidosAbertos</div>
+                </div>
+            </div>
+            <div class="mc or">
+                <div class="mc-bar"></div>
+                <div class="mc-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                <div>
+                    <div class="mc-lbl">Em Andamento</div>
+                    <div class="mc-val">@_pedidosAndamento</div>
+                </div>
+            </div>
+            <div class="mc sl">
+                <div class="mc-bar"></div>
+                <div class="mc-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+                <div>
+                    <div class="mc-lbl">OS Abertas</div>
+                    <div class="mc-val">@_osAbertas.Count</div>
+                </div>
             </div>
         </div>
 
@@ -189,6 +235,61 @@
                 </div>
             </div>
 
+            <!-- Pedidos recentes -->
+            <div class="dash-panel">
+                <div class="dash-panel-head">
+                    <span class="dash-panel-title">Pedidos recentes</span>
+                    <a href="/pedidos" style="font-size:.72rem;color:var(--ink-400);text-decoration:none;">ver todos →</a>
+                </div>
+                <div class="dash-panel-body">
+                    @if (!_pedidosRecentes.Any())
+                    {
+                        <div style="font-size:.75rem;color:var(--ink-300);padding:.5rem 0;">Nenhum pedido encontrado.</div>
+                    }
+                    else
+                    {
+                        @foreach (var p in _pedidosRecentes)
+                        {
+                            var (statusCor, statusLabel) = p.Status switch
+                            {
+                                StatusPedido.Aberto      => ("#3a7fd5", "Aberto"),
+                                StatusPedido.EmAndamento => ("#d07c2e", "Andamento"),
+                                StatusPedido.Concluido   => ("var(--s-free)", "Concluído"),
+                                StatusPedido.Cancelado   => ("var(--s-maint)", "Cancelado"),
+                                _                        => ("var(--ink-400)", "Rascunho"),
+                            };
+                            var tipoCor = p.Tipo switch
+                            {
+                                TipoPedido.OrdemServico => "#7c5cbf",
+                                TipoPedido.Emprestimo   => "#1ab3a6",
+                                _                       => "var(--ink-400)",
+                            };
+                            var tipoLabel = p.Tipo switch
+                            {
+                                TipoPedido.OrdemServico => "OS",
+                                TipoPedido.Emprestimo   => "Emp.",
+                                _                       => "Venda",
+                            };
+                            var total = p.Itens.Sum(i => i.ValorTotal) + p.Servicos.Sum(s => s.Valor ?? 0);
+                            <a href="/pedidos/@p.Id" class="ped-item">
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;">
+                                    <span style="font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:@tipoCor;background:rgba(0,0,0,.04);padding:.1rem .3rem;border-radius:3px;">@tipoLabel</span>
+                                    <span style="font-size:.58rem;color:var(--ink-300);font-family:monospace;">#@p.Id</span>
+                                </div>
+                                <div class="ped-info">
+                                    <div class="ped-desc">@(p.Cliente?.Nome ?? p.Embarcacao?.Nome ?? "—")</div>
+                                    <div class="ped-sub">@p.CriadoEm.ToLocalTime().ToString("dd/MM HH:mm")</div>
+                                </div>
+                                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+                                    <span class="ped-val">R$ @total.ToString("N2")</span>
+                                    <span style="font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:@statusCor;">@statusLabel</span>
+                                </div>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+
         </div>
     }
 
@@ -197,8 +298,10 @@
 @code {
     private bool _load = true;
     private int  _livres, _ocupadas, _emMov, _manut;
-    private List<Movimentacao>  _passeio  = new();
-    private List<OrdemServico>  _osAbertas = new();
+    private int  _pedidosAbertos, _pedidosAndamento;
+    private List<Movimentacao>  _passeio         = new();
+    private List<OrdemServico>  _osAbertas        = new();
+    private List<Pedido>        _pedidosRecentes  = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -220,6 +323,14 @@
         _osAbertas  = todasOS.Where(o => o.Status != StatusOS.Finalizado)
                               .OrderBy(o => o.Status)
                               .ToList();
+
+        var pedidos       = await PedidoSvc.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _pedidosAbertos   = pedidos.Count(p => p.Status == StatusPedido.Aberto);
+        _pedidosAndamento = pedidos.Count(p => p.Status == StatusPedido.EmAndamento);
+        _pedidosRecentes  = pedidos
+            .Where(p => p.Status != StatusPedido.Cancelado)
+            .Take(6)
+            .ToList();
 
         _load = false;
     }
