@@ -8,17 +8,16 @@
 <style>
 @@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@@300;600&family=Outfit:wght@@300;400;500;600&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
+
+.login-wrap {
   --ocean: #050d1a; --deep: #071525;
   --glass: rgba(255,255,255,0.04); --border: rgba(0,200,255,0.12);
   --cyan: #00d4ff; --text: #e8f4f8; --muted: #5a8098;
-}
-body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; }
-
-.login-wrap {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   padding: 2rem 1rem;
   background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,80,140,.4) 0%, transparent 70%), var(--ocean);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
 }
 .login-card {
   width: 100%; max-width: 420px;
