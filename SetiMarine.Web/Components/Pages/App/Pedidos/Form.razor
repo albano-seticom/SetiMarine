@@ -602,15 +602,19 @@ else
         _                             => "Outro",
     };
 
+    private static DateTime? Utc(DateTime? dt)
+        => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : null;
+
     private async Task SalvarAsync()
     {
         _salvando = true;
         _erro     = null;
         try
         {
-            _pedido.ClienteId     = int.TryParse(_clienteIdStr,     out var cid) && cid > 0 ? cid : null;
-            _pedido.EmbarcacaoId  = int.TryParse(_embarcacaoIdStr,  out var eid) && eid > 0 ? eid : null;
-            _pedido.ResponsavelId = int.TryParse(_responsavelIdStr, out var rid) && rid > 0 ? rid : null;
+            _pedido.ClienteId        = int.TryParse(_clienteIdStr,     out var cid) && cid > 0 ? cid : null;
+            _pedido.EmbarcacaoId     = int.TryParse(_embarcacaoIdStr,  out var eid) && eid > 0 ? eid : null;
+            _pedido.ResponsavelId    = int.TryParse(_responsavelIdStr, out var rid) && rid > 0 ? rid : null;
+            _pedido.PrevisaoConclusao = Utc(_pedido.PrevisaoConclusao);
 
             var itens = _linhas
                 .Where(l => !l.EhServico && int.TryParse(l.ProdutoIdStr, out _))
@@ -620,8 +624,8 @@ else
                     Tipo                  = Enum.Parse<TipoItemPedido>(l.TipoStr),
                     Quantidade            = l.Quantidade,
                     PrecoUnitario         = l.Preco,
-                    DataDevolucaoPrevista = l.DataDevolucaoPrevista,
-                    DataDevolucaoReal     = l.DataDevolucaoReal,
+                    DataDevolucaoPrevista = Utc(l.DataDevolucaoPrevista),
+                    DataDevolucaoReal     = Utc(l.DataDevolucaoReal),
                     StatusEmprestimo      = l.TipoStr == "Emprestimo" ? StatusAluguel.Ativo : null,
                 }).ToList();
 
