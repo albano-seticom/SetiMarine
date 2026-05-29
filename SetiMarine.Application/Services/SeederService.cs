@@ -7,6 +7,24 @@ namespace SetiMarine.Application.Services;
 
 public class SeederService(ISetiMarineDbContext ctx)
 {
+    public async Task SeedSuperAdminAsync()
+    {
+        if (await ctx.Usuarios.AnyAsync(u => u.Perfil == PerfilUsuario.SuperAdmin))
+            return;
+
+        ctx.Usuarios.Add(new Usuario
+        {
+            EmpresaId = null,
+            Nome      = "SuperAdmin",
+            Email     = "superadmin@seticom.com.br",
+            SenhaHash = AuthService.HashSenha("SetiAdmin@2026"),
+            Perfil    = PerfilUsuario.SuperAdmin,
+            Ativo     = true,
+            CriadoEm  = DateTime.UtcNow,
+        });
+        await ctx.SaveChangesAsync();
+    }
+
     public async Task<int> SeedProdutosAsync(int empresaId)
     {
         if (await ctx.Produtos.AnyAsync(p => p.EmpresaId == empresaId))

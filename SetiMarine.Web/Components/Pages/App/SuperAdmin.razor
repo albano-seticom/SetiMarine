@@ -1,3 +1,866 @@
 @page "/superadmin"
 @layout AppLayout
-<h2>SuperAdmin — em construção</h2>
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SuperAdmin")]
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject SuperAdminService SuperSvc
+@inject NavigationManager Nav
+
+<PageTitle>SuperAdmin — SetiMarine</PageTitle>
+
+<style>
+    .sa-tabs { display:flex; gap:0; border-bottom:2px solid var(--line); margin-bottom:1.75rem; }
+    .sa-tab  { padding:.55rem 1.25rem; font-size:.83rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+               color:var(--ink-400); cursor:pointer; border:none; background:none; border-bottom:2px solid transparent;
+               margin-bottom:-2px; transition:color .15s,border-color .15s; }
+    .sa-tab.active { color:var(--navy-700); border-bottom-color:var(--navy-700); }
+    .sa-stat-grid  { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2rem; }
+    .sa-stat-card  { padding:1.1rem 1.25rem; border:1px solid var(--line); border-radius:4px; }
+    .sa-stat-val   { font-size:2rem; font-weight:700; line-height:1; color:var(--navy-700); }
+    .sa-stat-lbl   { font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-400); margin-top:.3rem; }
+    .sa-form-wrap  { background:var(--cream-50,#f9f8f6); border:1px solid var(--line); border-radius:4px;
+                     padding:1.25rem 1.5rem 1rem; margin-bottom:1.5rem; }
+    .sa-form-wrap .form-row { grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); }
+</style>
+
+@* ── Header ──────────────────────────────────────────────── *@
+<div class="page-head" style="margin-bottom:1.25rem;">
+    <div>
+        <span class="eyebrow">Seticom</span>
+        <h1>Painel SuperAdmin</h1>
+    </div>
+</div>
+
+@* ── Tabs ────────────────────────────────────────────────── *@
+<div class="sa-tabs">
+    <button class="sa-tab @(_aba=="dashboard"?"active":"")" @onclick='()=>MudarAba("dashboard")'>Dashboard</button>
+    <button class="sa-tab @(_aba=="empresas" ?"active":"")" @onclick='()=>MudarAba("empresas")'>Empresas</button>
+    <button class="sa-tab @(_aba=="planos"   ?"active":"")" @onclick='()=>MudarAba("planos")'>Planos</button>
+    <button class="sa-tab @(_aba=="usuarios" ?"active":"")" @onclick='()=>MudarAba("usuarios")'>Usuários</button>
+</div>
+
+@* ════════════════════════════════════════════════════════════
+   ABA: DASHBOARD
+   ════════════════════════════════════════════════════════════ *@
+@if (_aba == "dashboard")
+{
+    <div class="sa-stat-grid">
+        <div class="sa-stat-card">
+            <div class="sa-stat-val">@_stats.empresas</div>
+            <div class="sa-stat-lbl">Empresas Ativas</div>
+        </div>
+        <div class="sa-stat-card">
+            <div class="sa-stat-val">@_stats.usuarios</div>
+            <div class="sa-stat-lbl">Usuários Ativos</div>
+        </div>
+        <div class="sa-stat-card">
+            <div class="sa-stat-val">@_stats.planos</div>
+            <div class="sa-stat-lbl">Planos Ativos</div>
+        </div>
+        <div class="sa-stat-card">
+            <div class="sa-stat-val">@_stats.embarcacoes</div>
+            <div class="sa-stat-lbl">Embarcações</div>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;">
+        <div style="flex:1;min-width:260px;">
+            <h3 style="font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400);margin:0 0 .75rem;">Empresas Recentes</h3>
+            @if (_empresas.Count == 0)
+            {
+                <p style="color:var(--ink-300);font-size:.85rem;">Nenhuma empresa cadastrada.</p>
+            }
+            else
+            {
+                <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+                    <table>
+                        <thead><tr><th>Empresa</th><th>Plano</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var e in _empresas.Take(10))
+                            {
+                                <tr>
+                                    <td>
+                                        <div style="font-weight:600;font-size:.85rem;">@(e.NomeFantasia?.Length>0?e.NomeFantasia:e.RazaoSocial)</div>
+                                        <div style="font-size:.72rem;color:var(--ink-300);">@e.Cnpj</div>
+                                    </td>
+                                    <td style="font-size:.82rem;">@(e.Plano?.Nome ?? "—")</td>
+                                    <td>
+                                        @if (e.Bloqueada)
+                                        {
+                                            <span class="badge" style="background:rgba(200,50,50,.1);color:#c03232;">Bloqueada</span>
+                                        }
+                                        else if (e.Ativa)
+                                        {
+                                            <span class="badge badge-free">Ativa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-maint">Inativa</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@* ════════════════════════════════════════════════════════════
+   ABA: EMPRESAS
+   ════════════════════════════════════════════════════════════ *@
+@if (_aba == "empresas")
+{
+    <div class="page-head-actions" style="margin-bottom:1rem;">
+        @if (!_editandoEmpresa)
+        {
+            <button class="btn btn-primary btn-sm" @onclick="NovaEmpresa">+ Nova Empresa</button>
+        }
+    </div>
+
+    @if (_erroEmpresa != null)
+    {
+        <div style="margin-bottom:1rem;padding:.6rem 1rem;background:rgba(200,50,50,.08);border:1px solid rgba(200,50,50,.3);border-radius:4px;color:#c03232;font-size:.83rem;">@_erroEmpresa</div>
+    }
+
+    @if (_editandoEmpresa)
+    {
+        <div class="sa-form-wrap">
+            <h3 style="margin:0 0 1rem;font-size:.95rem;">@(_modelEmpresa.Id == 0 ? "Nova Empresa" : "Editar Empresa")</h3>
+            <div class="form-section">
+                <div class="form-row">
+                    <div class="field">
+                        <label>Razão Social *</label>
+                        <input @bind="_modelEmpresa.RazaoSocial" placeholder="Nome jurídico" />
+                    </div>
+                    <div class="field">
+                        <label>Nome Fantasia</label>
+                        <input @bind="_modelEmpresa.NomeFantasia" placeholder="Nome comercial" />
+                    </div>
+                    <div class="field">
+                        <label>CNPJ *</label>
+                        <input @bind="_modelEmpresa.Cnpj" placeholder="00.000.000/0000-00" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field">
+                        <label>E-mail</label>
+                        <input type="email" @bind="_modelEmpresa.Email" />
+                    </div>
+                    <div class="field">
+                        <label>Telefone</label>
+                        <input @bind="_modelEmpresa.Telefone" />
+                    </div>
+                    <div class="field">
+                        <label>Cidade</label>
+                        <input @bind="_modelEmpresa.Cidade" />
+                    </div>
+                    <div class="field">
+                        <label>Estado</label>
+                        <input @bind="_modelEmpresa.Estado" maxlength="2" placeholder="SP" style="width:80px;" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field">
+                        <label>Plano</label>
+                        <select value="@(_modelEmpresa.PlanoId?.ToString()??"")" @onchange="e => _modelEmpresa.PlanoId = int.TryParse(e.Value?.ToString(),out var v)?v:null">
+                            <option value="">— sem plano —</option>
+                            @foreach (var p in _planos)
+                            {
+                                <option value="@p.Id">@p.Nome</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Plano vence em</label>
+                        <input type="date" value="@(_modelEmpresa.PlanoVenceEm?.ToString("yyyy-MM-dd"))"
+                               @onchange="e => _modelEmpresa.PlanoVenceEm = DateTime.TryParse(e.Value?.ToString(),out var d)?DateTime.SpecifyKind(d,DateTimeKind.Utc):null" />
+                    </div>
+                    <div class="field" style="align-self:flex-end;padding-bottom:.4rem;">
+                        <label><input type="checkbox" @bind="_modelEmpresa.Ativa" /> Ativa</label>
+                        <label style="margin-top:.4rem;"><input type="checkbox" @bind="_modelEmpresa.Bloqueada" /> Bloqueada</label>
+                    </div>
+                </div>
+                @if (_modelEmpresa.Bloqueada)
+                {
+                    <div class="form-row">
+                        <div class="field" style="grid-column:1/-1;">
+                            <label>Motivo do Bloqueio</label>
+                            <input @bind="_modelEmpresa.MotivoBloqueio" />
+                        </div>
+                    </div>
+                }
+
+                @if (_modelEmpresa.Id == 0)
+                {
+                    <div style="margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--line);">
+                        <label style="font-weight:600;font-size:.85rem;">
+                            <input type="checkbox" @bind="_criarAdmin" style="margin-right:.4rem;" />
+                            Criar usuário Admin para esta empresa
+                        </label>
+                        @if (_criarAdmin)
+                        {
+                            <div class="form-row" style="margin-top:.75rem;">
+                                <div class="field">
+                                    <label>Nome do Admin *</label>
+                                    <input @bind="_adminNome" />
+                                </div>
+                                <div class="field">
+                                    <label>E-mail do Admin *</label>
+                                    <input type="email" @bind="_adminEmail" />
+                                </div>
+                                <div class="field">
+                                    <label>Senha *</label>
+                                    <input type="password" @bind="_adminSenha" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="form-actions" style="margin-top:1rem;">
+                <button class="btn btn-primary" @onclick="SalvarEmpresaAsync">Salvar</button>
+                <button class="btn btn-ghost" @onclick="CancelarEmpresa">Cancelar</button>
+            </div>
+        </div>
+    }
+
+    @if (_carregandoEmpresas)
+    {
+        <p style="color:var(--ink-300);">Carregando...</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Empresa</th>
+                        <th>CNPJ</th>
+                        <th>Plano</th>
+                        <th>Vence Em</th>
+                        <th>Usuários</th>
+                        <th>Status</th>
+                        <th style="width:110px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_empresas.Count == 0)
+                    {
+                        <tr><td colspan="7" style="text-align:center;color:var(--ink-300);padding:2rem;">Nenhuma empresa cadastrada.</td></tr>
+                    }
+                    @foreach (var e in _empresas)
+                    {
+                        <tr>
+                            <td>
+                                <div style="font-weight:600;">@e.RazaoSocial</div>
+                                @if (!string.IsNullOrWhiteSpace(e.NomeFantasia))
+                                {
+                                    <div style="font-size:.75rem;color:var(--ink-300);">@e.NomeFantasia</div>
+                                }
+                            </td>
+                            <td style="font-size:.82rem;white-space:nowrap;">@e.Cnpj</td>
+                            <td style="font-size:.82rem;">@(e.Plano?.Nome ?? "—")</td>
+                            <td style="font-size:.82rem;">@(e.PlanoVenceEm?.ToString("dd/MM/yyyy") ?? "—")</td>
+                            <td style="font-size:.82rem;text-align:center;">@e.Usuarios.Count</td>
+                            <td>
+                                @if (e.Bloqueada)
+                                {
+                                    <span class="badge" style="background:rgba(200,50,50,.1);color:#c03232;">Bloqueada</span>
+                                }
+                                else if (e.Ativa)
+                                {
+                                    <span class="badge badge-free">Ativa</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-maint">Inativa</span>
+                                }
+                            </td>
+                            <td>
+                                <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                    <button class="btn btn-ghost btn-sm" @onclick="()=>EditarEmpresa(e)" title="Editar">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="()=>ToggleEmpresaAtivaAsync(e)" title="@(e.Ativa?"Desativar":"Ativar")">
+                                        @if (e.Ativa)
+                                        {
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22a36e" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                                        }
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@* ════════════════════════════════════════════════════════════
+   ABA: PLANOS
+   ════════════════════════════════════════════════════════════ *@
+@if (_aba == "planos")
+{
+    <div class="page-head-actions" style="margin-bottom:1rem;">
+        @if (!_editandoPlano)
+        {
+            <button class="btn btn-primary btn-sm" @onclick="NovoPlano">+ Novo Plano</button>
+        }
+    </div>
+
+    @if (_erroPlano != null)
+    {
+        <div style="margin-bottom:1rem;padding:.6rem 1rem;background:rgba(200,50,50,.08);border:1px solid rgba(200,50,50,.3);border-radius:4px;color:#c03232;font-size:.83rem;">@_erroPlano</div>
+    }
+
+    @if (_editandoPlano)
+    {
+        <div class="sa-form-wrap">
+            <h3 style="margin:0 0 1rem;font-size:.95rem;">@(_modelPlano.Id == 0 ? "Novo Plano" : "Editar Plano")</h3>
+            <div class="form-section">
+                <div class="form-row">
+                    <div class="field">
+                        <label>Nome *</label>
+                        <input @bind="_modelPlano.Nome" />
+                    </div>
+                    <div class="field">
+                        <label>Descrição</label>
+                        <input @bind="_modelPlano.Descricao" />
+                    </div>
+                    <div class="field">
+                        <label>Valor (R$) *</label>
+                        <input type="number" step="0.01" min="0" @bind="_modelPlano.Valor" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field">
+                        <label>Limite de Embarcações</label>
+                        <input type="number" min="0" @bind="_modelPlano.LimiteEmbarcacoes" />
+                    </div>
+                    <div class="field">
+                        <label>Limite de Usuários</label>
+                        <input type="number" min="0" @bind="_modelPlano.LimiteUsuarios" />
+                    </div>
+                    <div class="field">
+                        <label>Ordem</label>
+                        <input type="number" min="0" @bind="_modelPlano.Ordem" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field">
+                        <label>Texto do Botão</label>
+                        <input @bind="_modelPlano.TextoBotao" placeholder="Ex: Assinar agora" />
+                    </div>
+                    <div class="field">
+                        <label>Link de Pagamento</label>
+                        <input @bind="_modelPlano.LinkPagamento" placeholder="https://..." />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field" style="grid-column:1/-1;">
+                        <label>Recursos (um por linha)</label>
+                        <textarea @bind="_modelPlano.Recursos" rows="4" placeholder="Até 5 embarcações&#10;3 usuários&#10;Suporte por e-mail" style="width:100%;font-size:.85rem;"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field" style="align-self:flex-end;padding-bottom:.4rem;">
+                        <label><input type="checkbox" @bind="_modelPlano.Ativo" /> Ativo</label>
+                        <label style="margin-top:.4rem;"><input type="checkbox" @bind="_modelPlano.Destaque" /> Em destaque</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top:1rem;">
+                <button class="btn btn-primary" @onclick="SalvarPlanoAsync">Salvar</button>
+                <button class="btn btn-ghost" @onclick="CancelarPlano">Cancelar</button>
+            </div>
+        </div>
+    }
+
+    @if (_carregandoPlanos)
+    {
+        <p style="color:var(--ink-300);">Carregando...</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:50px;">Ordem</th>
+                        <th>Nome</th>
+                        <th>Valor</th>
+                        <th>Embarcações</th>
+                        <th>Usuários</th>
+                        <th>Destaque</th>
+                        <th>Status</th>
+                        <th style="width:90px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_planos.Count == 0)
+                    {
+                        <tr><td colspan="8" style="text-align:center;color:var(--ink-300);padding:2rem;">Nenhum plano cadastrado.</td></tr>
+                    }
+                    @foreach (var p in _planos)
+                    {
+                        <tr>
+                            <td style="text-align:center;font-size:.82rem;">@p.Ordem</td>
+                            <td>
+                                <div style="font-weight:600;">@p.Nome</div>
+                                @if (!string.IsNullOrWhiteSpace(p.Descricao))
+                                {
+                                    <div style="font-size:.75rem;color:var(--ink-300);">@p.Descricao</div>
+                                }
+                            </td>
+                            <td style="font-size:.82rem;white-space:nowrap;">R$ @p.Valor.ToString("N2")</td>
+                            <td style="font-size:.82rem;text-align:center;">@(p.LimiteEmbarcacoes == 0 ? "∞" : p.LimiteEmbarcacoes.ToString())</td>
+                            <td style="font-size:.82rem;text-align:center;">@(p.LimiteUsuarios == 0 ? "∞" : p.LimiteUsuarios.ToString())</td>
+                            <td style="text-align:center;">
+                                @if (p.Destaque)
+                                {
+                                    <span style="color:#d4a017;font-size:1rem;" title="Destaque">★</span>
+                                }
+                            </td>
+                            <td>
+                                @if (p.Ativo)
+                                {
+                                    <span class="badge badge-free">Ativo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-maint">Inativo</span>
+                                }
+                            </td>
+                            <td>
+                                <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                    <button class="btn btn-ghost btn-sm" @onclick="()=>EditarPlano(p)" title="Editar">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="()=>TogglePlanoAtivoAsync(p)" title="@(p.Ativo?"Desativar":"Ativar")">
+                                        @if (p.Ativo)
+                                        {
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22a36e" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                                        }
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@* ════════════════════════════════════════════════════════════
+   ABA: USUARIOS
+   ════════════════════════════════════════════════════════════ *@
+@if (_aba == "usuarios")
+{
+    <div class="page-head-actions" style="margin-bottom:1rem;">
+        @if (!_editandoUsuario)
+        {
+            <button class="btn btn-primary btn-sm" @onclick="NovoUsuario">+ Novo Usuário</button>
+        }
+    </div>
+
+    @if (_erroUsuario != null)
+    {
+        <div style="margin-bottom:1rem;padding:.6rem 1rem;background:rgba(200,50,50,.08);border:1px solid rgba(200,50,50,.3);border-radius:4px;color:#c03232;font-size:.83rem;">@_erroUsuario</div>
+    }
+
+    @if (_editandoUsuario)
+    {
+        <div class="sa-form-wrap">
+            <h3 style="margin:0 0 1rem;font-size:.95rem;">@(_modelUsuario.Id == 0 ? "Novo Usuário" : "Editar Usuário")</h3>
+            <div class="form-section">
+                <div class="form-row">
+                    <div class="field">
+                        <label>Nome *</label>
+                        <input @bind="_modelUsuario.Nome" />
+                    </div>
+                    <div class="field">
+                        <label>E-mail *</label>
+                        <input type="email" @bind="_modelUsuario.Email" />
+                    </div>
+                    <div class="field">
+                        <label>Senha @(_modelUsuario.Id == 0 ? "*" : "(em branco = manter)")</label>
+                        <input type="password" @bind="_novaSenhaUsr" placeholder="@(_modelUsuario.Id==0?"Obrigatório":"Deixe em branco para não alterar")" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field">
+                        <label>Empresa</label>
+                        <select value="@(_modelUsuario.EmpresaId?.ToString()??"")" @onchange="e => _modelUsuario.EmpresaId = int.TryParse(e.Value?.ToString(),out var v)?v:null">
+                            <option value="">— sem empresa —</option>
+                            @foreach (var emp in _empresas)
+                            {
+                                <option value="@emp.Id">@(emp.NomeFantasia?.Length>0?emp.NomeFantasia:emp.RazaoSocial)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Perfil *</label>
+                        <select value="@((int)_modelUsuario.Perfil)" @onchange="OnPerfilChanged">
+                            <option value="1">Admin</option>
+                            <option value="2">Operacional</option>
+                        </select>
+                    </div>
+                    <div class="field" style="align-self:flex-end;padding-bottom:.4rem;">
+                        <label><input type="checkbox" @bind="_modelUsuario.Ativo" /> Ativo</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top:1rem;">
+                <button class="btn btn-primary" @onclick="SalvarUsuarioAsync">Salvar</button>
+                <button class="btn btn-ghost" @onclick="CancelarUsuario">Cancelar</button>
+            </div>
+        </div>
+    }
+
+    @if (_carregandoUsuarios)
+    {
+        <p style="color:var(--ink-300);">Carregando...</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Empresa</th>
+                        <th>Perfil</th>
+                        <th>Status</th>
+                        <th style="width:90px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_usuarios.Count == 0)
+                    {
+                        <tr><td colspan="6" style="text-align:center;color:var(--ink-300);padding:2rem;">Nenhum usuário cadastrado.</td></tr>
+                    }
+                    @foreach (var u in _usuarios)
+                    {
+                        <tr>
+                            <td style="font-weight:600;">@u.Nome</td>
+                            <td style="font-size:.82rem;">@u.Email</td>
+                            <td style="font-size:.82rem;">@(u.Empresa != null ? (u.Empresa.NomeFantasia?.Length>0?u.Empresa.NomeFantasia:u.Empresa.RazaoSocial) : "—")</td>
+                            <td style="font-size:.82rem;">@(u.Perfil == PerfilUsuario.Admin ? "Admin" : "Operacional")</td>
+                            <td>
+                                @if (u.Ativo)
+                                {
+                                    <span class="badge badge-free">Ativo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-maint">Inativo</span>
+                                }
+                            </td>
+                            <td>
+                                <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                    <button class="btn btn-ghost btn-sm" @onclick="()=>EditarUsuario(u)" title="Editar">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="()=>ToggleUsuarioAtivoAsync(u)" title="@(u.Ativo?"Desativar":"Ativar")">
+                                        @if (u.Ativo)
+                                        {
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22a36e" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                                        }
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    string _aba = "dashboard";
+
+    // ── Stats ─────────────────────────────────────────────────────
+    (int empresas, int usuarios, int planos, int embarcacoes) _stats;
+
+    // ── Empresas ──────────────────────────────────────────────────
+    List<Empresa> _empresas = [];
+    bool _carregandoEmpresas;
+    bool _editandoEmpresa;
+    Empresa _modelEmpresa = new();
+    string? _erroEmpresa;
+    bool _criarAdmin;
+    string _adminNome = "", _adminEmail = "", _adminSenha = "";
+
+    // ── Planos ────────────────────────────────────────────────────
+    List<Plano> _planos = [];
+    bool _carregandoPlanos;
+    bool _editandoPlano;
+    Plano _modelPlano = new();
+    string? _erroPlano;
+
+    // ── Usuários ──────────────────────────────────────────────────
+    List<Usuario> _usuarios = [];
+    bool _carregandoUsuarios;
+    bool _editandoUsuario;
+    Usuario _modelUsuario = new() { Perfil = PerfilUsuario.Admin, Ativo = true };
+    string? _erroUsuario;
+    string _novaSenhaUsr = "";
+
+    // ─────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        _stats    = await SuperSvc.ObterStatsAsync();
+        _empresas = await SuperSvc.ListarEmpresasAsync();
+        _planos   = await SuperSvc.ListarPlanosAsync();
+    }
+
+    async Task MudarAba(string aba)
+    {
+        _aba = aba;
+        _editandoEmpresa = _editandoPlano = _editandoUsuario = false;
+        _erroEmpresa = _erroPlano = _erroUsuario = null;
+
+        if (aba == "dashboard")
+        {
+            _stats    = await SuperSvc.ObterStatsAsync();
+            _empresas = await SuperSvc.ListarEmpresasAsync();
+        }
+        else if (aba == "empresas")
+        {
+            _carregandoEmpresas = true; StateHasChanged();
+            _empresas = await SuperSvc.ListarEmpresasAsync();
+            _planos   = await SuperSvc.ListarPlanosAsync();
+            _carregandoEmpresas = false;
+        }
+        else if (aba == "planos")
+        {
+            _carregandoPlanos = true; StateHasChanged();
+            _planos = await SuperSvc.ListarPlanosAsync();
+            _carregandoPlanos = false;
+        }
+        else if (aba == "usuarios")
+        {
+            _carregandoUsuarios = true; StateHasChanged();
+            _usuarios = await SuperSvc.ListarUsuariosAsync();
+            _empresas = await SuperSvc.ListarEmpresasAsync();
+            _carregandoUsuarios = false;
+        }
+    }
+
+    // ── Empresas ──────────────────────────────────────────────────
+    void NovaEmpresa()
+    {
+        _modelEmpresa   = new() { Ativa = true };
+        _criarAdmin     = false;
+        _adminNome = _adminEmail = _adminSenha = "";
+        _erroEmpresa    = null;
+        _editandoEmpresa = true;
+    }
+
+    void EditarEmpresa(Empresa e)
+    {
+        _modelEmpresa = new Empresa
+        {
+            Id            = e.Id,
+            RazaoSocial   = e.RazaoSocial,
+            NomeFantasia  = e.NomeFantasia,
+            Cnpj          = e.Cnpj,
+            Email         = e.Email,
+            Telefone      = e.Telefone,
+            Cidade        = e.Cidade,
+            Estado        = e.Estado,
+            PlanoId       = e.PlanoId,
+            PlanoVenceEm  = e.PlanoVenceEm,
+            Ativa         = e.Ativa,
+            Bloqueada     = e.Bloqueada,
+            MotivoBloqueio = e.MotivoBloqueio,
+        };
+        _criarAdmin = false;
+        _erroEmpresa = null;
+        _editandoEmpresa = true;
+    }
+
+    void CancelarEmpresa() { _editandoEmpresa = false; _erroEmpresa = null; }
+
+    async Task SalvarEmpresaAsync()
+    {
+        _erroEmpresa = null;
+        if (string.IsNullOrWhiteSpace(_modelEmpresa.RazaoSocial))
+        { _erroEmpresa = "Razao Social e obrigatoria."; return; }
+        if (string.IsNullOrWhiteSpace(_modelEmpresa.Cnpj))
+        { _erroEmpresa = "CNPJ e obrigatorio."; return; }
+
+        try
+        {
+            if (_modelEmpresa.Id == 0 && _criarAdmin)
+            {
+                if (string.IsNullOrWhiteSpace(_adminNome) || string.IsNullOrWhiteSpace(_adminEmail) || string.IsNullOrWhiteSpace(_adminSenha))
+                { _erroEmpresa = "Preencha todos os campos do admin."; return; }
+                await SuperSvc.CriarEmpresaComAdminAsync(_modelEmpresa, _adminNome, _adminEmail, _adminSenha);
+            }
+            else
+            {
+                await SuperSvc.SalvarEmpresaAsync(_modelEmpresa);
+            }
+            _editandoEmpresa = false;
+            _empresas = await SuperSvc.ListarEmpresasAsync();
+            _stats    = await SuperSvc.ObterStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            _erroEmpresa = ex.Message;
+        }
+    }
+
+    async Task ToggleEmpresaAtivaAsync(Empresa e)
+    {
+        try
+        {
+            await SuperSvc.ToggleEmpresaAtivaAsync(e.Id);
+            _empresas = await SuperSvc.ListarEmpresasAsync();
+            _stats    = await SuperSvc.ObterStatsAsync();
+        }
+        catch (Exception ex) { _erroEmpresa = ex.Message; }
+    }
+
+    // ── Planos ────────────────────────────────────────────────────
+    void NovoPlano()
+    {
+        _modelPlano  = new() { Ativo = true, Ordem = _planos.Count > 0 ? _planos.Max(p => p.Ordem) + 1 : 0 };
+        _erroPlano   = null;
+        _editandoPlano = true;
+    }
+
+    void EditarPlano(Plano p)
+    {
+        _modelPlano = new Plano
+        {
+            Id               = p.Id,
+            Nome             = p.Nome,
+            Descricao        = p.Descricao,
+            Valor            = p.Valor,
+            LimiteEmbarcacoes = p.LimiteEmbarcacoes,
+            LimiteUsuarios   = p.LimiteUsuarios,
+            Ativo            = p.Ativo,
+            Destaque         = p.Destaque,
+            Ordem            = p.Ordem,
+            TextoBotao       = p.TextoBotao,
+            LinkPagamento    = p.LinkPagamento,
+            Recursos         = p.Recursos,
+        };
+        _erroPlano   = null;
+        _editandoPlano = true;
+    }
+
+    void CancelarPlano() { _editandoPlano = false; _erroPlano = null; }
+
+    async Task SalvarPlanoAsync()
+    {
+        _erroPlano = null;
+        if (string.IsNullOrWhiteSpace(_modelPlano.Nome))
+        { _erroPlano = "Nome e obrigatorio."; return; }
+
+        try
+        {
+            await SuperSvc.SalvarPlanoAsync(_modelPlano);
+            _editandoPlano = false;
+            _planos = await SuperSvc.ListarPlanosAsync();
+            _stats  = await SuperSvc.ObterStatsAsync();
+        }
+        catch (Exception ex) { _erroPlano = ex.Message; }
+    }
+
+    async Task TogglePlanoAtivoAsync(Plano p)
+    {
+        try
+        {
+            await SuperSvc.TogglePlanoAtivoAsync(p.Id);
+            _planos = await SuperSvc.ListarPlanosAsync();
+            _stats  = await SuperSvc.ObterStatsAsync();
+        }
+        catch (Exception ex) { _erroPlano = ex.Message; }
+    }
+
+    // ── Usuários ──────────────────────────────────────────────────
+    void NovoUsuario()
+    {
+        _modelUsuario  = new() { Perfil = PerfilUsuario.Admin, Ativo = true };
+        _novaSenhaUsr  = "";
+        _erroUsuario   = null;
+        _editandoUsuario = true;
+    }
+
+    void EditarUsuario(Usuario u)
+    {
+        _modelUsuario = new Usuario
+        {
+            Id        = u.Id,
+            Nome      = u.Nome,
+            Email     = u.Email,
+            Perfil    = u.Perfil,
+            EmpresaId = u.EmpresaId,
+            Ativo     = u.Ativo,
+        };
+        _novaSenhaUsr  = "";
+        _erroUsuario   = null;
+        _editandoUsuario = true;
+    }
+
+    void CancelarUsuario() { _editandoUsuario = false; _erroUsuario = null; }
+
+    async Task SalvarUsuarioAsync()
+    {
+        _erroUsuario = null;
+        if (string.IsNullOrWhiteSpace(_modelUsuario.Nome))
+        { _erroUsuario = "Nome e obrigatorio."; return; }
+        if (string.IsNullOrWhiteSpace(_modelUsuario.Email))
+        { _erroUsuario = "E-mail e obrigatorio."; return; }
+        if (_modelUsuario.Id == 0 && string.IsNullOrWhiteSpace(_novaSenhaUsr))
+        { _erroUsuario = "Senha e obrigatoria para novo usuario."; return; }
+
+        try
+        {
+            await SuperSvc.SalvarUsuarioAsync(_modelUsuario, _novaSenhaUsr.Length > 0 ? _novaSenhaUsr : null);
+            _editandoUsuario = false;
+            _usuarios = await SuperSvc.ListarUsuariosAsync();
+            _stats    = await SuperSvc.ObterStatsAsync();
+        }
+        catch (Exception ex) { _erroUsuario = ex.Message; }
+    }
+
+    void OnPerfilChanged(ChangeEventArgs e)
+        => _modelUsuario.Perfil = (PerfilUsuario)(int.TryParse(e.Value?.ToString(), out var v) ? v : 1);
+
+    async Task ToggleUsuarioAtivoAsync(Usuario u)
+    {
+        try
+        {
+            await SuperSvc.ToggleUsuarioAtivoAsync(u.Id);
+            _usuarios = await SuperSvc.ListarUsuariosAsync();
+            _stats    = await SuperSvc.ObterStatsAsync();
+        }
+        catch (Exception ex) { _erroUsuario = ex.Message; }
+    }
+}

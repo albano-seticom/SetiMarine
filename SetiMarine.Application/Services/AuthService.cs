@@ -34,11 +34,11 @@ public class AuthService
 
         var sessao = new SessaoAtiva
         {
-            UsuarioId = usuario.Id,
-            EmpresaId = usuario.EmpresaId,
+            UsuarioId  = usuario.Id,
+            EmpresaId  = usuario.EmpresaId,
             IniciadaEm = DateTime.UtcNow,
-            ExpiraEm = DateTime.UtcNow.AddHours(12),
-            Token = Guid.NewGuid().ToString()
+            ExpiraEm   = DateTime.UtcNow.AddHours(12),
+            Token      = Guid.NewGuid().ToString()
         };
         _context.SessoesAtivas.Add(sessao);
         await _context.SaveChangesAsync();
@@ -48,8 +48,8 @@ public class AuthService
             new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
             new(ClaimTypes.Name,           usuario.Nome),
             new(ClaimTypes.Email,          usuario.Email),
-            new("EmpresaId",               usuario.EmpresaId.ToString()),
-            new("EmpresaNome",             usuario.Empresa?.NomeFantasia ?? usuario.Empresa?.RazaoSocial ?? ""),
+            new("EmpresaId",               usuario.EmpresaId?.ToString() ?? ""),
+            new("EmpresaNome",             usuario.Empresa?.NomeFantasia ?? usuario.Empresa?.RazaoSocial ?? "SETICOM"),
             new(ClaimTypes.Role,           usuario.Perfil.ToString()),
             new("SessaoToken",             sessao.Token),
         };
@@ -86,7 +86,7 @@ public class AuthService
 
         var admin = new Usuario
         {
-            EmpresaId  = empresa.Id,
+            EmpresaId  = (int?)empresa.Id,
             Nome       = nomeAdmin.Trim(),
             Email      = emailAdmin.ToLower().Trim(),
             SenhaHash  = HashSenha(senhaAdmin),

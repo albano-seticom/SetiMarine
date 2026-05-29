@@ -385,11 +385,22 @@ else
                                         <tr class="dev-row">
                                             <td></td><td></td>
                                             <td colspan="4">
-                                                <div style="display:flex;gap:.5rem;align-items:center;">
-                                                    <span style="font-size:.7rem;color:var(--ink-400);">Devolução:</span>
-                                                    <span style="font-size:.7rem;color:var(--ink-300);">Prevista</span>
+                                                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                                                    <span style="font-size:.7rem;color:var(--ink-400);">Horas:</span>
+                                                    <input type="number" value="@ln.HorasAluguel" min="1" step="1"
+                                                           @oninput="@(ev => OnHorasChanged(ln, ev.Value?.ToString()))"
+                                                           style="height:24px;font-size:.76rem;width:60px;text-align:center;" />
+                                                    @if (ln.PrecoUnitAluguelHora.HasValue)
+                                                    {
+                                                        <span style="font-size:.7rem;color:var(--ink-400);">× @ln.PrecoUnitAluguelHora.Value.ToString("C2")/h</span>
+                                                    }
+                                                    else if (ln.PrecoUnitAluguelDia.HasValue)
+                                                    {
+                                                        <span style="font-size:.7rem;color:var(--ink-400);">× @ln.PrecoUnitAluguelDia.Value.ToString("C2")/dia</span>
+                                                    }
+                                                    <span style="font-size:.7rem;color:var(--ink-300);margin-left:.25rem;">Dev. prevista:</span>
                                                     <input type="date" @bind="ln.DataDevolucaoPrevista" @bind:format="yyyy-MM-dd" style="height:24px;font-size:.76rem;width:128px;" />
-                                                    <span style="font-size:.7rem;color:var(--ink-300);">Real</span>
+                                                    <span style="font-size:.7rem;color:var(--ink-300);">Real:</span>
                                                     <input type="date" @bind="ln.DataDevolucaoReal" @bind:format="yyyy-MM-dd" style="height:24px;font-size:.76rem;width:128px;" />
                                                 </div>
                                             </td>
@@ -486,16 +497,19 @@ else
 
     private class LinhaRow
     {
-        public bool      EhServico             { get; set; }
-        public bool      Alugavel              { get; set; }
-        public string    ProdutoIdStr          { get; set; } = "";
-        public string    Nome                  { get; set; } = "";
-        public int       Quantidade            { get; set; } = 1;
-        public decimal   Preco                 { get; set; }
-        public string    TipoStr               { get; set; } = "Venda";
-        public string    ResponsavelIdStr      { get; set; } = "";
-        public DateTime? DataDevolucaoPrevista { get; set; }
-        public DateTime? DataDevolucaoReal     { get; set; }
+        public bool      EhServico              { get; set; }
+        public bool      Alugavel               { get; set; }
+        public string    ProdutoIdStr           { get; set; } = "";
+        public string    Nome                   { get; set; } = "";
+        public int       Quantidade             { get; set; } = 1;
+        public decimal   Preco                  { get; set; }
+        public string    TipoStr                { get; set; } = "Venda";
+        public string    ResponsavelIdStr       { get; set; } = "";
+        public int       HorasAluguel           { get; set; } = 1;
+        public decimal?  PrecoUnitAluguelHora   { get; set; }
+        public decimal?  PrecoUnitAluguelDia    { get; set; }
+        public DateTime? DataDevolucaoPrevista  { get; set; }
+        public DateTime? DataDevolucaoReal      { get; set; }
         public decimal Total => EhServico ? Preco : Quantidade * Preco;
     }
 
@@ -521,17 +535,24 @@ else
             _statusStr            = existente.Status.ToString();
             _servicosConcluidos   = existente.Servicos.Count(s => s.Concluido);
 
-            _linhas = existente.Itens.Select(i => new LinhaRow
+            _linhas = existente.Itens.Select(i =>
             {
-                EhServico             = false,
-                Alugavel              = _produtos.FirstOrDefault(p => p.Id == i.ProdutoId)?.Alugavel ?? false,
-                ProdutoIdStr          = i.ProdutoId.ToString(),
-                Nome                  = _produtos.FirstOrDefault(p => p.Id == i.ProdutoId)?.Nome ?? "",
-                Quantidade            = i.Quantidade,
-                Preco                 = i.PrecoUnitario,
-                TipoStr               = i.Tipo.ToString(),
-                DataDevolucaoPrevista = i.DataDevolucaoPrevista,
-                DataDevolucaoReal     = i.DataDevolucaoReal,
+                var prod = _produtos.FirstOrDefault(p => p.Id == i.ProdutoId);
+                return new LinhaRow
+                {
+                    EhServico             = false,
+                    Alugavel              = prod?.Alugavel ?? false,
+                    ProdutoIdStr          = i.ProdutoId.ToString(),
+                    Nome                  = prod?.Nome ?? "",
+                    Quantidade            = i.Quantidade,
+                    Preco                 = i.PrecoUnitario,
+                    TipoStr               = i.Tipo.ToString(),
+                    HorasAluguel          = i.HorasAluguel ?? 1,
+                    PrecoUnitAluguelHora  = prod?.PrecoAluguelHora,
+                    PrecoUnitAluguelDia   = prod?.PrecoAluguelDia,
+                    DataDevolucaoPrevista = i.DataDevolucaoPrevista,
+                    DataDevolucaoReal     = i.DataDevolucaoReal,
+                };
             })
             .Concat(existente.Servicos.Select(s => new LinhaRow
             {
@@ -585,22 +606,38 @@ else
         return lista;
     }
 
+    private static decimal PrecoEmprestimo(Produto p, int horas)
+    {
+        if (p.PrecoAluguelHora.HasValue) return horas * p.PrecoAluguelHora.Value;
+        if (p.PrecoAluguelDia.HasValue)  return (horas / 24m) * p.PrecoAluguelDia.Value;
+        return p.PrecoVenda ?? 0;
+    }
+
+    private static decimal RecalcularPreco(LinhaRow ln)
+    {
+        if (ln.PrecoUnitAluguelHora.HasValue) return ln.HorasAluguel * ln.PrecoUnitAluguelHora.Value;
+        if (ln.PrecoUnitAluguelDia.HasValue)  return (ln.HorasAluguel / 24m) * ln.PrecoUnitAluguelDia.Value;
+        return ln.Preco;
+    }
+
     private void AdicionarProduto(Produto p)
     {
         var tipoStr   = _pedido.Tipo == TipoPedido.Emprestimo && p.Alugavel ? "Emprestimo" : "Venda";
         var existente = _linhas.FirstOrDefault(l => !l.EhServico && l.ProdutoIdStr == p.Id.ToString() && l.TipoStr == tipoStr);
         if (existente != null) { existente.Quantidade++; return; }
 
+        var horas = 1;
         _linhas.Add(new LinhaRow
         {
-            EhServico    = false,
-            Alugavel     = p.Alugavel,
-            ProdutoIdStr = p.Id.ToString(),
-            Nome         = p.Nome,
-            Quantidade   = 1,
-            Preco        = tipoStr == "Emprestimo"
-                ? (p.PrecoAluguelHora ?? p.PrecoAluguelDia ?? p.PrecoVenda ?? 0)
-                : (p.PrecoVenda ?? 0),
+            EhServico             = false,
+            Alugavel              = p.Alugavel,
+            ProdutoIdStr          = p.Id.ToString(),
+            Nome                  = p.Nome,
+            Quantidade            = 1,
+            PrecoUnitAluguelHora  = p.PrecoAluguelHora,
+            PrecoUnitAluguelDia   = p.PrecoAluguelDia,
+            HorasAluguel          = horas,
+            Preco                 = tipoStr == "Emprestimo" ? PrecoEmprestimo(p, horas) : (p.PrecoVenda ?? 0),
             TipoStr               = tipoStr,
             DataDevolucaoPrevista = tipoStr == "Emprestimo"
                 ? DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc)
@@ -612,12 +649,25 @@ else
     {
         if (novoTipo == "Emprestimo" && !ln.Alugavel) return;
         ln.TipoStr = novoTipo;
-        if (novoTipo == "Emprestimo" && ln.DataDevolucaoPrevista == null)
-            ln.DataDevolucaoPrevista = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
-        if (novoTipo == "Venda")
+        if (novoTipo == "Emprestimo")
+        {
+            ln.HorasAluguel          = 1;
+            ln.Preco                 = RecalcularPreco(ln);
+            ln.DataDevolucaoPrevista ??= DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
+        }
+        else
         {
             ln.DataDevolucaoPrevista = null;
             ln.DataDevolucaoReal     = null;
+        }
+    }
+
+    private void OnHorasChanged(LinhaRow ln, string? valor)
+    {
+        if (int.TryParse(valor, out var h) && h >= 1)
+        {
+            ln.HorasAluguel = h;
+            ln.Preco        = RecalcularPreco(ln);
         }
     }
 
@@ -705,6 +755,7 @@ else
                     Tipo                  = Enum.Parse<TipoItemPedido>(l.TipoStr),
                     Quantidade            = l.Quantidade,
                     PrecoUnitario         = l.Preco,
+                    HorasAluguel          = l.TipoStr == "Emprestimo" ? l.HorasAluguel : null,
                     DataDevolucaoPrevista = Utc(l.DataDevolucaoPrevista),
                     DataDevolucaoReal     = Utc(l.DataDevolucaoReal),
                     StatusEmprestimo      = l.TipoStr == "Emprestimo" ? StatusAluguel.Ativo : null,

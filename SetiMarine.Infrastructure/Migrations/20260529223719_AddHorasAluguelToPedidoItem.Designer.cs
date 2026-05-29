@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SetiMarine.Infrastructure.Data;
@@ -11,9 +12,11 @@ using SetiMarine.Infrastructure.Data;
 namespace SetiMarine.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260529223719_AddHorasAluguelToPedidoItem")]
+    partial class AddHorasAluguelToPedidoItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -749,13 +752,7 @@ namespace SetiMarine.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Ordem")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Recursos")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TextoBotao")
                         .HasColumnType("text");
 
                     b.Property<decimal>("Valor")
@@ -925,7 +922,7 @@ namespace SetiMarine.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("EmpresaId")
+                    b.Property<int>("EmpresaId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("ExpiraEm")
@@ -1020,7 +1017,7 @@ namespace SetiMarine.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("EmpresaId")
+                    b.Property<int>("EmpresaId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Nome")
@@ -1542,7 +1539,9 @@ namespace SetiMarine.Infrastructure.Migrations
                 {
                     b.HasOne("SetiMarine.Domain.Entities.Empresa", "Empresa")
                         .WithMany("Usuarios")
-                        .HasForeignKey("EmpresaId");
+                        .HasForeignKey("EmpresaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Empresa");
                 });

@@ -48,6 +48,7 @@ builder.Services.AddScoped<EmpresaService>();
 builder.Services.AddScoped<ProdutoService>();
 builder.Services.AddScoped<PedidoService>();
 builder.Services.AddScoped<SeederService>();
+builder.Services.AddScoped<SuperAdminService>();
 
 var app = builder.Build();
 
@@ -56,6 +57,9 @@ using (var scope = app.Services.CreateScope())
     var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
     using var dbContext = dbContextFactory.CreateDbContext();
     await dbContext.Database.MigrateAsync();
+
+    var seeder = scope.ServiceProvider.GetRequiredService<SeederService>();
+    await seeder.SeedSuperAdminAsync();
 }
 
 if (!app.Environment.IsDevelopment())

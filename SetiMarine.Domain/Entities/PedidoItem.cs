@@ -17,8 +17,9 @@ public class PedidoItem
     public decimal PrecoUnitario { get; set; }
     public decimal ValorTotal => Quantidade * PrecoUnitario;
 
+    public int?      HorasAluguel          { get; set; }
     public DateTime? DataDevolucaoPrevista { get; set; }
-    public DateTime? DataDevolucaoReal { get; set; }
+    public DateTime? DataDevolucaoReal     { get; set; }
     public StatusAluguel? StatusEmprestimo { get; set; }
 
     public string? Observacao { get; set; }

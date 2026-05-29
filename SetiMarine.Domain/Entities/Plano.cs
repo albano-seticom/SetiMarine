@@ -10,7 +10,9 @@ public class Plano
     public int LimiteUsuarios { get; set; }
     public bool Ativo { get; set; } = true;
     public bool Destaque { get; set; } = false;
+    public int Ordem { get; set; } = 0;
+    public string? TextoBotao { get; set; }
     public string? LinkPagamento { get; set; }
-    public string? Recursos { get; set; }  // uma linha por recurso
+    public string? Recursos { get; set; }
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 }
