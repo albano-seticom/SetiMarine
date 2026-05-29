@@ -838,7 +838,8 @@ body {
         await using var db = await DbFactory.CreateDbContextAsync();
         Planos = await db.Planos
             .Where(p => p.Ativo)
-            .OrderBy(p => p.Valor)
+            .OrderBy(p => p.Ordem)
+            .ThenBy(p => p.Valor)
             .ToListAsync();
         CarregandoPlanos = false;
     }

@@ -1,0 +1,363 @@
+@page "/planos"
+@layout EmptyLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject NavigationManager Nav
+@inject IDbContextFactory<AppDbContext> DbFactory
+@using SetiMarine.Infrastructure.Data
+@using SetiMarine.Domain.Entities
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Planos e Preços — SetiMarine</PageTitle>
+
+<style>
+@@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ocean:   #050d1a;
+  --deep:    #071525;
+  --surface: #0a1e30;
+  --glass:   rgba(255,255,255,0.04);
+  --border:  rgba(0,200,255,0.12);
+  --cyan:    #00d4ff;
+  --gold:    #c9a84c;
+  --text:    #e8f4f8;
+  --muted:   #5a8098;
+  --radius:  12px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ocean);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: 68px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(1.5rem, 5vw, 4rem);
+  background: rgba(5,13,26,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo img { height: 68px; width: auto; display: block; }
+
+.nav-right { display: flex; align-items: center; gap: .75rem; }
+
+.nav-link {
+  color: var(--muted); text-decoration: none; font-size: .88rem;
+  padding: .4rem .85rem; border-radius: 8px; transition: color .2s;
+}
+.nav-link:hover { color: var(--text); }
+
+.nav-login {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); padding: .45rem 1.1rem; border-radius: 8px;
+  cursor: pointer; font-family: 'Outfit', sans-serif; font-size: .88rem;
+  text-decoration: none; transition: color .2s, border-color .2s;
+}
+.nav-login:hover { color: var(--text); border-color: rgba(0,212,255,.3); }
+
+.nav-signup {
+  background: var(--cyan); color: #030b14;
+  border: none; padding: .5rem 1.25rem; border-radius: 8px;
+  cursor: pointer; font-family: 'Outfit', sans-serif;
+  font-size: .88rem; font-weight: 600; text-decoration: none;
+  transition: background .2s, box-shadow .2s;
+}
+.nav-signup:hover { background: #1ad8ff; box-shadow: 0 6px 24px rgba(0,212,255,.3); }
+
+.page-wrap {
+  min-height: 100vh;
+  padding: 110px clamp(1.5rem, 5vw, 4rem) 5rem;
+  max-width: 1100px; margin: 0 auto;
+}
+
+.page-hero { text-align: center; margin-bottom: 4rem; }
+
+.eyebrow {
+  display: inline-block;
+  font-size: .75rem; font-weight: 500; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--cyan);
+  margin-bottom: 1rem;
+}
+
+.page-hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 300; line-height: 1.15;
+  letter-spacing: -0.02em; margin-bottom: 1rem;
+}
+
+.page-hero p {
+  color: var(--muted); font-size: 1.05rem; font-weight: 300;
+  max-width: 480px; margin: 0 auto;
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1.5rem; margin-bottom: 4rem;
+}
+
+.plan-card {
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: 16px;
+  padding: 2rem 1.75rem;
+  position: relative; overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column;
+}
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0,0,0,.35);
+}
+.plan-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,.3), transparent);
+}
+.plan-card.featured {
+  border-color: rgba(0,212,255,.4);
+  background: linear-gradient(160deg, rgba(0,212,255,.07) 0%, var(--surface) 60%);
+  box-shadow: 0 0 40px rgba(0,212,255,.1);
+}
+.plan-card.featured::before {
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+
+.plan-badge {
+  display: inline-block;
+  background: rgba(0,212,255,.15); border: 1px solid rgba(0,212,255,.35);
+  color: var(--cyan); font-size: .72rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: .25rem .75rem; border-radius: 100px;
+  margin-bottom: 1.25rem;
+}
+
+.plan-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem; font-weight: 400;
+  letter-spacing: .02em; margin-bottom: .35rem;
+}
+
+.plan-desc { font-size: .88rem; color: var(--muted); margin-bottom: 1.25rem; font-weight: 300; }
+
+.plan-price { margin-bottom: 1.75rem; }
+.price-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3rem; font-weight: 300; color: var(--cyan);
+  letter-spacing: -0.03em;
+}
+.price-mo { font-size: .9rem; color: var(--muted); margin-left: 2px; }
+.price-consult {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem; font-style: italic; color: var(--muted);
+}
+
+.plan-list {
+  list-style: none; margin-bottom: 2rem; flex: 1;
+}
+.plan-list li {
+  padding: .5rem 0; border-bottom: 1px solid var(--border);
+  font-size: .88rem; color: var(--muted); font-weight: 300;
+  display: flex; align-items: center; gap: 8px;
+}
+.plan-list li::before { content: '—'; color: var(--cyan); font-size: .7rem; flex-shrink: 0; }
+
+.plan-btn {
+  width: 100%; padding: .85rem; border-radius: 10px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text); cursor: pointer;
+  font-family: 'Outfit', sans-serif; font-size: .95rem;
+  transition: background .2s, border-color .2s, color .2s;
+  margin-top: auto;
+}
+.plan-btn:hover { border-color: rgba(0,212,255,.4); color: var(--cyan); background: rgba(0,212,255,.05); }
+.plan-btn.featured {
+  background: var(--cyan); border-color: var(--cyan); color: #030b14;
+  font-weight: 600;
+}
+.plan-btn.featured:hover { background: #1ad8ff; border-color: #1ad8ff; box-shadow: 0 8px 24px rgba(0,212,255,.3); }
+
+.loading-wrap { text-align: center; padding: 5rem; color: var(--muted); }
+.loading-wrap p { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.2rem; }
+
+.faq { max-width: 700px; margin: 0 auto; }
+.faq h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem; font-weight: 300; text-align: center;
+  margin-bottom: 2.5rem; letter-spacing: -0.01em;
+}
+.faq-item {
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 0;
+}
+.faq-q { font-weight: 500; margin-bottom: .5rem; cursor: pointer; }
+.faq-a { font-size: .9rem; color: var(--muted); font-weight: 300; line-height: 1.7; }
+
+.footer {
+  background: var(--ocean);
+  border-top: 1px solid var(--border);
+  padding: 1.75rem clamp(1.5rem, 5vw, 4rem);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem; margin-top: 4rem;
+}
+.footer span { font-size: .8rem; color: var(--muted); }
+.footer-links { display: flex; gap: 1.5rem; }
+.footer-links a { font-size: .8rem; color: var(--muted); text-decoration: none; transition: color .2s; }
+.footer-links a:hover { color: var(--cyan); }
+</style>
+
+<nav class="nav">
+    <a href="/" class="nav-logo">
+        <img src="/images/marina/Logo_Setimarine_horizontal.png" alt="SetiMarine" />
+    </a>
+    <div class="nav-right">
+        <a href="/" class="nav-link">Início</a>
+        <a href="/login" class="nav-login">Entrar</a>
+        <a href="/cadastro" class="nav-signup">Criar conta</a>
+    </div>
+</nav>
+
+<div class="page-wrap">
+    <div class="page-hero">
+        <div class="eyebrow">Planos e preços</div>
+        <h1>Escolha o plano<br />ideal para sua marina</h1>
+        <p>Sem taxa de adesão. Sem fidelidade. Cancele quando quiser.</p>
+    </div>
+
+    @if (_carregando)
+    {
+        <div class="loading-wrap">
+            <p>Carregando planos...</p>
+        </div>
+    }
+    else if (!_planos.Any())
+    {
+        <div class="loading-wrap">
+            <p>Planos em breve. Entre em contato para mais informações.</p>
+        </div>
+    }
+    else
+    {
+        <div class="plans-grid">
+            @foreach (var plano in _planos)
+            {
+                <div class="plan-card @(plano.Destaque ? "featured" : "")">
+                    @if (plano.Destaque)
+                    {
+                        <div class="plan-badge">Mais popular</div>
+                    }
+                    <div class="plan-name">@plano.Nome</div>
+                    @if (!string.IsNullOrWhiteSpace(plano.Descricao))
+                    {
+                        <div class="plan-desc">@plano.Descricao</div>
+                    }
+                    <div class="plan-price">
+                        @if (plano.Valor > 0)
+                        {
+                            <span class="price-val">R$ @plano.Valor.ToString("N0")</span><span class="price-mo">/mês</span>
+                        }
+                        else
+                        {
+                            <span class="price-consult">Sob consulta</span>
+                        }
+                    </div>
+                    <ul class="plan-list">
+                        @if (plano.LimiteEmbarcacoes > 0)
+                        {
+                            <li>Até @plano.LimiteEmbarcacoes embarcações</li>
+                        }
+                        else
+                        {
+                            <li>Embarcações ilimitadas</li>
+                        }
+                        @if (plano.LimiteUsuarios > 0)
+                        {
+                            <li>Até @plano.LimiteUsuarios usuários</li>
+                        }
+                        else
+                        {
+                            <li>Usuários ilimitados</li>
+                        }
+                        @if (!string.IsNullOrEmpty(plano.Recursos))
+                        {
+                            @foreach (var rec in plano.Recursos.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <li>@rec.Trim()</li>
+                            }
+                        }
+                    </ul>
+                    <button class="plan-btn @(plano.Destaque ? "featured" : "")"
+                            @onclick="() => Assinar(plano)">
+                        @(string.IsNullOrWhiteSpace(plano.TextoBotao)
+                            ? (plano.Valor > 0 ? "Assinar agora" : "Falar com vendas")
+                            : plano.TextoBotao)
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="faq">
+        <h2>Perguntas frequentes</h2>
+        <div class="faq-item">
+            <div class="faq-q">Posso mudar de plano depois?</div>
+            <div class="faq-a">Sim. Você pode fazer upgrade ou downgrade a qualquer momento direto no painel administrativo.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Há fidelidade ou multa por cancelamento?</div>
+            <div class="faq-a">Não. O SetiMarine é mensal sem fidelidade. Cancele quando quiser sem cobranças extras.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">O que são embarcações no limite do plano?</div>
+            <div class="faq-a">É o número de embarcações cadastradas no sistema. Vagas não entram nessa contagem.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Tenho suporte incluído?</div>
+            <div class="faq-a">Todos os planos incluem suporte por e-mail. Planos maiores têm suporte prioritário via WhatsApp.</div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <span>© 2026 SetiMarine · SETICOM Tecnologia · Avaré – SP</span>
+    <div class="footer-links">
+        <a href="/">Início</a>
+        <a href="/cadastro">Criar conta</a>
+        <a href="/login">Entrar</a>
+    </div>
+</footer>
+
+@code {
+    List<Plano> _planos = [];
+    bool _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _planos = await db.Planos
+            .Where(p => p.Ativo)
+            .OrderBy(p => p.Ordem)
+            .ThenBy(p => p.Valor)
+            .ToListAsync();
+        _carregando = false;
+    }
+
+    void Assinar(Plano plano)
+    {
+        if (!string.IsNullOrEmpty(plano.LinkPagamento))
+            Nav.NavigateTo(plano.LinkPagamento, forceLoad: true);
+        else
+            Nav.NavigateTo("/cadastro");
+    }
+}
