@@ -123,4 +123,28 @@ public class PedidoService(ISetiMarineDbContext ctx)
             .Where(s => s.EmpresaId == empresaId && s.Ativo)
             .OrderBy(s => s.Nome)
             .ToListAsync();
+
+    public async Task<List<PedidoServico>> ListarServicosAsync(int empresaId, int? responsavelId = null)
+    {
+        var q = ctx.PedidoServicos
+            .Include(s => s.Responsavel)
+            .Include(s => s.Pedido).ThenInclude(p => p!.Embarcacao)
+            .Include(s => s.Pedido).ThenInclude(p => p!.Cliente)
+            .Where(s => s.Pedido!.EmpresaId == empresaId);
+
+        if (responsavelId.HasValue)
+            q = q.Where(s => s.ResponsavelId == responsavelId.Value);
+
+        return await q.OrderBy(s => s.Concluido).ThenByDescending(s => s.Id).ToListAsync();
+    }
+
+    public async Task AtualizarConcluidoAsync(int servicoId, bool concluido)
+    {
+        var s = await ctx.PedidoServicos.FindAsync(servicoId);
+        if (s != null)
+        {
+            s.Concluido = concluido;
+            await ctx.SaveChangesAsync();
+        }
+    }
 }

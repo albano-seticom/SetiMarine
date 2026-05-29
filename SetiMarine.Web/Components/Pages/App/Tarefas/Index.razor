@@ -1,0 +1,211 @@
+@page "/tarefas"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject PedidoService PedidoSvc
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Tarefas de Serviço — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <h1>Tarefas de Serviço</h1>
+        <p style="margin:.25rem 0 0;font-size:.82rem;color:var(--ink-400);">
+            Serviços vinculados a pedidos, organizados por responsável.
+        </p>
+    </div>
+    <div class="page-head-actions">
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+            @if (_isAdmin)
+            {
+                <select value="@_filtroRespStr"
+                        @onchange="@(ev => { _filtroRespStr = ev.Value?.ToString() ?? ""; _ = CarregarAsync(); })"
+                        style="height:32px;font-size:.82rem;min-width:160px;">
+                    <option value="">Todos os responsáveis</option>
+                    @foreach (var u in _colaboradores)
+                    { <option value="@u.Id" selected="@(_filtroRespStr == u.Id.ToString())">@u.Nome</option> }
+                </select>
+            }
+            <select value="@_filtroConcluido"
+                    @onchange="@(ev => { _filtroConcluido = ev.Value?.ToString() ?? ""; _ = CarregarAsync(); })"
+                    style="height:32px;font-size:.82rem;">
+                <option value="" selected="@(_filtroConcluido == "")">Pendentes e concluídos</option>
+                <option value="false" selected="@(_filtroConcluido == "false")">Somente pendentes</option>
+                <option value="true" selected="@(_filtroConcluido == "true")">Somente concluídos</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_grupos.Any())
+{
+    <div style="padding:4rem 1rem;text-align:center;color:var(--ink-300);">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="margin:0 auto .75rem;display:block;opacity:.4;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        <p style="font-size:.8rem;">Nenhuma tarefa encontrada para os filtros selecionados.</p>
+    </div>
+}
+else
+{
+    @foreach (var grp in _grupos)
+    {
+        var pendentes = grp.Value.Count(s => !s.Concluido);
+        var total     = grp.Value.Count;
+
+        <div style="margin-bottom:2rem;">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem;padding-bottom:.5rem;border-bottom:2px solid var(--line);">
+                <span style="font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-500);">
+                    @grp.Key
+                </span>
+                @if (pendentes > 0)
+                {
+                    <span class="badge badge-mov" style="font-size:.68rem;">@pendentes pendente@(pendentes!=1?"s":"")</span>
+                }
+                <span style="font-size:.72rem;color:var(--ink-300);">@total tarefa@(total!=1?"s":"")</span>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:70px;">Pedido</th>
+                            <th style="width:90px;">Tipo</th>
+                            <th>Serviço</th>
+                            <th style="width:140px;">Embarcação</th>
+                            <th style="width:130px;">Cliente</th>
+                            <th style="width:90px;text-align:right;">Valor</th>
+                            <th style="width:100px;text-align:center;">Status</th>
+                            <th style="width:90px;text-align:center;">Concluído</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in grp.Value)
+                        {
+                            <tr style="@(s.Concluido ? "opacity:.5;" : "")">
+                                <td>
+                                    <a href="/pedidos/@s.PedidoId" style="color:var(--navy-700);font-weight:600;font-size:.82rem;">
+                                        #@s.PedidoId
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge @BadgeTipo(s.Pedido?.Tipo ?? TipoPedido.OrdemServico)" style="font-size:.68rem;">
+                                        @LabelTipo(s.Pedido?.Tipo ?? TipoPedido.OrdemServico)
+                                    </span>
+                                </td>
+                                <td style="font-weight:500;">@s.Descricao</td>
+                                <td style="color:var(--ink-600);">@(s.Pedido?.Embarcacao?.Nome ?? "—")</td>
+                                <td style="color:var(--ink-600);">@(s.Pedido?.Cliente?.Nome ?? "—")</td>
+                                <td style="text-align:right;color:var(--ink-500);">
+                                    @(s.Valor.HasValue && s.Valor > 0 ? s.Valor.Value.ToString("C2") : "—")
+                                </td>
+                                <td style="text-align:center;">
+                                    <span class="badge @(s.Pedido?.Status == StatusPedido.Concluido ? "badge-free" : s.Pedido?.Status == StatusPedido.EmAndamento ? "badge-mov" : "badge-occ")" style="font-size:.68rem;">
+                                        @LabelStatus(s.Pedido?.Status ?? StatusPedido.Aberto)
+                                    </span>
+                                </td>
+                                <td style="text-align:center;">
+                                    <button type="button"
+                                            title="@(s.Concluido ? "Marcar como pendente" : "Marcar como concluído")"
+                                            @onclick="() => ToggleConcluidoAsync(s)"
+                                            style="background:none;border:none;cursor:pointer;padding:4px;color:@(s.Concluido ? "var(--s-free)" : "var(--ink-200)");display:inline-flex;">
+                                        @if (s.Concluido)
+                                        {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/></svg>
+                                        }
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private Dictionary<string, List<PedidoServico>> _grupos = new();
+    private List<Usuario>   _colaboradores  = new();
+    private string          _filtroRespStr  = "";
+    private string          _filtroConcluido = "false";
+    private bool            _carregando      = true;
+    private bool            _isAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _isAdmin       = UserCtx.IsAdmin || UserCtx.IsSuperAdmin;
+        _colaboradores = await PedidoSvc.ListarColaboradoresAsync(UserCtx.EmpresaId);
+
+        if (!_isAdmin)
+            _filtroRespStr = UserCtx.UsuarioId.ToString();
+
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        StateHasChanged();
+
+        int? respId = int.TryParse(_filtroRespStr, out var rid) && rid > 0 ? rid : null;
+        var lista   = await PedidoSvc.ListarServicosAsync(UserCtx.EmpresaId, respId);
+
+        if (_filtroConcluido == "true")
+            lista = lista.Where(s => s.Concluido).ToList();
+        else if (_filtroConcluido == "false")
+            lista = lista.Where(s => !s.Concluido).ToList();
+
+        _grupos = lista
+            .GroupBy(s => s.Responsavel?.Nome ?? "Sem responsável")
+            .OrderBy(g => g.Key)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        _carregando = false;
+    }
+
+    private async Task ToggleConcluidoAsync(PedidoServico s)
+    {
+        s.Concluido = !s.Concluido;
+        await PedidoSvc.AtualizarConcluidoAsync(s.Id, s.Concluido);
+        StateHasChanged();
+    }
+
+    private static string LabelTipo(TipoPedido t) => t switch
+    {
+        TipoPedido.Venda        => "Venda",
+        TipoPedido.Emprestimo   => "Empréstimo",
+        TipoPedido.OrdemServico => "OS",
+        _                       => t.ToString()
+    };
+
+    private static string BadgeTipo(TipoPedido t) => t switch
+    {
+        TipoPedido.OrdemServico => "badge-mov",
+        TipoPedido.Venda        => "badge-free",
+        TipoPedido.Emprestimo   => "badge-occ",
+        _                       => "badge"
+    };
+
+    private static string LabelStatus(StatusPedido s) => s switch
+    {
+        StatusPedido.Rascunho    => "Rascunho",
+        StatusPedido.Aberto      => "Aberto",
+        StatusPedido.EmAndamento => "Em And.",
+        StatusPedido.Concluido   => "Concluído",
+        StatusPedido.Cancelado   => "Cancelado",
+        _                        => s.ToString()
+    };
+}
