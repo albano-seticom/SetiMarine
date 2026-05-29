@@ -435,12 +435,22 @@ else
 
                 <div class="form-actions" style="margin-top:0;padding-bottom:.1rem;">
                     <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
-                    <button type="button" @onclick="SalvarAsync" disabled="@(_salvando || _salvo)"
-                            style="@(_salvo ? "background:#2a7a2a;border-color:#2a7a2a;color:#fff;" : "") padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;">
-                        @if (_salvo)        { <text>✓ Pedido salvo!</text> }
-                        else if (_salvando) { <text>Salvando...</text> }
-                        else                { <text>Salvar Pedido</text> }
-                    </button>
+                    @if (!_isNovo && _pedido.Status == StatusPedido.Concluido)
+                    {
+                        <button type="button" @onclick="ReabrirAsync" disabled="@_salvando"
+                                style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--s-mov);border:1px solid var(--s-mov);color:#fff;">
+                            @(_salvando ? "Reabrindo..." : "Reabrir Pedido")
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" @onclick="SalvarAsync" disabled="@(_salvando || _salvo)"
+                                style="@(_salvo ? "background:#2a7a2a;border-color:#2a7a2a;color:#fff;" : "") padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;">
+                            @if (_salvo)        { <text>✓ Pedido salvo!</text> }
+                            else if (_salvando) { <text>Salvando...</text> }
+                            else                { <text>Salvar Pedido</text> }
+                        </button>
+                    }
                 </div>
             </div>
         </div>
@@ -643,6 +653,25 @@ else
 
     private static DateTime? Utc(DateTime? dt)
         => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : null;
+
+    private async Task ReabrirAsync()
+    {
+        _salvando = true;
+        _erro     = null;
+        try
+        {
+            await PedidoSvc.ReabrirAsync(Id!.Value, UserCtx.EmpresaId);
+            var atualizado = await PedidoSvc.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
+            if (atualizado != null)
+            {
+                _pedido             = atualizado;
+                _statusStr          = atualizado.Status.ToString();
+                _servicosConcluidos = atualizado.Servicos.Count(s => s.Concluido);
+            }
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
 
     private async Task SalvarAsync()
     {
