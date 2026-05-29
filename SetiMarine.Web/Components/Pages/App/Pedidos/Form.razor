@@ -211,6 +211,19 @@ else
         }
     </div>
 
+    @* Banner: serviços já concluídos — bloqueia edição *@
+    @if (_servicosConcluidos > 0)
+    {
+        <div style="margin-bottom:.75rem;padding:.7rem 1rem;background:rgba(154,116,32,.08);border:1px solid rgba(154,116,32,.35);border-radius:4px;display:flex;align-items:center;gap:.75rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a7420" stroke-width="2" stroke-linecap="round" flex-shrink="0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style="font-size:.83rem;color:#7a5c10;flex:1;">
+                <strong>@_servicosConcluidos serviço@(_servicosConcluidos != 1 ? "s" : "") já concluído@(_servicosConcluidos != 1 ? "s" : "").</strong>
+                Para editar ou reabrir este pedido, cancele ess@(_servicosConcluidos != 1 ? "es serviços" : "e serviço") primeiro na página de
+                <a href="/tarefas" style="color:#7a5c10;font-weight:600;">Tarefas</a>.
+            </span>
+        </div>
+    }
+
     @* ── PDV ─────────────────────────────────────────────────────────── *@
     <div class="pdv-wrap">
 
@@ -454,6 +467,7 @@ else
     private bool _carregando = true;
     private bool _salvando;
     private bool _salvo;
+    private int  _servicosConcluidos;
     private string? _erro;
 
     private class LinhaRow
@@ -485,11 +499,12 @@ else
             var existente = await PedidoSvc.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
             if (existente == null) { Nav.NavigateTo("/pedidos"); return; }
 
-            _pedido           = existente;
-            _clienteIdStr     = existente.ClienteId?.ToString() ?? "";
-            _embarcacaoIdStr  = existente.EmbarcacaoId?.ToString() ?? "";
-            _responsavelIdStr = existente.ResponsavelId?.ToString() ?? "";
-            _statusStr        = existente.Status.ToString();
+            _pedido               = existente;
+            _clienteIdStr         = existente.ClienteId?.ToString() ?? "";
+            _embarcacaoIdStr      = existente.EmbarcacaoId?.ToString() ?? "";
+            _responsavelIdStr     = existente.ResponsavelId?.ToString() ?? "";
+            _statusStr            = existente.Status.ToString();
+            _servicosConcluidos   = existente.Servicos.Count(s => s.Concluido);
 
             _linhas = existente.Itens.Select(i => new LinhaRow
             {
@@ -608,6 +623,12 @@ else
 
     private async Task SalvarAsync()
     {
+        if (!_isNovo && _servicosConcluidos > 0)
+        {
+            _erro = $"Não é possível salvar: {_servicosConcluidos} serviço(s) já concluído(s). Cancele-os em Tarefas antes de editar o pedido.";
+            return;
+        }
+
         _salvando = true;
         _erro     = null;
         try
