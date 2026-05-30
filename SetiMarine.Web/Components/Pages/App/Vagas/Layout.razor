@@ -345,11 +345,21 @@ else
 <!-- ═══ MODAL: Nova Seção ═══ -->
 @if (_modalNovaSecao)
 {
-    <Modal Title="Nova Seção" OnClose="FecharModais" Width="380px">
+    <Modal Title="Nova Seção" OnClose="FecharModais" Width="420px">
         <div class="form-section">
-            <div class="field">
-                <label>Nome *</label>
-                <input @bind="_novaSecaoNome" @bind:event="oninput" placeholder="Ex: Molhadas, Secas, Píer A..." maxlength="60" />
+            <div class="form-row">
+                <div class="field">
+                    <label>Nome *</label>
+                    <input @bind="_novaSecaoNome" @bind:event="oninput" placeholder="Ex: Molhadas, Secas, Píer A..." maxlength="60" />
+                </div>
+                <div class="field">
+                    <label>Tipo preferencial</label>
+                    <select value="@_novaSecaoTipoStr" @onchange="e => _novaSecaoTipoStr = e.Value?.ToString() ?? string.Empty">
+                        <option value="">Qualquer</option>
+                        <option value="Agua">Molhada (Água)</option>
+                        <option value="Seco">Seca</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -466,7 +476,8 @@ else
     private bool    _salvandoVaga;
 
     // nova seção (quick-add)
-    private string _novaSecaoNome = "";
+    private string _novaSecaoNome    = "";
+    private string _novaSecaoTipoStr = "";
 
     // novo corredor (quick-add)
     private string _novaCorredorNome       = "";
@@ -519,9 +530,10 @@ else
 
     private void AbrirModalNovaSecao()
     {
-        _novaSecaoNome = "";
-        _novaErro      = null;
-        _modalNovaSecao = true;
+        _novaSecaoNome    = "";
+        _novaSecaoTipoStr = "";
+        _novaErro         = null;
+        _modalNovaSecao   = true;
     }
 
     private void AbrirModalNovoCorredor()
@@ -604,9 +616,10 @@ else
         {
             await SecaoSvc.CriarAsync(new Secao
             {
-                EmpresaId = UserCtx.EmpresaId,
-                Nome      = _novaSecaoNome.Trim(),
-                Ativo     = true,
+                EmpresaId       = UserCtx.EmpresaId,
+                Nome            = _novaSecaoNome.Trim(),
+                Ativo           = true,
+                TipoPreferencial = Enum.TryParse<TipoVaga>(_novaSecaoTipoStr, out var t) ? t : null,
             });
             _secoes            = await SecaoSvc.ListarPorEmpresaAsync(UserCtx.EmpresaId);
             _modalNovaSecao    = false;

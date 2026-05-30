@@ -212,44 +212,87 @@ public class SeederService(ISetiMarineDbContext ctx)
 
         await SeedClientesAsync(empresaId);
 
-        var secao = await ctx.Secoes
-            .FirstOrDefaultAsync(s => s.EmpresaId == empresaId && s.Nome == "Seção A");
-        if (secao == null)
+        var secaoMol = await ctx.Secoes
+            .FirstOrDefaultAsync(s => s.EmpresaId == empresaId && s.Nome == "Vagas Molhadas");
+        if (secaoMol == null)
         {
-            secao = new Secao
+            secaoMol = new Secao
             {
-                EmpresaId = empresaId,
-                Nome      = "Seção A",
-                Ordem     = 1,
-                Ativo     = true,
-                CriadoEm  = DateTime.UtcNow,
+                EmpresaId        = empresaId,
+                Nome             = "Vagas Molhadas",
+                TipoPreferencial = TipoVaga.Agua,
+                Ordem            = 1,
+                Ativo            = true,
+                CriadoEm         = DateTime.UtcNow,
             };
-            ctx.Secoes.Add(secao);
+            ctx.Secoes.Add(secaoMol);
             await ctx.SaveChangesAsync();
         }
 
-        var corredor = await ctx.Corredores
-            .FirstOrDefaultAsync(c => c.EmpresaId == empresaId && c.Nome == "Corredor A");
-        if (corredor == null)
+        var secaoSec = await ctx.Secoes
+            .FirstOrDefaultAsync(s => s.EmpresaId == empresaId && s.Nome == "Vagas Secas");
+        if (secaoSec == null)
         {
-            var ordem = await ctx.Corredores
+            secaoSec = new Secao
+            {
+                EmpresaId        = empresaId,
+                Nome             = "Vagas Secas",
+                TipoPreferencial = TipoVaga.Seco,
+                Ordem            = 2,
+                Ativo            = true,
+                CriadoEm         = DateTime.UtcNow,
+            };
+            ctx.Secoes.Add(secaoSec);
+            await ctx.SaveChangesAsync();
+        }
+
+        var corrMol = await ctx.Corredores
+            .FirstOrDefaultAsync(c => c.EmpresaId == empresaId && c.Nome == "Corredor A");
+        if (corrMol == null)
+        {
+            var ordemMol = await ctx.Corredores
                 .Where(c => c.EmpresaId == empresaId)
                 .MaxAsync(c => (int?)c.Ordem) ?? 0;
-            corredor = new Corredor
+            corrMol = new Corredor
             {
                 EmpresaId = empresaId,
                 Nome      = "Corredor A",
-                SecaoId   = secao.Id,
-                Ordem     = ordem + 1,
+                SecaoId   = secaoMol.Id,
+                Ordem     = ordemMol + 1,
                 Ativo     = true,
                 CriadoEm  = DateTime.UtcNow,
             };
-            ctx.Corredores.Add(corredor);
+            ctx.Corredores.Add(corrMol);
             await ctx.SaveChangesAsync();
         }
-        else if (corredor.SecaoId == null)
+        else if (corrMol.SecaoId == null)
         {
-            corredor.SecaoId = secao.Id;
+            corrMol.SecaoId = secaoMol.Id;
+            await ctx.SaveChangesAsync();
+        }
+
+        var corrSec = await ctx.Corredores
+            .FirstOrDefaultAsync(c => c.EmpresaId == empresaId && c.Nome == "Corredor S");
+        if (corrSec == null)
+        {
+            var ordemSec = await ctx.Corredores
+                .Where(c => c.EmpresaId == empresaId)
+                .MaxAsync(c => (int?)c.Ordem) ?? 0;
+            corrSec = new Corredor
+            {
+                EmpresaId = empresaId,
+                Nome      = "Corredor S",
+                SecaoId   = secaoSec.Id,
+                Ordem     = ordemSec + 1,
+                Ativo     = true,
+                CriadoEm  = DateTime.UtcNow,
+            };
+            ctx.Corredores.Add(corrSec);
+            await ctx.SaveChangesAsync();
+        }
+        else if (corrSec.SecaoId == null)
+        {
+            corrSec.SecaoId = secaoSec.Id;
             await ctx.SaveChangesAsync();
         }
 
@@ -258,7 +301,7 @@ public class SeederService(ISetiMarineDbContext ctx)
             ctx.Vagas.Add(new Vaga
             {
                 EmpresaId  = empresaId,
-                CorredorId = corredor.Id,
+                CorredorId = corrMol.Id,
                 Codigo     = "A01",
                 Tipo       = TipoVaga.Agua,
                 Status     = StatusVaga.Livre,
@@ -272,7 +315,7 @@ public class SeederService(ISetiMarineDbContext ctx)
             ctx.Vagas.Add(new Vaga
             {
                 EmpresaId  = empresaId,
-                CorredorId = corredor.Id,
+                CorredorId = corrSec.Id,
                 Codigo     = "S01",
                 Tipo       = TipoVaga.Seco,
                 Status     = StatusVaga.Livre,
