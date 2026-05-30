@@ -1,0 +1,181 @@
+@page "/perfil"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject UsuarioService UsuarioService
+@inject UsuarioContextService UserCtx
+@inject NavigationManager Nav
+
+<PageTitle>Meu Perfil — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Conta</span>
+        <h1>Meu Perfil</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (_usuario != null)
+{
+    <div style="max-width:600px;">
+
+        <!-- Avatar + nome + empresa -->
+        <div style="display:flex;align-items:center;gap:1.25rem;padding:1.5rem;border:1px solid var(--line);border-radius:8px;margin-bottom:2rem;background:var(--cream-100,#fafafa);">
+            <div style="width:56px;height:56px;border-radius:50%;background:var(--navy-700);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:#fff;flex-shrink:0;">
+                @(_usuario.Nome.Length > 0 ? _usuario.Nome[0].ToString().ToUpper() : "?")
+            </div>
+            <div>
+                <div style="font-size:1.05rem;font-weight:700;color:var(--ink-900);">@_usuario.Nome</div>
+                <div style="font-size:.8rem;color:var(--ink-400);margin-top:.15rem;">@_usuario.Email</div>
+                <div style="display:flex;align-items:center;gap:.5rem;margin-top:.4rem;">
+                    <span style="font-size:.65rem;padding:2px 8px;border-radius:3px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+                                 background:@RoleBg(_usuario.Perfil);color:@RoleColor(_usuario.Perfil);">
+                        @RoleLabel(_usuario.Perfil)
+                    </span>
+                    @if (!string.IsNullOrEmpty(UserCtx.EmpresaNome))
+                    {
+                        <span style="font-size:.75rem;color:var(--ink-400);">· @UserCtx.EmpresaNome</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados pessoais -->
+        <div class="form-section">
+            <div class="form-section-title">Dados Pessoais</div>
+
+            <div class="form-row" style="grid-template-columns:1fr;">
+                <div class="field">
+                    <label>Nome completo</label>
+                    <input @bind="_nome" placeholder="Seu nome" />
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns:1fr;">
+                <div class="field">
+                    <label>E-mail (login)</label>
+                    <input type="email" @bind="_email" placeholder="seu@email.com" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Alterar senha -->
+        <div class="form-section">
+            <div class="form-section-title">Alterar Senha <span style="font-size:.72rem;font-weight:400;color:var(--ink-400);text-transform:none;letter-spacing:0;">(deixe em branco para manter a atual)</span></div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Nova senha</label>
+                    <input type="password" @bind="_novaSenha" placeholder="Nova senha" />
+                </div>
+                <div class="field">
+                    <label>Confirmar nova senha</label>
+                    <input type="password" @bind="_confirmarSenha" placeholder="Repita a senha" />
+                </div>
+            </div>
+        </div>
+
+        @if (_erro != null)
+        {
+            <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:4px;">@_erro</div>
+        }
+
+        @if (_ok)
+        {
+            <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(26,179,166,.08);border:1px solid rgba(26,179,166,.28);color:#1a8a82;font-size:.82rem;border-radius:4px;">
+                Perfil salvo com sucesso.
+            </div>
+        }
+
+        <div class="form-actions">
+            <a href="/dashboard" class="btn btn-ghost">Cancelar</a>
+            <button class="btn btn-primary" @onclick="SalvarAsync" disabled="@_salvando">
+                @(_salvando ? "Salvando..." : "Salvar alterações")
+            </button>
+        </div>
+
+    </div>
+}
+
+@code {
+    private Usuario? _usuario;
+    private string   _nome           = "";
+    private string   _email          = "";
+    private string   _novaSenha      = "";
+    private string   _confirmarSenha = "";
+    private bool     _carregando     = true;
+    private bool     _salvando;
+    private bool     _ok;
+    private string?  _erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _usuario = await UsuarioService.ObterPorIdAsync(UserCtx.UsuarioId);
+        if (_usuario != null)
+        {
+            _nome  = _usuario.Nome;
+            _email = _usuario.Email;
+        }
+        _carregando = false;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _ok    = false;
+        _erro  = null;
+        if (_usuario == null) return;
+
+        if (string.IsNullOrWhiteSpace(_nome))  { _erro = "O nome não pode ficar em branco."; return; }
+        if (string.IsNullOrWhiteSpace(_email)) { _erro = "O e-mail não pode ficar em branco."; return; }
+
+        if (!string.IsNullOrWhiteSpace(_novaSenha))
+        {
+            if (_novaSenha != _confirmarSenha) { _erro = "As senhas não coincidem."; return; }
+            if (_novaSenha.Length < 6)         { _erro = "A senha precisa ter ao menos 6 caracteres."; return; }
+        }
+
+        _salvando = true;
+        try
+        {
+            _usuario.Nome  = _nome.Trim();
+            _usuario.Email = _email.Trim().ToLower();
+            await UsuarioService.EditarAsync(_usuario, string.IsNullOrWhiteSpace(_novaSenha) ? null : _novaSenha);
+            _novaSenha      = "";
+            _confirmarSenha = "";
+            _ok             = true;
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+
+    private static string RoleLabel(PerfilUsuario p) => p switch
+    {
+        PerfilUsuario.SuperAdmin  => "Super Admin",
+        PerfilUsuario.Admin       => "Administrador",
+        _                         => "Operacional",
+    };
+
+    private static string RoleBg(PerfilUsuario p) => p switch
+    {
+        PerfilUsuario.SuperAdmin => "rgba(201,168,76,.15)",
+        PerfilUsuario.Admin      => "rgba(22,53,103,.1)",
+        _                        => "rgba(0,0,0,.06)",
+    };
+
+    private static string RoleColor(PerfilUsuario p) => p switch
+    {
+        PerfilUsuario.SuperAdmin => "#a07820",
+        PerfilUsuario.Admin      => "var(--navy-700)",
+        _                        => "var(--ink-500)",
+    };
+}

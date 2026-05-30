@@ -18,6 +18,9 @@ public class UsuarioService(ISetiMarineDbContext ctx)
     public async Task<Usuario?> ObterPorIdAsync(int id, int empresaId)
         => await ctx.Usuarios.FirstOrDefaultAsync(u => u.Id == id && u.EmpresaId == empresaId);
 
+    public async Task<Usuario?> ObterPorIdAsync(int id)
+        => await ctx.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
+
     public async Task CriarAsync(Usuario usuario, string senha)
     {
         if (await ctx.Usuarios.AnyAsync(u => u.Email == usuario.Email.ToLower().Trim()))
