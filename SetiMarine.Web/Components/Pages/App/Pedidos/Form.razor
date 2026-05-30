@@ -6,6 +6,8 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject PedidoService PedidoSvc
+@inject CaixaService CaixaSvc
+@inject ConfiguracaoMarinaService CfgSvc
 @inject UsuarioContextService UserCtx
 @inject NavigationManager Nav
 
@@ -200,7 +202,7 @@ else
         {
             <div class="field" style="margin:0;min-width:110px;">
                 <label style="font-size:.66rem;">Status</label>
-                <select value="@_statusStr" @onchange="@(ev => _statusStr = ev.Value?.ToString() ?? "Aberto")" style="height:27px;font-size:.81rem;">
+                <select value="@_statusStr" @onchange="OnStatusChanged" style="height:27px;font-size:.81rem;">
                     <option value="Rascunho" selected="@(_statusStr == "Rascunho")">Rascunho</option>
                     <option value="Aberto" selected="@(_statusStr == "Aberto")">Aberto</option>
                     <option value="EmAndamento" selected="@(_statusStr == "EmAndamento")">Em Andamento</option>
@@ -442,6 +444,45 @@ else
                     <InputTextArea @bind-Value="_pedido.Observacoes" rows="2" style="resize:none;width:100%;" placeholder="Observações do pedido..." />
                 </div>
 
+                @* ── Painel de Pagamento ── *@
+                @if (_painelPagamento)
+                {
+                    <div style="border:1px solid rgba(0,53,128,.2);border-radius:5px;padding:.75rem 1rem;background:rgba(0,53,128,.03);margin-top:.25rem;">
+                        <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--navy-700);font-weight:700;margin-bottom:.6rem;">
+                            Forma de Pagamento · Total: @_linhas.Sum(l => l.Total).ToString("C2")
+                        </div>
+
+                        <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.6rem;">
+                            @foreach (var fp in _formasPagamento)
+                            {
+                                var sel = _formaPagamentoStr == fp.Key;
+                                <button type="button"
+                                        style="padding:.3rem .75rem;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;transition:.12s;border:1px solid @(sel ? "var(--navy-700)" : "var(--line)");background:@(sel ? "var(--navy-700)" : "transparent");color:@(sel ? "#fff" : "var(--ink-500)");"
+                                        @onclick="() => _formaPagamentoStr = fp.Key">
+                                    @fp.Value
+                                </button>
+                            }
+                        </div>
+
+                        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                            <div class="field" style="margin:0;flex:1;min-width:130px;">
+                                <label style="font-size:.66rem;">Valor Recebido (R$)</label>
+                                <InputNumber @bind-Value="_valorPago" style="height:28px;font-size:.83rem;" />
+                            </div>
+                            @if (_valorPago > 0 && _linhas.Any())
+                            {
+                                var troco = _valorPago - _linhas.Sum(l => l.Total);
+                                @if (troco > 0 && _formaPagamentoStr == "Dinheiro")
+                                {
+                                    <div style="font-size:.82rem;color:#1e783c;font-weight:600;padding-top:1.1rem;">
+                                        Troco: @troco.ToString("C2")
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+
                 @if (_erro != null)
                 {
                     <div style="padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
@@ -458,10 +499,12 @@ else
                     }
                     else
                     {
-                        <button type="button" @onclick="SalvarAsync" disabled="@(_salvando || _salvo)"
+                        <button type="button" @onclick="SalvarAsync"
+                                disabled="@(_salvando || _salvo || (_painelPagamento && string.IsNullOrEmpty(_formaPagamentoStr)))"
                                 style="@(_salvo ? "background:#2a7a2a;border-color:#2a7a2a;color:#fff;" : "") padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;">
                             @if (_salvo)        { <text>✓ Pedido salvo!</text> }
                             else if (_salvando) { <text>Salvando...</text> }
+                            else if (_painelPagamento) { <text>Confirmar e Fechar Pedido</text> }
                             else                { <text>Salvar Pedido</text> }
                         </button>
                     }
@@ -498,6 +541,23 @@ else
     private int  _servicosConcluidos;
     private string? _erro;
 
+    // Pagamento
+    private bool    _painelPagamento   = false;
+    private string  _formaPagamentoStr = "";
+    private decimal _valorPago;
+    private string  _statusOriginal    = "";
+    private ConfiguracaoMarina _cfg = new();
+
+    private static readonly Dictionary<string, string> _formasPagamento = new()
+    {
+        ["Dinheiro"]      = "Dinheiro",
+        ["PIX"]           = "PIX",
+        ["DebitoCartao"]  = "Débito",
+        ["CreditoCartao"] = "Crédito",
+        ["Transferencia"] = "Transferência",
+        ["Outro"]         = "Outro",
+    };
+
     private class LinhaRow
     {
         public bool      EhServico              { get; set; }
@@ -519,6 +579,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await UserCtx.InitAsync();
+        _cfg           = await CfgSvc.ObterAsync(UserCtx.EmpresaId);
         _clientes      = await PedidoSvc.ListarClientesAsync(UserCtx.EmpresaId);
         _embarcacoes   = await PedidoSvc.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
         _produtos      = await PedidoSvc.ListarProdutosAsync(UserCtx.EmpresaId);
@@ -536,6 +597,7 @@ else
             _embarcacaoIdStr      = existente.EmbarcacaoId?.ToString() ?? "";
             _responsavelIdStr     = existente.ResponsavelId?.ToString() ?? "";
             _statusStr            = existente.Status.ToString();
+            _statusOriginal       = existente.Status.ToString();
             _servicosConcluidos   = existente.Servicos.Count(s => s.Concluido);
 
             _linhas = existente.Itens.Select(i =>
@@ -574,6 +636,24 @@ else
         }
 
         _carregando = false;
+    }
+
+    private void OnStatusChanged(ChangeEventArgs e)
+    {
+        var novo = e.Value?.ToString() ?? "Aberto";
+        _statusStr = novo;
+
+        // Abre painel de pagamento só ao transicionar PARA Concluido
+        if (novo == "Concluido" && _statusOriginal != "Concluido")
+        {
+            _painelPagamento   = true;
+            _formaPagamentoStr = "";
+            _valorPago         = _linhas.Sum(l => l.Total);
+        }
+        else
+        {
+            _painelPagamento = false;
+        }
     }
 
     private void OnClienteChanged(ChangeEventArgs e)
@@ -781,6 +861,14 @@ else
                 })
                 .ToList();
 
+            // Dados de pagamento — preenchidos somente ao concluir
+            var fechando = _statusStr == "Concluido" && _statusOriginal != "Concluido";
+            if (fechando && _painelPagamento && !string.IsNullOrEmpty(_formaPagamentoStr))
+            {
+                _pedido.FormaPagamento = Enum.Parse<FormaPagamento>(_formaPagamentoStr);
+                _pedido.ValorPago      = _valorPago > 0 ? _valorPago : _linhas.Sum(l => l.Total);
+            }
+
             if (_isNovo)
             {
                 await PedidoSvc.CriarAsync(_pedido, itens, servicos);
@@ -794,13 +882,32 @@ else
                 _pedido.Status = Enum.Parse<StatusPedido>(_statusStr);
                 await PedidoSvc.EditarAsync(_pedido, itens, servicos);
 
+                // Lançamento automático no caixa ao fechar pedido
+                if (fechando && _cfg.CaixaAutomatico)
+                {
+                    var total      = _linhas.Sum(l => l.Total);
+                    var cliente    = _clientes.FirstOrDefault(c => c.Id.ToString() == _clienteIdStr);
+                    var fpLabel    = _formasPagamento.GetValueOrDefault(_formaPagamentoStr, _formaPagamentoStr);
+                    var descricao  = $"Pedido #{Id}" +
+                                     (cliente != null ? $" — {cliente.Nome}" : "") +
+                                     $" ({fpLabel})";
+
+                    await CaixaSvc.RegistrarAutomaticoAsync(
+                        UserCtx.EmpresaId,
+                        TipoMovimentoCaixa.Entrada,
+                        OrigemMovimentoCaixa.ServicoPedido,
+                        total, descricao, pedidoId: Id);
+                }
+
                 // Rebusca do banco para garantir estado sincronizado (inclui Status, ConcluidoEm, etc.)
                 var atualizado = await PedidoSvc.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
                 if (atualizado != null)
                 {
                     _pedido             = atualizado;
                     _statusStr          = atualizado.Status.ToString();
+                    _statusOriginal     = atualizado.Status.ToString();
                     _servicosConcluidos = atualizado.Servicos.Count(s => s.Concluido);
+                    _painelPagamento    = false;
                 }
 
                 _salvo = true;

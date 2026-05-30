@@ -61,9 +61,11 @@ public class PedidoService(ISetiMarineDbContext ctx)
         existente.ClienteId        = pedido.ClienteId;
         existente.EmbarcacaoId     = pedido.EmbarcacaoId;
         existente.ResponsavelId    = pedido.ResponsavelId;
-        existente.Descricao        = pedido.Descricao;
-        existente.Observacoes      = pedido.Observacoes;
+        existente.Descricao         = pedido.Descricao;
+        existente.Observacoes       = pedido.Observacoes;
         existente.PrevisaoConclusao = pedido.PrevisaoConclusao;
+        existente.FormaPagamento    = pedido.FormaPagamento;
+        existente.ValorPago         = pedido.ValorPago;
 
         if (pedido.Status == StatusPedido.Concluido && existente.ConcluidoEm == null)
             existente.ConcluidoEm = DateTime.UtcNow;

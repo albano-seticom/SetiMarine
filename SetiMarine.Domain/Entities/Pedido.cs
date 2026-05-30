@@ -22,6 +22,9 @@ public class Pedido
     public string? Descricao { get; set; }
     public string? Observacoes { get; set; }
 
+    public FormaPagamento? FormaPagamento { get; set; }
+    public decimal? ValorPago { get; set; }
+
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
     public DateTime? PrevisaoConclusao { get; set; }
     public DateTime? ConcluidoEm { get; set; }

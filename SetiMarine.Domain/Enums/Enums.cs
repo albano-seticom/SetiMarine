@@ -87,6 +87,16 @@ public enum StatusAgendamento
     Cancelado  = 3,
 }
 
+public enum FormaPagamento
+{
+    Dinheiro      = 0,
+    PIX           = 1,
+    DebitoCartao  = 2,
+    CreditoCartao = 3,
+    Transferencia = 4,
+    Outro         = 99,
+}
+
 public enum TipoMovimentoEstoque { Entrada = 0, Saida = 1, Ajuste = 2 }
 
 public enum TipoMovimentoCaixa { Entrada = 0, Saida = 1 }
