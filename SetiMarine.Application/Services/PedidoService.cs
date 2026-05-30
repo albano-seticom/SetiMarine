@@ -131,6 +131,7 @@ public class PedidoService(ISetiMarineDbContext ctx)
 
     public async Task<List<Produto>> ListarProdutosAsync(int empresaId)
         => await ctx.Produtos
+            .Include(p => p.Aux)
             .Where(p => p.EmpresaId == empresaId && p.Ativo)
             .OrderBy(p => p.Nome)
             .ToListAsync();

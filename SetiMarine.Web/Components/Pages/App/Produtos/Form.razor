@@ -27,7 +27,7 @@
 }
 else
 {
-    <EditForm Model="_prod" OnValidSubmit="SalvarAsync" style="max-width:680px;">
+    <EditForm Model="_prod" OnValidSubmit="SalvarAsync" style="max-width:720px;">
         <DataAnnotationsValidator />
 
         <div class="form-section">
@@ -59,36 +59,6 @@ else
                     <InputTextArea @bind-Value="_prod.Descricao" rows="2" style="resize:vertical;" placeholder="Detalhes, especificações, referências..." />
                 </div>
             </div>
-        </div>
-
-        <div class="form-section">
-            <div class="form-section-title">Preços e Estoque</div>
-
-            <div class="form-row">
-                <div class="field">
-                    <label>Unidade</label>
-                    <InputText @bind-Value="_prod.Unidade" placeholder="un, L, kg, m..." />
-                </div>
-                <div class="field">
-                    <label>Preço de Venda (R$)</label>
-                    <InputNumber @bind-Value="_prod.PrecoVenda" />
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="field">
-                    <label>Estoque atual</label>
-                    <InputNumber @bind-Value="_prod.Estoque" />
-                </div>
-                <div class="field">
-                    <label>Estoque mínimo (alerta)</label>
-                    <InputNumber @bind-Value="_prod.EstoqueMinimo" />
-                </div>
-            </div>
-        </div>
-
-        <div class="form-section">
-            <div class="form-section-title">Aluguel</div>
 
             <div class="form-row" style="grid-template-columns:auto 1fr;">
                 <div class="field" style="display:flex;align-items:flex-end;padding-bottom:.5rem;">
@@ -98,16 +68,112 @@ else
                     </label>
                 </div>
             </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Preços</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Unidade</label>
+                    <InputText @bind-Value="_prod.Unidade" placeholder="un, L, kg, m..." />
+                </div>
+                <div class="field">
+                    <label>Preço de Custo (R$)</label>
+                    <InputNumber @bind-Value="_aux.PrecoCusto" />
+                </div>
+                <div class="field">
+                    <label>Preço de Venda (R$)</label>
+                    <InputNumber @bind-Value="_aux.PrecoVenda" />
+                </div>
+            </div>
 
             @if (_prod.Alugavel)
             {
                 <div class="form-row">
                     <div class="field">
-                        <label>Preço de Aluguel por Dia (R$)</label>
-                        <InputNumber @bind-Value="_prod.PrecoAluguelDia" />
+                        <label>Aluguel por Hora (R$)</label>
+                        <InputNumber @bind-Value="_aux.PrecoAluguelHora" />
+                    </div>
+                    <div class="field">
+                        <label>Aluguel por Dia (R$)</label>
+                        <InputNumber @bind-Value="_aux.PrecoAluguelDia" />
                     </div>
                 </div>
             }
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Estoque</div>
+
+            <div class="form-row" style="grid-template-columns:auto 1fr;">
+                <div class="field" style="display:flex;align-items:flex-end;padding-bottom:.5rem;">
+                    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;text-transform:none;letter-spacing:0;font-size:.88rem;color:var(--ink-900);">
+                        <InputCheckbox @bind-Value="_aux.ControlaEstoque" />
+                        Controla estoque
+                    </label>
+                </div>
+            </div>
+
+            @if (_aux.ControlaEstoque)
+            {
+                <div class="form-row">
+                    <div class="field">
+                        <label>Estoque atual</label>
+                        <InputNumber @bind-Value="_aux.Estoque" />
+                    </div>
+                    <div class="field">
+                        <label>Estoque mínimo (alerta)</label>
+                        <InputNumber @bind-Value="_aux.EstoqueMinimo" />
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Dados Fiscais</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>NCM</label>
+                    <InputText @bind-Value="_aux.Ncm" placeholder="Ex: 8903.91.00" />
+                </div>
+                <div class="field">
+                    <label>CFOP</label>
+                    <InputText @bind-Value="_aux.Cfop" placeholder="Ex: 5102" />
+                </div>
+                <div class="field">
+                    <label>CST ICMS</label>
+                    <InputText @bind-Value="_aux.CstIcms" placeholder="Ex: 00, 40, 60" />
+                </div>
+                <div class="field">
+                    <label>CST PIS/COFINS</label>
+                    <InputText @bind-Value="_aux.CstPisCofins" placeholder="Ex: 01, 07" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Alíq. ICMS (%)</label>
+                    <InputNumber @bind-Value="_aux.AliquotaICMS" />
+                </div>
+                <div class="field">
+                    <label>Alíq. IPI (%)</label>
+                    <InputNumber @bind-Value="_aux.AliquotaIPI" />
+                </div>
+                <div class="field">
+                    <label>Alíq. PIS (%)</label>
+                    <InputNumber @bind-Value="_aux.AliquotaPIS" />
+                </div>
+                <div class="field">
+                    <label>Alíq. COFINS (%)</label>
+                    <InputNumber @bind-Value="_aux.AliquotaCOFINS" />
+                </div>
+                <div class="field">
+                    <label>Alíq. ISS (%)</label>
+                    <InputNumber @bind-Value="_aux.AliquotaISS" />
+                </div>
+            </div>
         </div>
 
         <div class="form-section">
@@ -139,11 +205,12 @@ else
 @code {
     [Parameter] public int? Id { get; set; }
 
-    private Produto _prod = new() { Ativo = true, Unidade = "un" };
-    private string _categoriaStr = "Outro";
+    private Produto    _prod = new() { Ativo = true, Unidade = "un" };
+    private ProdutoAux _aux  = new();
+    private string     _categoriaStr = "Outro";
 
-    private bool _isNovo    => Id is null;
-    private bool _carregando = true;
+    private bool _isNovo     => Id is null;
+    private bool _carregando  = true;
     private bool _salvando;
     private string? _erro;
 
@@ -156,11 +223,13 @@ else
             var existente = await ProdService.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
             if (existente == null) { Nav.NavigateTo("/produtos"); return; }
             _prod         = existente;
+            _aux          = existente.Aux ?? new ProdutoAux();
             _categoriaStr = _prod.Categoria.ToString();
         }
         else
         {
             _prod = new Produto { EmpresaId = UserCtx.EmpresaId, Ativo = true, Unidade = "un" };
+            _aux  = new ProdutoAux();
         }
         _carregando = false;
     }
@@ -171,11 +240,11 @@ else
         _erro     = null;
         try
         {
-            _prod.Categoria  = Enum.Parse<CategoriaProduto>(_categoriaStr);
-            _prod.EmpresaId  = UserCtx.EmpresaId;
+            _prod.Categoria = Enum.Parse<CategoriaProduto>(_categoriaStr);
+            _prod.EmpresaId = UserCtx.EmpresaId;
 
-            if (_isNovo) await ProdService.CriarAsync(_prod);
-            else         await ProdService.EditarAsync(_prod);
+            if (_isNovo) await ProdService.CriarAsync(_prod, _aux);
+            else         await ProdService.EditarAsync(_prod, _aux);
 
             Nav.NavigateTo("/produtos");
         }

@@ -1,0 +1,173 @@
+@page "/notas"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject NotaService NotaSvc
+@inject UsuarioContextService UserCtx
+@inject NavigationManager Nav
+
+<PageTitle>Notas Fiscais — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Financeiro</span>
+        <h1>Notas Fiscais</h1>
+    </div>
+    <div class="page-head-actions">
+        <div class="field" style="margin:0;min-width:150px;">
+            <select @bind="_filtroStatus" @bind:after="CarregarAsync" style="height:34px;">
+                <option value="">Todos os status</option>
+                <option value="Rascunho">Rascunho</option>
+                <option value="Emitida">Emitida</option>
+                <option value="Cancelada">Cancelada</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (!_notas.Any())
+{
+    <div style="padding:4rem 2rem;text-align:center;color:var(--ink-300);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto 1rem;display:block;opacity:.35;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Nenhuma nota fiscal encontrada</p>
+        <p style="font-size:.82rem;color:var(--ink-400);margin-top:.5rem;">As notas são geradas a partir dos Pedidos concluídos.</p>
+        <a href="/pedidos" class="btn btn-ghost btn-sm" style="margin-top:1rem;">Ir para Pedidos →</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nº / Série</th>
+                    <th>Data Emissão</th>
+                    <th>Cliente</th>
+                    <th>Pedido</th>
+                    <th style="text-align:right;">Valor Total</th>
+                    <th style="text-align:right;">ICMS</th>
+                    <th style="text-align:right;">ISS</th>
+                    <th style="width:100px;text-align:center;">Status</th>
+                    <th style="width:80px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var n in _notas)
+                {
+                    <tr>
+                        <td>
+                            <strong style="font-weight:600;font-family:monospace;">@n.Numero</strong>
+                            <span style="color:var(--ink-400);font-size:.75rem;margin-left:.3rem;">série @n.Serie</span>
+                        </td>
+                        <td style="color:var(--ink-500);font-size:.82rem;">@n.DataEmissao.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                        <td>@(n.Cliente?.Nome ?? "—")</td>
+                        <td>
+                            @if (n.PedidoId.HasValue)
+                            {
+                                <a href="/pedidos/@n.PedidoId" style="color:var(--navy-700);">Pedido #@n.PedidoId</a>
+                            }
+                            else { <text>—</text> }
+                        </td>
+                        <td style="text-align:right;font-weight:600;">@n.ValorTotal.ToString("C2")</td>
+                        <td style="text-align:right;color:var(--ink-500);font-size:.82rem;">@(n.ValorICMS > 0 ? n.ValorICMS.ToString("C2") : "—")</td>
+                        <td style="text-align:right;color:var(--ink-500);font-size:.82rem;">@(n.ValorISS > 0 ? n.ValorISS.ToString("C2") : "—")</td>
+                        <td style="text-align:center;">
+                            <span class="badge @BadgeStatus(n.Status)">@LabelStatus(n.Status)</span>
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:.25rem;justify-content:flex-end;">
+                                @if (n.Status == StatusNota.Rascunho)
+                                {
+                                    <button class="btn btn-ghost btn-sm" title="Emitir"
+                                            @onclick="() => AlterarStatusAsync(n, StatusNota.Emitida)"
+                                            style="color:var(--s-free);">✓</button>
+                                    <button class="btn btn-ghost btn-sm" title="Cancelar"
+                                            @onclick="() => AlterarStatusAsync(n, StatusNota.Cancelada)"
+                                            style="color:var(--s-maint);">✕</button>
+                                }
+                                @if (n.Status == StatusNota.Emitida)
+                                {
+                                    <button class="btn btn-ghost btn-sm" title="Cancelar"
+                                            @onclick="() => AlterarStatusAsync(n, StatusNota.Cancelada)"
+                                            style="color:var(--s-maint);">Cancelar</button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top:1.5rem;padding:1rem;background:var(--paper);border:1px solid var(--line);border-radius:4px;display:flex;gap:2rem;flex-wrap:wrap;">
+        <div>
+            <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);">Total Emitidas</div>
+            <div style="font-size:1.2rem;font-weight:700;color:var(--navy-700);">
+                @_notas.Where(n => n.Status == StatusNota.Emitida).Sum(n => n.ValorTotal).ToString("C2")
+            </div>
+        </div>
+        <div>
+            <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);">Total ICMS</div>
+            <div style="font-size:1.2rem;font-weight:700;">
+                @_notas.Where(n => n.Status == StatusNota.Emitida).Sum(n => n.ValorICMS).ToString("C2")
+            </div>
+        </div>
+        <div>
+            <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);">Total ISS</div>
+            <div style="font-size:1.2rem;font-weight:700;">
+                @_notas.Where(n => n.Status == StatusNota.Emitida).Sum(n => n.ValorISS).ToString("C2")
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Nota> _notas = new();
+    private string _filtroStatus = "";
+    private bool _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        StatusNota? status = Enum.TryParse<StatusNota>(_filtroStatus, out var sv) ? sv : null;
+        _notas      = await NotaSvc.ListarAsync(UserCtx.EmpresaId, status);
+        _carregando = false;
+    }
+
+    private async Task AlterarStatusAsync(Nota nota, StatusNota novoStatus)
+    {
+        await NotaSvc.AlterarStatusAsync(nota.Id, UserCtx.EmpresaId, novoStatus);
+        await CarregarAsync();
+    }
+
+    private static string BadgeStatus(StatusNota s) => s switch
+    {
+        StatusNota.Emitida   => "badge-free",
+        StatusNota.Cancelada => "badge-maint",
+        _                    => "badge-occ",
+    };
+
+    private static string LabelStatus(StatusNota s) => s switch
+    {
+        StatusNota.Emitida   => "Emitida",
+        StatusNota.Cancelada => "Cancelada",
+        _                    => "Rascunho",
+    };
+}

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SetiMarine.Domain.Entities;
 
 namespace SetiMarine.Domain.Data
@@ -27,10 +27,13 @@ namespace SetiMarine.Domain.Data
         DbSet<FotoServico> FotosServico { get; set; }
         DbSet<OrdemServico> OrdensServico { get; set; }
         DbSet<Produto> Produtos { get; set; }
+        DbSet<ProdutoAux> ProdutoAux { get; set; }
         DbSet<VendaProduto> VendasProduto { get; set; }
         DbSet<Pedido> Pedidos { get; set; }
         DbSet<PedidoItem> PedidoItens { get; set; }
         DbSet<PedidoServico> PedidoServicos { get; set; }
+        DbSet<Nota> Notas { get; set; }
+        DbSet<NotaItem> NotaItens { get; set; }
         DbSet<PlanoContrato> PlanosContrato { get; set; }
         DbSet<PlanoContratoServico> PlanoContratoServicos { get; set; }
         DbSet<AgendamentoUso> AgendamentosUso { get; set; }

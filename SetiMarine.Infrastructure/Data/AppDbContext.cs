@@ -52,10 +52,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<OrdemServico> OrdensServico { get; set; }
 
     // ============================================================
-    // MARINA - Produtos e Vendas
+    // MARINA - Produtos, Vendas e Notas
     // ============================================================
     public DbSet<Produto> Produtos { get; set; }
+    public DbSet<ProdutoAux> ProdutoAux { get; set; }
     public DbSet<VendaProduto> VendasProduto { get; set; }
+    public DbSet<Nota> Notas { get; set; }
+    public DbSet<NotaItem> NotaItens { get; set; }
 
     // ============================================================
     // MARINA - Pedidos
@@ -127,10 +130,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         mb.Entity<OrdemServico>().ToTable("mar_ordens_servico");
 
         mb.Entity<Produto>().ToTable("mar_produtos");
+        mb.Entity<ProdutoAux>().ToTable("mar_produtos_aux");
         mb.Entity<VendaProduto>().ToTable("mar_vendas_produto");
+        mb.Entity<Nota>().ToTable("mar_notas");
+        mb.Entity<NotaItem>().ToTable("mar_nota_itens");
 
-        mb.Entity<VendaProduto>()
-            .Ignore(v => v.ValorTotal);
+        mb.Entity<VendaProduto>().Ignore(v => v.ValorTotal);
 
         mb.Entity<Pedido>().ToTable("mar_pedidos");
         mb.Entity<PedidoItem>().ToTable("mar_pedido_itens");
@@ -167,6 +172,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         mb.Entity<Vaga>()
             .HasIndex(v => new { v.EmpresaId, v.Codigo })
+            .IsUnique();
+
+        mb.Entity<ProdutoAux>()
+            .HasIndex(a => a.ProdutoId)
             .IsUnique();
 
         // ============================================================
@@ -219,6 +228,42 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithOne(i => i.ChecklistTemplate)
             .HasForeignKey(i => i.ChecklistTemplateId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // ============================================================
+        // Relacionamentos - ProdutoAux
+        // ============================================================
+        mb.Entity<ProdutoAux>()
+            .HasOne(a => a.Produto)
+            .WithOne(p => p.Aux)
+            .HasForeignKey<ProdutoAux>(a => a.ProdutoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // ============================================================
+        // Relacionamentos - Nota
+        // ============================================================
+        mb.Entity<Nota>()
+            .HasMany(n => n.Itens)
+            .WithOne(i => i.Nota)
+            .HasForeignKey(i => i.NotaId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        mb.Entity<Nota>()
+            .HasOne(n => n.Pedido)
+            .WithMany()
+            .HasForeignKey(n => n.PedidoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<Nota>()
+            .HasOne(n => n.Cliente)
+            .WithMany()
+            .HasForeignKey(n => n.ClienteId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<NotaItem>()
+            .HasOne(i => i.Produto)
+            .WithMany()
+            .HasForeignKey(i => i.ProdutoId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // ============================================================
         // Relacionamentos - Pedido

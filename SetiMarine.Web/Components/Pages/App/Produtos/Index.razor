@@ -30,6 +30,7 @@
             </select>
         </div>
         <a href="/produtos/vendas" class="btn btn-ghost btn-sm">Ver Transações</a>
+        <a href="/produtos/novo" class="btn btn-primary btn-sm">+ Novo</a>
         <button class="btn btn-ghost btn-sm" @onclick="SeedAsync" disabled="@_seeding" title="Popular catálogo com produtos base de marina">
             @(_seeding ? "Importando..." : "Catálogo Padrão")
         </button>
@@ -43,79 +44,6 @@
         <button @onclick="() => _seedMsg = null" style="background:none;border:none;cursor:pointer;color:inherit;font-size:1.1rem;line-height:1;padding:0 0 0 1rem;">×</button>
     </div>
 }
-
-@* Formulário de adição / edição *@
-<div id="form-produto" style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
-    <p style="font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.75rem;">
-        @(_editando?.Id > 0 ? "Editar produto" : "Novo produto")
-    </p>
-    <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
-        <div class="field" style="margin:0;flex:3;min-width:180px;">
-            <label>Nome do produto</label>
-            <input type="text" @bind="_editando!.Nome" placeholder="Ex: Óleo Lubrificante 1L" />
-        </div>
-        <div class="field" style="margin:0;min-width:140px;">
-            <label>Categoria</label>
-            <select @bind="_editando.Categoria">
-                <option value="@CategoriaProduto.Acessorio">Acessório</option>
-                <option value="@CategoriaProduto.Combustivel">Combustível</option>
-                <option value="@CategoriaProduto.Lubrificante">Lubrificante</option>
-                <option value="@CategoriaProduto.Peca">Peça</option>
-                <option value="@CategoriaProduto.Equipamento">Equipamento</option>
-                <option value="@CategoriaProduto.Alimento">Alimento</option>
-                <option value="@CategoriaProduto.Outro">Outro</option>
-            </select>
-        </div>
-        <div class="field" style="margin:0;min-width:80px;">
-            <label>Unidade</label>
-            <input type="text" @bind="_editando.Unidade" placeholder="un, L, kg…" style="max-width:90px;" />
-        </div>
-        <div class="field" style="margin:0;min-width:110px;">
-            <label>Preço Venda (R$)</label>
-            <input type="number" @bind="_editando.PrecoVenda" min="0" step="0.01" placeholder="0,00" />
-        </div>
-        <div class="field" style="margin:0;min-width:110px;">
-            <label>Aluguel/hora (R$)</label>
-            <input type="number" @bind="_editando.PrecoAluguelHora" min="0" step="0.01" placeholder="0,00" />
-        </div>
-        <div class="field" style="margin:0;min-width:110px;">
-            <label>Aluguel/dia (R$)</label>
-            <input type="number" @bind="_editando.PrecoAluguelDia" min="0" step="0.01" placeholder="0,00" />
-        </div>
-        <div class="field" style="margin:0;min-width:80px;">
-            <label>Estoque</label>
-            <input type="number" @bind="_editando.Estoque" min="0" step="1" style="max-width:90px;" />
-        </div>
-        <div class="field" style="margin:0;min-width:90px;">
-            <label>Est. Mínimo</label>
-            <input type="number" @bind="_editando.EstoqueMinimo" min="0" step="1" style="max-width:90px;" />
-        </div>
-        <div style="display:flex;align-items:center;gap:.35rem;padding-bottom:.1rem;">
-            <input type="checkbox" id="chkAlugavel" @bind="_editando.Alugavel" style="width:15px;height:15px;" />
-            <label for="chkAlugavel" style="font-size:.78rem;color:var(--ink-600);cursor:pointer;white-space:nowrap;">Alugável</label>
-        </div>
-        @if (_editando.Id > 0)
-        {
-            <div style="display:flex;align-items:center;gap:.35rem;padding-bottom:.1rem;">
-                <input type="checkbox" id="chkAtivo" @bind="_editando.Ativo" style="width:15px;height:15px;" />
-                <label for="chkAtivo" style="font-size:.78rem;color:var(--ink-600);cursor:pointer;white-space:nowrap;">Ativo</label>
-            </div>
-        }
-        <div style="display:flex;gap:.5rem;padding-bottom:.1rem;">
-            <button class="btn btn-primary btn-sm" @onclick="SalvarAsync">
-                @(_editando.Id > 0 ? "Salvar" : "Adicionar")
-            </button>
-            @if (_editando.Id > 0)
-            {
-                <button class="btn btn-ghost btn-sm" @onclick="CancelarEdicao">Cancelar</button>
-            }
-        </div>
-    </div>
-    @if (_erro != null)
-    {
-        <p style="color:var(--s-maint);font-size:.82rem;margin-top:.5rem;">@_erro</p>
-    }
-</div>
 
 @* Contadores *@
 <div style="display:flex;gap:.75rem;margin-bottom:1.75rem;flex-wrap:wrap;">
@@ -165,6 +93,7 @@ else
                     <th>Nome</th>
                     <th>Categoria</th>
                     <th>Unidade</th>
+                    <th>Custo</th>
                     <th>Preço Venda</th>
                     <th>Aluguel/h</th>
                     <th>Aluguel/dia</th>
@@ -176,8 +105,11 @@ else
             <tbody>
                 @foreach (var p in _produtos)
                 {
-                    var estoqueOk    = p.Estoque > p.EstoqueMinimo;
-                    var estoqueBaixo = p.Estoque > 0 && p.Estoque <= p.EstoqueMinimo;
+                    var aux          = p.Aux;
+                    var estoque      = aux?.Estoque ?? 0;
+                    var estoqueMin   = aux?.EstoqueMinimo ?? 0;
+                    var estoqueOk    = estoque > estoqueMin;
+                    var estoqueBaixo = estoque > 0 && estoque <= estoqueMin;
                     <tr style="@(!p.Ativo ? "opacity:.45;" : "")">
                         <td>
                             <strong style="font-weight:500;">@p.Nome</strong>
@@ -186,16 +118,24 @@ else
                         </td>
                         <td style="color:var(--ink-500);">@CategoriaLabel(p.Categoria)</td>
                         <td style="color:var(--ink-400);font-size:.8rem;">@p.Unidade</td>
-                        <td style="font-weight:500;">@(p.PrecoVenda.HasValue ? p.PrecoVenda.Value.ToString("C2") : "—")</td>
-                        <td style="color:var(--ink-500);">@(p.PrecoAluguelHora.HasValue ? p.PrecoAluguelHora.Value.ToString("C2") : "—")</td>
-                        <td style="color:var(--ink-500);">@(p.PrecoAluguelDia.HasValue ? p.PrecoAluguelDia.Value.ToString("C2") : "—")</td>
+                        <td style="color:var(--ink-400);font-size:.82rem;">@(aux?.PrecoCusto.HasValue == true ? aux.PrecoCusto!.Value.ToString("C2") : "—")</td>
+                        <td style="font-weight:500;">@(aux?.PrecoVenda.HasValue == true ? aux.PrecoVenda!.Value.ToString("C2") : "—")</td>
+                        <td style="color:var(--ink-500);">@(aux?.PrecoAluguelHora.HasValue == true ? aux.PrecoAluguelHora!.Value.ToString("C2") : "—")</td>
+                        <td style="color:var(--ink-500);">@(aux?.PrecoAluguelDia.HasValue == true ? aux.PrecoAluguelDia!.Value.ToString("C2") : "—")</td>
                         <td>
-                            <span style="font-weight:600;color:@(estoqueOk ? "var(--ink-900)" : estoqueBaixo ? "#9a7420" : "var(--s-maint)");">
-                                @p.Estoque
-                            </span>
-                            @if (p.EstoqueMinimo > 0)
+                            @if (aux?.ControlaEstoque == true)
                             {
-                                <span style="font-size:.72rem;color:var(--ink-300);margin-left:.3rem;">/ mín @p.EstoqueMinimo</span>
+                                <span style="font-weight:600;color:@(estoqueOk ? "var(--ink-900)" : estoqueBaixo ? "#9a7420" : "var(--s-maint)");">
+                                    @estoque
+                                </span>
+                                @if (estoqueMin > 0)
+                                {
+                                    <span style="font-size:.72rem;color:var(--ink-300);margin-left:.3rem;">/ mín @estoqueMin</span>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color:var(--ink-300);font-size:.78rem;">—</span>
                             }
                         </td>
                         <td style="text-align:center;">
@@ -205,10 +145,9 @@ else
                         </td>
                         <td>
                             <div style="display:flex;gap:.35rem;justify-content:flex-end;">
-                                <button class="btn btn-ghost btn-sm" title="Editar"
-                                        @onclick="() => IniciarEdicaoAsync(p)">
+                                <a href="/produtos/@p.Id" class="btn btn-ghost btn-sm" title="Editar">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                </button>
+                                </a>
                                 <button class="btn btn-ghost btn-sm" title="@(p.Ativo ? "Desativar" : "Ativar")"
                                         @onclick="() => ToggleAtivoAsync(p)"
                                         style="color:@(p.Ativo ? "var(--s-maint)" : "var(--s-free)");">
@@ -232,13 +171,11 @@ else
 
 @code {
     private List<Produto> _produtos = new();
-    private Produto _editando = new() { Ativo = true };
     private string _filtroCategoria = "";
     private bool _carregando = true;
     private bool _seeding;
     private int _semEstoque;
     private string? _seedMsg;
-    private string? _erro;
 
     protected override async Task OnInitializedAsync()
     {
@@ -251,49 +188,8 @@ else
         _carregando = true;
         CategoriaProduto? cat = Enum.TryParse<CategoriaProduto>(_filtroCategoria, out var cv) ? cv : null;
         _produtos   = await ProdService.ListarAsync(UserCtx.EmpresaId, apenasAtivos: null, categoria: cat);
-        _semEstoque = _produtos.Count(p => p.Estoque == 0 && p.Ativo);
+        _semEstoque = _produtos.Count(p => p.Aux?.ControlaEstoque == true && p.Aux.Estoque == 0 && p.Ativo);
         _carregando = false;
-    }
-
-    private async Task IniciarEdicaoAsync(Produto p)
-    {
-        _editando = new Produto
-        {
-            Id               = p.Id,
-            EmpresaId        = p.EmpresaId,
-            Nome             = p.Nome,
-            Categoria        = p.Categoria,
-            Unidade          = p.Unidade,
-            PrecoVenda       = p.PrecoVenda,
-            PrecoAluguelHora = p.PrecoAluguelHora,
-            PrecoAluguelDia  = p.PrecoAluguelDia,
-            Estoque          = p.Estoque,
-            EstoqueMinimo    = p.EstoqueMinimo,
-            Alugavel         = p.Alugavel,
-            Ativo            = p.Ativo,
-        };
-        _erro = null;
-        await JS.InvokeVoidAsync("eval", "document.querySelector('.app-main')?.scrollTo({top:0,behavior:'smooth'})");
-    }
-
-    private void CancelarEdicao()
-    {
-        _editando = new Produto { Ativo = true };
-        _erro = null;
-    }
-
-    private async Task SalvarAsync()
-    {
-        _erro = null;
-        if (string.IsNullOrWhiteSpace(_editando.Nome))
-        {
-            _erro = "Informe o nome do produto.";
-            return;
-        }
-        _editando.EmpresaId = UserCtx.EmpresaId;
-        await ProdService.SalvarAsync(_editando);
-        CancelarEdicao();
-        await CarregarAsync();
     }
 
     private async Task ToggleAtivoAsync(Produto p)

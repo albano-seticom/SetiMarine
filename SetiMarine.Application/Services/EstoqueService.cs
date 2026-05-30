@@ -9,12 +9,14 @@ public class EstoqueService(ISetiMarineDbContext ctx)
 {
     public async Task<List<Produto>> ListarProdutosComEstoqueAsync(int empresaId)
         => await ctx.Produtos
-            .Where(p => p.EmpresaId == empresaId && p.Ativo && p.ControlaEstoque)
+            .Include(p => p.Aux)
+            .Where(p => p.EmpresaId == empresaId && p.Ativo && p.Aux != null && p.Aux.ControlaEstoque)
             .OrderBy(p => p.Nome)
             .ToListAsync();
 
     public async Task<List<Produto>> ListarTodosProdutosAsync(int empresaId)
         => await ctx.Produtos
+            .Include(p => p.Aux)
             .Where(p => p.EmpresaId == empresaId && p.Ativo)
             .OrderBy(p => p.Nome)
             .ToListAsync();
@@ -44,27 +46,32 @@ public class EstoqueService(ISetiMarineDbContext ctx)
     public async Task<MovimentoEstoque> AjustarAsync(
         int empresaId, int produtoId, int novoEstoque, string? motivo, int? usuarioId)
     {
-        var produto = await ctx.Produtos.FirstOrDefaultAsync(p => p.Id == produtoId && p.EmpresaId == empresaId)
+        var produto = await ctx.Produtos
+            .Include(p => p.Aux)
+            .FirstOrDefaultAsync(p => p.Id == produtoId && p.EmpresaId == empresaId)
             ?? throw new InvalidOperationException("Produto não encontrado.");
 
-        if (!produto.ControlaEstoque)
+        var aux = produto.Aux ?? throw new InvalidOperationException("Produto sem dados auxiliares.");
+
+        if (!aux.ControlaEstoque)
             throw new InvalidOperationException("Este produto não tem controle de estoque ativo.");
 
-        var antes    = produto.Estoque;
-        var diff     = novoEstoque - antes;
-        produto.Estoque = novoEstoque;
+        var antes       = aux.Estoque;
+        var diff        = novoEstoque - antes;
+        aux.Estoque     = novoEstoque;
+        aux.AtualizadoEm = DateTime.UtcNow;
 
         var mov = new MovimentoEstoque
         {
-            EmpresaId    = empresaId,
-            ProdutoId    = produtoId,
-            UsuarioId    = usuarioId,
-            Tipo         = TipoMovimentoEstoque.Ajuste,
-            Quantidade   = Math.Abs(diff),
-            EstoqueAntes = antes,
+            EmpresaId     = empresaId,
+            ProdutoId     = produtoId,
+            UsuarioId     = usuarioId,
+            Tipo          = TipoMovimentoEstoque.Ajuste,
+            Quantidade    = Math.Abs(diff),
+            EstoqueAntes  = antes,
             EstoqueDepois = novoEstoque,
-            Motivo       = motivo ?? "Ajuste manual",
-            CriadoEm    = DateTime.UtcNow,
+            Motivo        = motivo ?? "Ajuste manual",
+            CriadoEm     = DateTime.UtcNow,
         };
         ctx.MovimentosEstoque.Add(mov);
         await ctx.SaveChangesAsync();
@@ -75,29 +82,33 @@ public class EstoqueService(ISetiMarineDbContext ctx)
         int empresaId, int produtoId, int quantidade, TipoMovimentoEstoque tipo,
         string? motivo, int? usuarioId, int? pedidoId = null, int? vendaProdutoId = null)
     {
-        var produto = await ctx.Produtos.FirstOrDefaultAsync(p => p.Id == produtoId && p.EmpresaId == empresaId)
+        var produto = await ctx.Produtos
+            .Include(p => p.Aux)
+            .FirstOrDefaultAsync(p => p.Id == produtoId && p.EmpresaId == empresaId)
             ?? throw new InvalidOperationException("Produto não encontrado.");
 
-        if (!produto.ControlaEstoque) return null!;
+        var aux = produto.Aux;
+        if (aux == null || !aux.ControlaEstoque) return null!;
 
-        var antes = produto.Estoque;
-        produto.Estoque = tipo == TipoMovimentoEstoque.Entrada
+        var antes = aux.Estoque;
+        aux.Estoque = tipo == TipoMovimentoEstoque.Entrada
             ? antes + quantidade
             : antes - quantidade;
+        aux.AtualizadoEm = DateTime.UtcNow;
 
         var mov = new MovimentoEstoque
         {
-            EmpresaId     = empresaId,
-            ProdutoId     = produtoId,
-            UsuarioId     = usuarioId,
-            Tipo          = tipo,
-            Quantidade    = quantidade,
-            EstoqueAntes  = antes,
-            EstoqueDepois = produto.Estoque,
-            Motivo        = motivo,
-            PedidoId      = pedidoId,
+            EmpresaId      = empresaId,
+            ProdutoId      = produtoId,
+            UsuarioId      = usuarioId,
+            Tipo           = tipo,
+            Quantidade     = quantidade,
+            EstoqueAntes   = antes,
+            EstoqueDepois  = aux.Estoque,
+            Motivo         = motivo,
+            PedidoId       = pedidoId,
             VendaProdutoId = vendaProdutoId,
-            CriadoEm      = DateTime.UtcNow,
+            CriadoEm       = DateTime.UtcNow,
         };
         ctx.MovimentosEstoque.Add(mov);
         await ctx.SaveChangesAsync();

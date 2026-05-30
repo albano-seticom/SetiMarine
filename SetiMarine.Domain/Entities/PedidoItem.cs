@@ -23,4 +23,15 @@ public class PedidoItem
     public StatusAluguel? StatusEmprestimo { get; set; }
 
     public string? Observacao { get; set; }
+
+    // Snapshot fiscal no momento do pedido
+    public decimal? PrecoCusto      { get; set; }
+    public decimal? AliquotaICMS   { get; set; }
+    public decimal? AliquotaIPI    { get; set; }
+    public decimal? AliquotaPIS    { get; set; }
+    public decimal? AliquotaCOFINS { get; set; }
+    public decimal? AliquotaISS    { get; set; }
+    public string?  CstIcms        { get; set; }
+    public string?  Cfop           { get; set; }
+    public string?  Ncm            { get; set; }
 }

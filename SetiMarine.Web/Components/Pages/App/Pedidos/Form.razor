@@ -258,10 +258,10 @@ else
                                 <span class="pdv-row-sub">@p.Unidade · @CategoriaLabel(p.Categoria)</span>
                             </div>
                             <div class="pdv-row-preco">
-                                @if (_pedido.Tipo == TipoPedido.Emprestimo && p.PrecoAluguelDia.HasValue)
-                                { <text>@p.PrecoAluguelDia.Value.ToString("C2")/dia</text> }
-                                else if (p.PrecoVenda.HasValue)
-                                { <text>@p.PrecoVenda.Value.ToString("C2")</text> }
+                                @if (_pedido.Tipo == TipoPedido.Emprestimo && p.Aux?.PrecoAluguelDia != null)
+                                { <text>@p.Aux.PrecoAluguelDia.Value.ToString("C2")/dia</text> }
+                                else if (p.Aux?.PrecoVenda != null)
+                                { <text>@p.Aux.PrecoVenda.Value.ToString("C2")</text> }
                             </div>
                             <button type="button" class="pdv-add-btn" tabindex="-1">+</button>
                         </div>
@@ -629,8 +629,8 @@ else
                     Preco                 = i.PrecoUnitario,
                     TipoStr               = i.Tipo.ToString(),
                     HorasAluguel          = i.HorasAluguel ?? 1,
-                    PrecoUnitAluguelHora  = prod?.PrecoAluguelHora,
-                    PrecoUnitAluguelDia   = prod?.PrecoAluguelDia,
+                    PrecoUnitAluguelHora  = prod?.Aux?.PrecoAluguelHora,
+                    PrecoUnitAluguelDia   = prod?.Aux?.PrecoAluguelDia,
                     DataDevolucaoPrevista = i.DataDevolucaoPrevista,
                     DataDevolucaoReal     = i.DataDevolucaoReal,
                 };
@@ -707,9 +707,9 @@ else
 
     private static decimal PrecoEmprestimo(Produto p, int horas)
     {
-        if (p.PrecoAluguelHora.HasValue) return horas * p.PrecoAluguelHora.Value;
-        if (p.PrecoAluguelDia.HasValue)  return (horas / 24m) * p.PrecoAluguelDia.Value;
-        return p.PrecoVenda ?? 0;
+        if (p.Aux?.PrecoAluguelHora != null) return horas * p.Aux.PrecoAluguelHora.Value;
+        if (p.Aux?.PrecoAluguelDia  != null) return (horas / 24m) * p.Aux.PrecoAluguelDia.Value;
+        return p.Aux?.PrecoVenda ?? 0;
     }
 
     private static decimal RecalcularPreco(LinhaRow ln)
@@ -733,10 +733,10 @@ else
             ProdutoIdStr          = p.Id.ToString(),
             Nome                  = p.Nome,
             Quantidade            = 1,
-            PrecoUnitAluguelHora  = p.PrecoAluguelHora,
-            PrecoUnitAluguelDia   = p.PrecoAluguelDia,
+            PrecoUnitAluguelHora  = p.Aux?.PrecoAluguelHora,
+            PrecoUnitAluguelDia   = p.Aux?.PrecoAluguelDia,
             HorasAluguel          = horas,
-            Preco                 = tipoStr == "Emprestimo" ? PrecoEmprestimo(p, horas) : (p.PrecoVenda ?? 0),
+            Preco                 = tipoStr == "Emprestimo" ? PrecoEmprestimo(p, horas) : (p.Aux?.PrecoVenda ?? 0),
             TipoStr               = tipoStr,
             DataDevolucaoPrevista = tipoStr == "Emprestimo"
                 ? DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc)

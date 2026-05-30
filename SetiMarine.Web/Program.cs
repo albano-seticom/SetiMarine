@@ -55,6 +55,7 @@ builder.Services.AddScoped<ConsumoPlanoService>();
 builder.Services.AddScoped<EstoqueService>();
 builder.Services.AddScoped<CaixaService>();
 builder.Services.AddScoped<ConfiguracaoMarinaService>();
+builder.Services.AddScoped<NotaService>();
 
 var app = builder.Build();
 

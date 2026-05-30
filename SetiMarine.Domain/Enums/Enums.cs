@@ -113,6 +113,7 @@ public enum OrigemMovimentoCaixa
 
 public enum TipoPedido    { Venda = 0, Emprestimo = 1, OrdemServico = 2 }
 public enum TipoItemPedido { Venda = 0, Emprestimo = 1 }
+public enum StatusNota    { Rascunho = 0, Emitida = 1, Cancelada = 2 }
 public enum StatusPedido
 {
     Rascunho    = 0,

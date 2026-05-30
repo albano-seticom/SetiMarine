@@ -50,7 +50,10 @@ else
                     <select @bind="_produtoIdStr" @bind:after="AtualizarPreco">
                         <option value="">Selecione...</option>
                         @foreach (var p in _produtos.Where(p => _tipo != "Aluguel" || p.Alugavel))
-                        { <option value="@p.Id">@p.Nome — Estoque: @p.Estoque @p.Unidade</option> }
+                        {
+                            var estoque = p.Aux?.ControlaEstoque == true ? $" — Estoque: {p.Aux.Estoque} {p.Unidade}" : "";
+                            <option value="@p.Id">@p.Nome@estoque</option>
+                        }
                     </select>
                 </div>
                 <div class="field">
@@ -159,8 +162,8 @@ else
         var prod = _produtos.FirstOrDefault(p => p.Id == pid);
         if (prod == null) return;
         _precoUnitario = _tipo == "Aluguel"
-            ? prod.PrecoAluguelDia ?? 0
-            : prod.PrecoVenda      ?? 0;
+            ? prod.Aux?.PrecoAluguelDia ?? 0
+            : prod.Aux?.PrecoVenda      ?? 0;
     }
 
     private async Task SalvarAsync()

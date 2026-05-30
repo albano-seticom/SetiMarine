@@ -44,7 +44,10 @@ else
                     <select value="@_movProdutoIdStr" @onchange="e => _movProdutoIdStr = e.Value?.ToString() ?? string.Empty" style="height:34px;">
                         <option value="">Selecione...</option>
                         @foreach (var p in _produtos)
-                        { <option value="@p.Id">@p.Nome (@p.Estoque @p.Unidade)</option> }
+                        {
+                            var estoque = p.Aux?.Estoque ?? 0;
+                            <option value="@p.Id">@p.Nome (@estoque @p.Unidade)</option>
+                        }
                     </select>
                 </div>
                 @if (_modoAjuste)
@@ -109,16 +112,18 @@ else
                 <tbody>
                     @foreach (var p in _produtos)
                     {
-                        var abaixoMin = p.EstoqueMinimo > 0 && p.Estoque <= p.EstoqueMinimo;
+                        var estoque    = p.Aux?.Estoque ?? 0;
+                        var estoqueMin = p.Aux?.EstoqueMinimo ?? 0;
+                        var abaixoMin  = estoqueMin > 0 && estoque <= estoqueMin;
                         <tr>
                             <td><strong style="font-weight:500;">@p.Nome</strong></td>
                             <td style="color:var(--ink-500);font-size:.82rem;">@LabelCategoria(p.Categoria)</td>
                             <td style="color:var(--ink-500);font-size:.82rem;">@p.Unidade</td>
                             <td style="text-align:right;font-weight:600;@(abaixoMin ? "color:var(--s-maint);" : "")">
-                                @p.Estoque
+                                @estoque
                                 @if (abaixoMin) { <text> ⚠</text> }
                             </td>
-                            <td style="text-align:right;color:var(--ink-400);font-size:.82rem;">@(p.EstoqueMinimo > 0 ? p.EstoqueMinimo.ToString() : "—")</td>
+                            <td style="text-align:right;color:var(--ink-400);font-size:.82rem;">@(estoqueMin > 0 ? estoqueMin.ToString() : "—")</td>
                             <td>
                                 <button class="btn btn-ghost btn-sm" title="Entrada rápida"
                                         @onclick="() => AbrirEntradaRapida(p)">+</button>
