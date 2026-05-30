@@ -117,27 +117,23 @@ else
             <div class="form-row">
                 <div class="field" style="flex:2;">
                     <label>Cliente</label>
-                    <select value="@_form.ClienteIdStr" @onchange="OnClienteChanged" style="height:34px;">
-                        <option value="">Sem cliente específico</option>
+                    <select @onchange="OnClienteChanged" style="height:34px;">
+                        <option value="" selected="@(_form.ClienteIdStr == "")">Sem cliente específico</option>
                         @foreach (var c in _clientes)
                         { <option value="@c.Id" selected="@(_form.ClienteIdStr == c.Id.ToString())">@c.Nome</option> }
                     </select>
                 </div>
                 <div class="field" style="flex:2;">
                     <label>Embarcação</label>
-                    <select value="@_form.EmbarcacaoIdStr"
-                            @onchange="@(ev => _form.EmbarcacaoIdStr = ev.Value?.ToString() ?? "")"
-                            style="height:34px;">
+                    <select @bind="_form.EmbarcacaoIdStr" style="height:34px;">
                         <option value="">—</option>
                         @foreach (var e in _embarcacoesFiltradas)
-                        { <option value="@e.Id" selected="@(_form.EmbarcacaoIdStr == e.Id.ToString())">@e.Nome</option> }
+                        { <option value="@e.Id">@e.Nome</option> }
                     </select>
                 </div>
                 <div class="field" style="flex:1.5;">
                     <label>Tipo de Uso</label>
-                    <select value="@_form.TipoUsoStr"
-                            @onchange="@(ev => _form.TipoUsoStr = ev.Value?.ToString() ?? "DescidaNaAgua")"
-                            style="height:34px;">
+                    <select @bind="_form.TipoUsoStr" style="height:34px;">
                         <option value="DescidaNaAgua">Descida na Água</option>
                         <option value="UsoPier">Uso no Pier</option>
                         <option value="Passeio">Passeio</option>

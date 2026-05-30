@@ -78,11 +78,11 @@ else
 
             <div class="field">
                 <label>Plano de Contrato</label>
-                <select value="@_planoIdStr" @onchange="OnPlanoChanged" style="height:36px;">
-                    <option value="">Sem plano vinculado</option>
+                <select @onchange="OnPlanoChanged" style="height:36px;">
+                    <option value="" selected="@(_planoIdStr == "")">Sem plano vinculado</option>
                     @foreach (var p in _planos)
                     {
-                        <option value="@p.Id">
+                        <option value="@p.Id" selected="@(_planoIdStr == p.Id.ToString())">
                             @p.Nome @(p.Mensalidade.HasValue ? $"— {p.Mensalidade.Value.ToString("C2")}/mês" : "— sem mensalidade fixa")
                         </option>
                     }
