@@ -11,10 +11,12 @@ namespace SetiMarine.Application.Services;
 public class AuthService
 {
     private readonly ISetiMarineDbContext _context;
+    private readonly SeederService _seeder;
 
-    public AuthService(ISetiMarineDbContext context)
+    public AuthService(ISetiMarineDbContext context, SeederService seeder)
     {
         _context = context;
+        _seeder  = seeder;
     }
 
     public async Task<(ClaimsPrincipal? principal, string? erro)> LoginAsync(string email, string senha)
@@ -96,6 +98,8 @@ public class AuthService
         };
         _context.Usuarios.Add(admin);
         await _context.SaveChangesAsync();
+
+        await _seeder.SeedEmpresaAsync(empresa.Id);
 
         return (true, null);
     }

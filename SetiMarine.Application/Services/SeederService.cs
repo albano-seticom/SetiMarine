@@ -27,7 +27,7 @@ public class SeederService(ISetiMarineDbContext ctx)
 
     public async Task<int> SeedProdutosAsync(int empresaId)
     {
-        if (await ctx.Produtos.AnyAsync(p => p.EmpresaId == empresaId))
+        if (await ctx.Produtos.AnyAsync(p => p.EmpresaId == empresaId && p.Nome == "Gasolina Comum"))
             return 0;
 
         var itens = new List<(Produto Produto, ProdutoAux Aux)>
@@ -167,5 +167,128 @@ public class SeederService(ISetiMarineDbContext ctx)
         });
         await ctx.SaveChangesAsync();
         return 1;
+    }
+
+    public async Task SeedEmpresaAsync(int empresaId)
+    {
+        await SeedServicosAsync(empresaId);
+
+        if (!await ctx.Produtos.AnyAsync(p => p.EmpresaId == empresaId && p.Nome == "Serviço Avulso"))
+        {
+            var prod = new Produto
+            {
+                EmpresaId = empresaId,
+                Nome      = "Serviço Avulso",
+                Categoria = CategoriaProduto.Outro,
+                Unidade   = "un",
+                Ativo     = true,
+                CriadoEm  = DateTime.UtcNow,
+            };
+            prod.Aux = new ProdutoAux
+            {
+                EmpresaId       = empresaId,
+                PrecoVenda      = 0m,
+                ControlaEstoque = false,
+                AtualizadoEm    = DateTime.UtcNow,
+            };
+            ctx.Produtos.Add(prod);
+            await ctx.SaveChangesAsync();
+        }
+
+        if (!await ctx.Usuarios.AnyAsync(u => u.EmpresaId == empresaId && u.Nome == "Vendedor"))
+        {
+            ctx.Usuarios.Add(new Usuario
+            {
+                EmpresaId = empresaId,
+                Nome      = "Vendedor",
+                Email     = $"vendedor.{empresaId}@marina.local",
+                SenhaHash = AuthService.HashSenha("Seticom@2024"),
+                Perfil    = PerfilUsuario.Operacional,
+                Ativo     = true,
+                CriadoEm  = DateTime.UtcNow,
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        await SeedClientesAsync(empresaId);
+
+        var corredor = await ctx.Corredores
+            .FirstOrDefaultAsync(c => c.EmpresaId == empresaId && c.Nome == "Corredor A");
+        if (corredor == null)
+        {
+            var ordem = await ctx.Corredores
+                .Where(c => c.EmpresaId == empresaId)
+                .MaxAsync(c => (int?)c.Ordem) ?? 0;
+            corredor = new Corredor
+            {
+                EmpresaId = empresaId,
+                Nome      = "Corredor A",
+                Ordem     = ordem + 1,
+                Ativo     = true,
+                CriadoEm  = DateTime.UtcNow,
+            };
+            ctx.Corredores.Add(corredor);
+            await ctx.SaveChangesAsync();
+        }
+
+        if (!await ctx.Vagas.AnyAsync(v => v.EmpresaId == empresaId && v.Codigo == "A01"))
+        {
+            ctx.Vagas.Add(new Vaga
+            {
+                EmpresaId  = empresaId,
+                CorredorId = corredor.Id,
+                Codigo     = "A01",
+                Tipo       = TipoVaga.Agua,
+                Status     = StatusVaga.Livre,
+                Ativa      = true,
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        var consumidor = await ctx.Clientes
+            .FirstOrDefaultAsync(c => c.EmpresaId == empresaId && c.Nome == "Consumidor");
+        if (consumidor != null &&
+            !await ctx.Embarcacoes.AnyAsync(e => e.EmpresaId == empresaId && e.Nome == "Embarcação Padrão"))
+        {
+            ctx.Embarcacoes.Add(new Embarcacao
+            {
+                EmpresaId         = empresaId,
+                ClienteId         = consumidor.Id,
+                Nome              = "Embarcação Padrão",
+                Tipo              = TipoEmbarcacao.Outro,
+                ComprimentoMetros = 5m,
+                Ativa             = true,
+                CriadaEm          = DateTime.UtcNow,
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        if (!await ctx.PlanosContrato.AnyAsync(p => p.EmpresaId == empresaId && p.Nome == "Mensalista Padrão"))
+        {
+            ctx.PlanosContrato.Add(new PlanoContrato
+            {
+                EmpresaId   = empresaId,
+                Nome        = "Mensalista Padrão",
+                Descricao   = "Plano padrão — ajuste os valores conforme necessário",
+                Mensalidade = 0m,
+                Ativo       = true,
+                CriadoEm    = DateTime.UtcNow,
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        var empresa = await ctx.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
+        if (empresa != null && empresa.PlanoId == null)
+        {
+            var planoPadrao = await ctx.Planos
+                .Where(p => p.Ativo)
+                .OrderBy(p => p.Ordem).ThenBy(p => p.Valor)
+                .FirstOrDefaultAsync();
+            if (planoPadrao != null)
+            {
+                empresa.PlanoId = planoPadrao.Id;
+                await ctx.SaveChangesAsync();
+            }
+        }
     }
 }

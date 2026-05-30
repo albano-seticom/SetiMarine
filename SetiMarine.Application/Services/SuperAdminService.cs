@@ -5,7 +5,7 @@ using SetiMarine.Domain.Enums;
 
 namespace SetiMarine.Application.Services;
 
-public class SuperAdminService(ISetiMarineDbContext ctx)
+public class SuperAdminService(ISetiMarineDbContext ctx, SeederService seeder)
 {
     // ── Empresas ─────────────────────────────────────────────────
 
@@ -67,6 +67,8 @@ public class SuperAdminService(ISetiMarineDbContext ctx)
             CriadoEm  = DateTime.UtcNow,
         });
         await ctx.SaveChangesAsync();
+
+        await seeder.SeedEmpresaAsync(empresa.Id);
     }
 
     public async Task ToggleEmpresaAtivaAsync(int id)

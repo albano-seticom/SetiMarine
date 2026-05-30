@@ -768,7 +768,17 @@ else
     }
 
     private void AdicionarServico(string nome, decimal? valorPadrao = null)
-        => _linhas.Add(new LinhaRow { EhServico = true, Nome = nome, Preco = valorPadrao ?? 0 });
+    {
+        var vendedor = _colaboradores.FirstOrDefault(u => u.Nome == "Vendedor");
+        var responsavelPadrao = vendedor?.Id.ToString() ?? _responsavelIdStr;
+        _linhas.Add(new LinhaRow
+        {
+            EhServico        = true,
+            Nome             = nome,
+            Preco            = valorPadrao ?? 0,
+            ResponsavelIdStr = responsavelPadrao,
+        });
+    }
 
     private static string LabelTipo(TipoPedido t) => t switch
     {

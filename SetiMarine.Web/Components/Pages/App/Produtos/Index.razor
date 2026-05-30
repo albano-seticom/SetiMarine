@@ -202,13 +202,13 @@ else
     {
         _seeding = true;
         _seedMsg = null;
-        var prods    = await Seeder.SeedProdutosAsync(UserCtx.EmpresaId);
-        var servs    = await Seeder.SeedServicosAsync(UserCtx.EmpresaId);
-        var clientes = await Seeder.SeedClientesAsync(UserCtx.EmpresaId);
 
-        _seedMsg = prods == 0 && servs == 0 && clientes == 0
-            ? "O catálogo já foi populado anteriormente."
-            : $"{prods} produto(s), {servs} tipo(s) de serviço e {clientes} cliente(s) padrão importados.";
+        await Seeder.SeedEmpresaAsync(UserCtx.EmpresaId);
+        var prods = await Seeder.SeedProdutosAsync(UserCtx.EmpresaId);
+
+        _seedMsg = prods == 0
+            ? "O catálogo completo já foi importado anteriormente."
+            : $"{prods} produto(s) do catálogo importados com sucesso.";
 
         _seeding = false;
         await CarregarAsync();
