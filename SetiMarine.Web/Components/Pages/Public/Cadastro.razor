@@ -1,4 +1,4 @@
-﻿@page "/cadastro"
+@page "/cadastro"
 @layout EmptyLayout
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject AuthService AuthService
@@ -9,7 +9,7 @@
 @using SetiMarine.Domain.Entities
 @using Microsoft.EntityFrameworkCore
 
-<PageTitle>Criar conta â€” SetiMarine</PageTitle>
+<PageTitle>Criar conta — SetiMarine</PageTitle>
 
 <style>
 @@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@@300;600&family=Outfit:wght@@300;400;500;600&display=swap');
@@ -131,7 +131,7 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
 .plano-preco { font-size: .85rem; color: var(--muted); }
 .plano-badge { font-size: .7rem; background: var(--cyan); color: #030b14; border-radius: 4px; padding: 2px 6px; font-weight: 700; }
 
-/* ConfirmaÃ§Ã£o */
+/* Confirmação */
 .confirm-row { display: flex; justify-content: space-between; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
 .confirm-row:last-child { border-bottom: none; }
 .confirm-label { color: var(--muted); }
@@ -154,25 +154,25 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
   <div class="cad-card">
 
     <a href="/" class="cad-logo">
-      <div class="logo-icon">âš“</div>
+      <div class="logo-icon">⚓</div>
       <span class="logo-text">Seti<b>Marine</b></span>
     </a>
 
     <!-- Indicador de etapas -->
     <div class="steps">
       <div class="step @(Etapa >= 1 ? (Etapa > 1 ? "done" : "active") : "")">
-        <div class="step-num">@(Etapa > 1 ? "âœ“" : "1")</div>
+        <div class="step-num">@(Etapa > 1 ? "✓" : "1")</div>
         <span class="step-label">Empresa</span>
       </div>
       <div class="step-line"></div>
       <div class="step @(Etapa >= 2 ? (Etapa > 2 ? "done" : "active") : "")">
-        <div class="step-num">@(Etapa > 2 ? "âœ“" : "2")</div>
+        <div class="step-num">@(Etapa > 2 ? "✓" : "2")</div>
         <span class="step-label">Administrador</span>
       </div>
       <div class="step-line"></div>
       <div class="step @(Etapa >= 3 ? "active" : "")">
         <div class="step-num">3</div>
-        <span class="step-label">ConfirmaÃ§Ã£o</span>
+        <span class="step-label">Confirmação</span>
       </div>
     </div>
 
@@ -188,7 +188,7 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
       <div class="cad-sub">Informe os dados da sua marina.</div>
 
       <div class="field">
-        <label>RazÃ£o Social *</label>
+        <label>Razão Social *</label>
         <input @bind="RazaoSocial" placeholder="Marina Exemplo Ltda" />
       </div>
       <div class="field">
@@ -229,7 +229,7 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
                 <div style="display:flex;align-items:center;gap:.5rem;">
                   @if (p.Destaque) { <span class="plano-badge">Popular</span> }
                   <span class="plano-preco">
-                    @(p.Valor > 0 ? $"R$ {p.Valor:N0}/mÃªs" : "Sob consulta")
+                    @(p.Valor > 0 ? $"R$ {p.Valor:N0}/mês" : "Sob consulta")
                   </span>
                 </div>
               </div>
@@ -239,8 +239,8 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
       </div>
 
       <div class="btns">
-        <button class="btn-primary" @onclick="AvancarEtapa1">PrÃ³ximo â€” Administrador â†’</button>
-        <a href="/login" class="btn-ghost" style="text-align:center;display:block;padding:.7rem;">JÃ¡ tenho uma conta</a>
+        <button class="btn-primary" @onclick="AvancarEtapa1">Próximo — Administrador →</button>
+        <a href="/login" class="btn-ghost" style="text-align:center;display:block;padding:.7rem;">Já tenho uma conta</a>
       </div>
     }
 
@@ -248,11 +248,11 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
     @if (Etapa == 2)
     {
       <div class="cad-title">Dados do administrador</div>
-      <div class="cad-sub">VocÃª serÃ¡ o primeiro administrador da conta.</div>
+      <div class="cad-sub">Você será o primeiro administrador da conta.</div>
 
       <div class="field">
         <label>Nome completo *</label>
-        <input @bind="NomeAdmin" placeholder="JoÃ£o da Silva" />
+        <input @bind="NomeAdmin" placeholder="João da Silva" />
       </div>
       <div class="field">
         <label>E-mail de acesso *</label>
@@ -260,7 +260,7 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
       </div>
       <div class="field">
         <label>Senha *</label>
-        <input type="password" @bind="Senha" placeholder="MÃ­nimo 6 caracteres" />
+        <input type="password" @bind="Senha" placeholder="Mínimo 6 caracteres" />
       </div>
       <div class="field">
         <label>Confirmar senha *</label>
@@ -268,23 +268,23 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
       </div>
 
       <div class="btns">
-        <button class="btn-primary" @onclick="AvancarEtapa2">PrÃ³ximo â€” ConfirmaÃ§Ã£o â†’</button>
-        <button class="btn-ghost" @onclick="() => { Etapa = 1; _erro = null; }">â† Voltar</button>
+        <button class="btn-primary" @onclick="AvancarEtapa2">Próximo — Confirmação →</button>
+        <button class="btn-ghost" @onclick="() => { Etapa = 1; _erro = null; }">← Voltar</button>
       </div>
     }
 
-    <!-- ===== ETAPA 3: ConfirmaÃ§Ã£o ===== -->
+    <!-- ===== ETAPA 3: Confirmação ===== -->
     @if (Etapa == 3 && !_sucesso)
     {
       <div class="cad-title">Confirme os dados</div>
       <div class="cad-sub">Revise tudo antes de criar a conta.</div>
 
       <div style="margin-bottom:1.5rem;">
-        <div class="confirm-row"><span class="confirm-label">RazÃ£o Social</span><span class="confirm-val">@RazaoSocial</span></div>
-        <div class="confirm-row"><span class="confirm-label">Nome Fantasia</span><span class="confirm-val">@(NomeFantasia ?? "â€”")</span></div>
+        <div class="confirm-row"><span class="confirm-label">Razão Social</span><span class="confirm-val">@RazaoSocial</span></div>
+        <div class="confirm-row"><span class="confirm-label">Nome Fantasia</span><span class="confirm-val">@(NomeFantasia ?? "—")</span></div>
         <div class="confirm-row"><span class="confirm-label">CNPJ</span><span class="confirm-val">@Cnpj</span></div>
         <div class="confirm-row"><span class="confirm-label">E-mail empresa</span><span class="confirm-val">@EmailEmpresa</span></div>
-        <div class="confirm-row"><span class="confirm-label">Plano</span><span class="confirm-val">@(_planos.FirstOrDefault(p => p.Id == PlanoSelecionadoId)?.Nome ?? "â€”")</span></div>
+        <div class="confirm-row"><span class="confirm-label">Plano</span><span class="confirm-val">@(_planos.FirstOrDefault(p => p.Id == PlanoSelecionadoId)?.Nome ?? "—")</span></div>
         <div class="confirm-row"><span class="confirm-label">Administrador</span><span class="confirm-val">@NomeAdmin</span></div>
         <div class="confirm-row"><span class="confirm-label">E-mail de acesso</span><span class="confirm-val">@EmailAdmin</span></div>
       </div>
@@ -294,29 +294,29 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
           @if (_carregando)
           { <div class="spin"></div> <span>Criando conta...</span> }
           else
-          { <span>âœ“ Criar conta agora</span> }
+          { <span>✓ Criar conta agora</span> }
         </button>
-        <button class="btn-ghost" @onclick="() => { Etapa = 2; _erro = null; }">â† Voltar</button>
+        <button class="btn-ghost" @onclick="() => { Etapa = 2; _erro = null; }">← Voltar</button>
       </div>
     }
 
     <!-- ===== SUCESSO ===== -->
     @if (_sucesso)
     {
-      <div class="success-icon">ðŸŽ‰</div>
+      <div class="success-icon">🎉</div>
       <div class="cad-title" style="text-align:center;">Conta criada!</div>
       <div class="cad-sub" style="text-align:center;margin-bottom:1.5rem;">
-        Bem-vindo ao SetiMarine. Sua marina estÃ¡ pronta para decolar.
+        Bem-vindo ao SetiMarine. Sua marina está pronta para decolar.
       </div>
       <button class="btn-primary" @onclick="@(() => Nav.NavigateTo("/login", forceLoad: true))">
-        Ir para o login â†’
+        Ir para o login →
       </button>
     }
 
     @if (!_sucesso)
     {
       <div class="login-footer" style="margin-top:1.5rem;">
-        JÃ¡ tem uma conta? <a href="/login">Entrar</a>
+        Já tem uma conta? <a href="/login">Entrar</a>
       </div>
     }
 
@@ -362,9 +362,9 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
     private void AvancarEtapa1()
     {
         _erro = null;
-        if (string.IsNullOrWhiteSpace(RazaoSocial)) { _erro = "RazÃ£o Social Ã© obrigatÃ³ria."; return; }
-        if (string.IsNullOrWhiteSpace(Cnpj))        { _erro = "CNPJ Ã© obrigatÃ³rio."; return; }
-        if (string.IsNullOrWhiteSpace(EmailEmpresa)){ _erro = "E-mail da empresa Ã© obrigatÃ³rio."; return; }
+        if (string.IsNullOrWhiteSpace(RazaoSocial)) { _erro = "Razão Social é obrigatória."; return; }
+        if (string.IsNullOrWhiteSpace(Cnpj))        { _erro = "CNPJ é obrigatório."; return; }
+        if (string.IsNullOrWhiteSpace(EmailEmpresa)){ _erro = "E-mail da empresa é obrigatório."; return; }
         if (PlanoSelecionadoId == null)              { _erro = "Selecione um plano."; return; }
         Etapa = 2;
     }
@@ -372,10 +372,10 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
     private void AvancarEtapa2()
     {
         _erro = null;
-        if (string.IsNullOrWhiteSpace(NomeAdmin))  { _erro = "Nome do administrador Ã© obrigatÃ³rio."; return; }
-        if (string.IsNullOrWhiteSpace(EmailAdmin)) { _erro = "E-mail de acesso Ã© obrigatÃ³rio."; return; }
+        if (string.IsNullOrWhiteSpace(NomeAdmin))  { _erro = "Nome do administrador é obrigatório."; return; }
+        if (string.IsNullOrWhiteSpace(EmailAdmin)) { _erro = "E-mail de acesso é obrigatório."; return; }
         if (Senha.Length < 6)                      { _erro = "A senha deve ter pelo menos 6 caracteres."; return; }
-        if (Senha != ConfirmarSenha)               { _erro = "As senhas nÃ£o conferem."; return; }
+        if (Senha != ConfirmarSenha)               { _erro = "As senhas não conferem."; return; }
         Etapa = 3;
     }
 
@@ -400,4 +400,3 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
         _carregando = false;
     }
 }
-

@@ -421,7 +421,6 @@ else
         _embarcacoes = await AgSvc.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
         _embarcacoesFiltradas = _embarcacoes;
 
-        await AgSvc.SeedDemoAsync(UserCtx.EmpresaId);
         await CarregarAsync();
     }
 
