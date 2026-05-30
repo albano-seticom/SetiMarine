@@ -11,6 +11,13 @@ public class EmpresaService(ISetiMarineDbContext ctx)
             .Include(e => e.Plano)
             .FirstOrDefaultAsync(e => e.Id == empresaId);
 
+    public async Task<List<Plano>> ListarPlanosAtivosAsync()
+        => await ctx.Planos
+            .Where(p => p.Ativo)
+            .OrderBy(p => p.Ordem)
+            .ThenBy(p => p.Valor)
+            .ToListAsync();
+
     public async Task EditarAsync(Empresa empresa)
     {
         ctx.Empresas.Update(empresa);

@@ -1,0 +1,209 @@
+@page "/planos"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@inject EmpresaService EmpresaSvc
+@inject UsuarioContextService UserCtx
+
+<PageTitle>Planos — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Conta</span>
+        <h1>Plano de Assinatura</h1>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    @* Plano atual *@
+    <div style="margin-bottom:2.5rem;">
+        <div style="font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-300);margin-bottom:.85rem;font-weight:600;">Seu Plano Atual</div>
+
+        @if (_planoAtual == null)
+        {
+            <div style="padding:1.25rem 1.5rem;border:1px dashed var(--line);border-radius:4px;color:var(--ink-400);font-size:.88rem;">
+                Sua conta não tem nenhum plano associado. Entre em contato com o suporte.
+            </div>
+        }
+        else
+        {
+            <div style="padding:1.5rem;border:2px solid var(--navy-700);border-radius:6px;background:rgba(0,53,128,.03);max-width:520px;position:relative;">
+                <div style="position:absolute;top:.85rem;right:.85rem;">
+                    <span class="badge badge-free" style="font-size:.65rem;letter-spacing:.14em;">Plano Ativo</span>
+                </div>
+                <div style="font-size:1.25rem;font-weight:700;color:var(--navy-700);margin-bottom:.2rem;">@_planoAtual.Nome</div>
+                @if (!string.IsNullOrWhiteSpace(_planoAtual.Descricao))
+                {
+                    <div style="font-size:.82rem;color:var(--ink-500);margin-bottom:.85rem;">@_planoAtual.Descricao</div>
+                }
+                <div style="font-size:2rem;font-weight:700;color:var(--ink-900);line-height:1;margin-bottom:.2rem;">
+                    @_planoAtual.Valor.ToString("C2")
+                    <span style="font-size:.75rem;font-weight:400;color:var(--ink-400);">/mês</span>
+                </div>
+                @if (_empresa?.PlanoVenceEm.HasValue == true)
+                {
+                    <div style="font-size:.75rem;color:var(--ink-400);margin-bottom:.85rem;">
+                        Vence em @_empresa.PlanoVenceEm!.Value.ToString("dd/MM/yyyy")
+                    </div>
+                }
+                else
+                {
+                    <div style="font-size:.75rem;color:var(--ink-400);margin-bottom:.85rem;">Sem data de vencimento definida</div>
+                }
+
+                <div style="display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:1.1rem;font-weight:700;color:var(--ink-900);">@_planoAtual.LimiteEmbarcacoes</div>
+                        <div style="font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-400);">Embarcações</div>
+                    </div>
+                    <div>
+                        <div style="font-size:1.1rem;font-weight:700;color:var(--ink-900);">@_planoAtual.LimiteUsuarios</div>
+                        <div style="font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-400);">Usuários</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_planoAtual.Recursos))
+                {
+                    <div style="border-top:1px solid var(--line);padding-top:.85rem;">
+                        <div style="font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-300);margin-bottom:.5rem;font-weight:600;">Recursos incluídos</div>
+                        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.3rem;">
+                            @foreach (var r in _planoAtual.Recursos.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <li style="font-size:.82rem;color:var(--ink-600);display:flex;align-items:flex-start;gap:.45rem;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--s-free)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;margin-top:.1rem;">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    @r.Trim()
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @* Todos os planos *@
+    @if (_planos.Any())
+    {
+        <div style="font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-300);margin-bottom:.85rem;font-weight:600;">Planos Disponíveis</div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;max-width:960px;">
+            @foreach (var p in _planos)
+            {
+                var isAtual  = p.Id == _planoAtual?.Id;
+                var destaque = p.Destaque && !isAtual;
+
+                <div style="@PlanoCardStyle(isAtual, destaque)">
+                    @if (p.Destaque && !isAtual)
+                    {
+                        <div style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--navy-700);padding:.3rem .75rem;margin:-1.25rem -1.25rem 1rem;border-radius:4px 4px 0 0;text-align:center;font-weight:700;">
+                            Recomendado
+                        </div>
+                    }
+                    @if (isAtual)
+                    {
+                        <div style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--navy-700);background:rgba(0,53,128,.08);padding:.3rem .75rem;margin:-1.25rem -1.25rem 1rem;border-radius:4px 4px 0 0;text-align:center;font-weight:700;">
+                            Plano Atual
+                        </div>
+                    }
+
+                    <div style="font-size:1rem;font-weight:700;color:var(--ink-900);margin-bottom:.2rem;">@p.Nome</div>
+
+                    @if (!string.IsNullOrWhiteSpace(p.Descricao))
+                    {
+                        <div style="font-size:.75rem;color:var(--ink-500);margin-bottom:.65rem;min-height:2.2rem;">@p.Descricao</div>
+                    }
+
+                    <div style="font-size:1.6rem;font-weight:700;color:var(--ink-900);line-height:1;margin-bottom:.85rem;">
+                        @p.Valor.ToString("C2")
+                        <span style="font-size:.68rem;font-weight:400;color:var(--ink-400);">/mês</span>
+                    </div>
+
+                    <div style="display:flex;gap:1rem;margin-bottom:.85rem;">
+                        <div style="font-size:.75rem;color:var(--ink-500);">
+                            <strong style="color:var(--ink-900);">@p.LimiteEmbarcacoes</strong> embarcações
+                        </div>
+                        <div style="font-size:.75rem;color:var(--ink-500);">
+                            <strong style="color:var(--ink-900);">@p.LimiteUsuarios</strong> usuários
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(p.Recursos))
+                    {
+                        <ul style="list-style:none;padding:0;margin:0 0 1rem;display:flex;flex-direction:column;gap:.28rem;">
+                            @foreach (var r in p.Recursos.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <li style="font-size:.78rem;color:var(--ink-600);display:flex;align-items:flex-start;gap:.4rem;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--s-free)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;margin-top:.15rem;">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    @r.Trim()
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    @if (isAtual)
+                    {
+                        <button class="btn btn-ghost btn-sm" disabled style="width:100%;justify-content:center;opacity:.5;cursor:default;">
+                            Plano contratado
+                        </button>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(p.LinkPagamento))
+                    {
+                        <a href="@p.LinkPagamento" target="_blank" rel="noopener"
+                           class="btn btn-primary btn-sm"
+                           style="width:100%;justify-content:center;text-align:center;display:block;">
+                            @(p.TextoBotao ?? "Fazer Upgrade")
+                        </a>
+                    }
+                    else
+                    {
+                        <div style="font-size:.72rem;color:var(--ink-400);padding:.5rem 0;">
+                            Entre em contato para contratar este plano.
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:rgba(0,53,128,.03);border:1px solid rgba(0,53,128,.1);border-radius:4px;max-width:960px;">
+            <div style="font-size:.8rem;color:var(--ink-600);">
+                Precisa de ajuda para escolher o melhor plano?
+                <strong>Fale com o suporte da SetiMarine</strong> — estamos disponíveis para orientar sua equipe.
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private Empresa?    _empresa    = null;
+    private Plano?      _planoAtual = null;
+    private List<Plano> _planos     = new();
+    private bool        _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _empresa    = await EmpresaSvc.ObterAsync(UserCtx.EmpresaId);
+        _planoAtual = _empresa?.Plano;
+        _planos     = await EmpresaSvc.ListarPlanosAtivosAsync();
+        _carregando = false;
+    }
+
+    private static string PlanoCardStyle(bool isAtual, bool destaque) =>
+        "padding:1.25rem;border-radius:6px;display:flex;flex-direction:column;" +
+        (isAtual   ? "border:2px solid var(--navy-700);background:rgba(0,53,128,.03);"
+         : destaque ? "border:2px solid var(--navy-700);background:#fff;"
+                    : "border:1px solid var(--line);background:#fff;");
+}
