@@ -14,32 +14,34 @@
 <PageTitle>Mapa da Marina — SetiMarine</PageTitle>
 
 <style>
-/* ── Container principal ──────────────────────────── */
-.mapa-outer { border:1px solid rgba(22,53,103,.14);border-radius:6px;overflow:hidden;margin-bottom:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.08); }
-.mapa-bar   { display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;background:#060f1e; }
-.mapa-title { font-size:.78rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#fff;display:flex;align-items:center;gap:.5rem; }
-.mapa-count { font-size:.65rem;font-weight:400;color:rgba(255,255,255,.35); }
-.live-dot   { width:7px;height:7px;border-radius:50%;background:#1ab3a6;animation:pulse 2s ease-in-out infinite; }
-@@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
-.leg        { display:flex;gap:.75rem; }
-.leg-i      { display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:rgba(255,255,255,.4); }
-.leg-d      { width:9px;height:9px;border-radius:2px; }
+/* ── Seção block ──────────────────────────────────── */
+.secao-blk       { margin-bottom:1.5rem;border:1px solid rgba(0,212,255,.1);border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08); }
+.secao-hd        { display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;background:#060f1e; }
+.secao-hd-left   { display:flex;align-items:center;gap:.55rem; }
+.secao-hd-nome   { font-size:.78rem;font-weight:700;letter-spacing:.25px;text-transform:uppercase;color:#fff; }
+.secao-count     { font-size:.65rem;font-weight:400;color:rgba(255,255,255,.3); }
+.badge-mol       { font-size:.58rem;padding:2px 7px;border-radius:3px;background:rgba(26,179,166,.15);color:#1ab3a6;border:1px solid rgba(26,179,166,.28);font-weight:700;letter-spacing:.3px; }
+.badge-sec       { font-size:.58rem;padding:2px 7px;border-radius:3px;background:rgba(201,168,76,.15);color:#c9a84c;border:1px solid rgba(201,168,76,.28);font-weight:700;letter-spacing:.3px; }
+.btn-cor-add     { background:none;border:1px dashed rgba(255,255,255,.14);color:rgba(255,255,255,.32);border-radius:4px;padding:.3rem .75rem;font-size:.68rem;cursor:pointer;display:flex;align-items:center;gap:.3rem;transition:all .15s; }
+.btn-cor-add:hover { border-color:rgba(26,179,166,.45);color:#1ab3a6; }
+
+/* ── Corpo do mapa ────────────────────────────────── */
 .mapa-body  { background:#050d1a;
     background-image:linear-gradient(rgba(0,212,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.02) 1px,transparent 1px);
     background-size:40px 40px; }
-.empty-mapa { display:flex;align-items:center;justify-content:center;min-height:180px;flex-direction:column;gap:.5rem;color:rgba(255,255,255,.3); }
+.empty-mapa { display:flex;align-items:center;justify-content:center;min-height:100px;flex-direction:column;gap:.5rem;color:rgba(255,255,255,.3); }
 
 /* ── Grid de vagas por corredor ───────────────────── */
-.mapa-grid  { padding:1.25rem 1.5rem;overflow-x:auto; }
+.mapa-grid   { padding:1.1rem 1.5rem 1.5rem; overflow-x:auto; }
 .corredor-hd { font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
                color:rgba(0,212,255,.4);margin-bottom:.55rem;margin-top:1.2rem;
                padding-left:50px; }
 .corredor-hd:first-child { margin-top:0; }
-.vaga-row   { display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:nowrap; }
-.vaga-lbl   { width:42px;min-width:42px;text-align:right;font-size:.68rem;font-weight:600;
-              color:rgba(255,255,255,.3);flex-shrink:0;padding-right:6px;
-              border-right:1px solid rgba(0,200,255,.1);
-              white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.vaga-row    { display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:nowrap; }
+.vaga-lbl    { width:42px;min-width:42px;text-align:right;font-size:.68rem;font-weight:600;
+               color:rgba(255,255,255,.3);flex-shrink:0;padding-right:6px;
+               border-right:1px solid rgba(0,200,255,.1);
+               white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 
 /* ── Célula de vaga ───────────────────────────────── */
 .vs { width:64px;height:52px;border-radius:6px;border:1.5px solid;
@@ -62,7 +64,7 @@
            background:#1ab3a6;color:#060f1e;font-size:.52rem;font-weight:800;
            display:flex;align-items:center;justify-content:center;padding:0 3px; }
 
-/* botão "+" ao final da linha */
+/* botão "+" ao final da linha de vagas */
 .vs-add { width:64px;height:52px;border-radius:6px;
           border:1.5px dashed rgba(255,255,255,.14);background:none;
           display:grid;place-items:center;flex-shrink:0;
@@ -70,7 +72,7 @@
           transition:border-color .15s,color .15s,background .15s; }
 .vs-add:hover { border-color:rgba(26,179,166,.5);color:#1ab3a6;background:rgba(26,179,166,.05); }
 
-/* ── Conteúdo do modal de detalhe ─────────────────── */
+/* ── Modal detalhe ────────────────────────────────── */
 .emb-row { display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;
            background:var(--surface,rgba(0,0,0,.03));border:1px solid var(--line);
            border-radius:4px;margin-bottom:.4rem; }
@@ -81,6 +83,8 @@
 .emb-row-rm:hover { color:var(--s-maint); }
 .modal-sec { font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
              color:var(--ink-400);margin:1.1rem 0 .55rem; }
+@@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+.live-dot { width:7px;height:7px;border-radius:50%;background:#1ab3a6;animation:pulse 2s ease-in-out infinite;flex-shrink:0; }
 </style>
 
 <div class="page-head">
@@ -90,7 +94,6 @@
     </div>
     <div class="page-head-actions">
         <button class="btn btn-ghost btn-sm" @onclick="AbrirModalNovaSecao">+ Seção</button>
-        <button class="btn btn-ghost btn-sm" @onclick="AbrirModalNovoCorredor">+ Corredor</button>
         <a href="/vagas" class="btn btn-ghost btn-sm">Lista de Vagas</a>
     </div>
 </div>
@@ -105,161 +108,128 @@
 else
 {
 
-<!-- ═══ VAGAS MOLHADAS ═══ -->
-<div class="mapa-outer">
-    <div class="mapa-bar">
-        <div class="mapa-title">
-            <div class="live-dot"></div>
-            Vagas Molhadas
-            <span class="mapa-count">@_vagasMol.Count vagas</span>
-        </div>
-        <div class="leg">
-            <div class="leg-i"><div class="leg-d" style="background:#1ab3a6"></div>Livre</div>
-            <div class="leg-i"><div class="leg-d" style="background:#1d4785"></div>Ocupada</div>
-            <div class="leg-i"><div class="leg-d" style="background:#c9a84c"></div>Mov.</div>
-            <div class="leg-i"><div class="leg-d" style="background:#e8453c"></div>Manut.</div>
-        </div>
+@if (!_secoes.Any() && !_corredores.Any())
+{
+    <div style="padding:3rem 0;text-align:center;color:var(--ink-300);">
+        <p style="margin-bottom:1rem;">Nenhuma seção cadastrada.</p>
+        <button class="btn btn-primary btn-sm" @onclick="AbrirModalNovaSecao">+ Criar primeira seção</button>
     </div>
-    <div class="mapa-body" @onclick="Deselecionar">
-        @if (!_vagasMol.Any())
-        {
-            <div class="empty-mapa">
-                <span>Nenhuma vaga molhada.</span>
-                <button class="vs-add" style="width:120px;height:40px;margin-top:.5rem;"
-                        @onclick="() => AbrirModalNova(TipoVaga.Agua)" @onclick:stopPropagation="true">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span style="font-size:.75rem;margin-left:.3rem;">Nova vaga</span>
-                </button>
-            </div>
-        }
-        else
-        {
-            <div class="mapa-grid">
-                @foreach (var secGrp in _vagasMol
-                    .GroupBy(v => new { SecaoId = v.Corredor?.SecaoId ?? 0, SecaoNome = v.Corredor?.Secao?.Nome ?? "" })
-                    .OrderBy(g => g.Key.SecaoId == 0 ? int.MaxValue : g.Key.SecaoId))
-                {
-                    @if (!string.IsNullOrEmpty(secGrp.Key.SecaoNome))
-                    {
-                        <div style="font-size:.58rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(0,212,255,.25);margin-top:1.5rem;margin-bottom:.2rem;padding-left:50px;">
-                            ◆ @secGrp.Key.SecaoNome
-                        </div>
-                    }
-                    @foreach (var corGrp in secGrp.GroupBy(v => new { CorredorId = v.CorredorId ?? 0, CorredorNome = v.Corredor?.Nome ?? "Sem Corredor" }).OrderBy(g => g.Key.CorredorNome))
-                    {
-                        <div class="corredor-hd">@corGrp.Key.CorredorNome</div>
-                        <div class="vaga-row">
-                            <span class="vaga-lbl">@ShortLabel(corGrp.Key.CorredorNome)</span>
-                            @foreach (var v in corGrp.OrderBy(v => v.Codigo))
-                            {
-                                var css    = StatusCss(v.Status);
-                                var embs   = v.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
-                                var first  = embs.FirstOrDefault();
-                                var isSel  = _sel?.Id == v.Id;
-                                var titulo = v.Codigo + (first?.Embarcacao != null ? " · " + first.Embarcacao.Nome : "");
-                                <div class="vs @css @(isSel ? "sel" : "")"
-                                     @onclick="() => SelecionarAsync(v)" @onclick:stopPropagation="true"
-                                     title="@titulo">
-                                    @if (first?.Embarcacao != null)
-                                    {
-                                        <img src="/images/boats/top/@SvgForTipo(first.Embarcacao.Tipo)" alt="@first.Embarcacao.Nome" class="vs-emb" />
-                                    }
-                                    else
-                                    {
-                                        <span class="vs-cod">@v.Codigo</span>
-                                    }
-                                    @if (embs.Count > 1) { <span class="vs-cnt">@embs.Count</span> }
-                                </div>
-                            }
-                            <button class="vs-add" title="Nova vaga molhada"
-                                    @onclick="() => AbrirModalNova(TipoVaga.Agua)" @onclick:stopPropagation="true">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            </button>
-                        </div>
-                    }
-                }
-            </div>
-        }
-    </div>
-</div>
+}
+else
+{
+    @foreach (var sec in _secoes.OrderBy(s => s.Ordem).ThenBy(s => s.Nome))
+    {
+        var cors        = _corredores.Where(c => c.SecaoId == sec.Id).OrderBy(c => c.Ordem).ThenBy(c => c.Nome).ToList();
+        var totalVagas  = cors.Sum(c => _todasVagas.Count(v => v.CorredorId == c.Id));
+        var tipoVaga    = sec.TipoPreferencial ?? TipoVaga.Agua;
+        var isDotSec    = sec.TipoPreferencial == TipoVaga.Seco;
 
-<!-- ═══ VAGAS SECAS ═══ -->
-<div class="mapa-outer">
-    <div class="mapa-bar">
-        <div class="mapa-title">
-            <div class="live-dot" style="background:#c9a84c;"></div>
-            Vagas Secas
-            <span class="mapa-count">@_vagasSec.Count vagas</span>
-        </div>
-        <div class="leg">
-            <div class="leg-i"><div class="leg-d" style="background:#1ab3a6"></div>Livre</div>
-            <div class="leg-i"><div class="leg-d" style="background:#1d4785"></div>Ocupada</div>
-            <div class="leg-i"><div class="leg-d" style="background:#c9a84c"></div>Mov.</div>
-            <div class="leg-i"><div class="leg-d" style="background:#e8453c"></div>Manut.</div>
-        </div>
-    </div>
-    <div class="mapa-body" @onclick="Deselecionar">
-        @if (!_vagasSec.Any())
-        {
-            <div class="empty-mapa">
-                <span>Nenhuma vaga seca.</span>
-                <button class="vs-add" style="width:120px;height:40px;margin-top:.5rem;"
-                        @onclick="() => AbrirModalNova(TipoVaga.Seco)" @onclick:stopPropagation="true">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span style="font-size:.75rem;margin-left:.3rem;">Nova vaga</span>
+        <div class="secao-blk">
+            <div class="secao-hd">
+                <div class="secao-hd-left">
+                    <div class="live-dot" style="@(isDotSec ? "background:#c9a84c;" : "")"></div>
+                    <span class="secao-hd-nome">@sec.Nome</span>
+                    @if (sec.TipoPreferencial == TipoVaga.Agua)
+                    { <span class="badge-mol">Molhada</span> }
+                    else if (sec.TipoPreferencial == TipoVaga.Seco)
+                    { <span class="badge-sec">Seca</span> }
+                    <span class="secao-count">@totalVagas vaga@(totalVagas != 1 ? "s" : "")</span>
+                </div>
+                <button class="btn-cor-add" @onclick="() => AbrirModalNovoCorredor(sec.Id)" @onclick:stopPropagation="true">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Corredor
                 </button>
             </div>
-        }
-        else
-        {
-            <div class="mapa-grid">
-                @foreach (var secGrp in _vagasSec
-                    .GroupBy(v => new { SecaoId = v.Corredor?.SecaoId ?? 0, SecaoNome = v.Corredor?.Secao?.Nome ?? "" })
-                    .OrderBy(g => g.Key.SecaoId == 0 ? int.MaxValue : g.Key.SecaoId))
+            <div class="mapa-body" @onclick="Deselecionar">
+                @if (!cors.Any())
                 {
-                    @if (!string.IsNullOrEmpty(secGrp.Key.SecaoNome))
+                    <div class="empty-mapa">
+                        <span style="font-size:.76rem;">Nenhum corredor. Clique em "+ Corredor" para criar.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="mapa-grid">
+                        @foreach (var cor in cors)
+                        {
+                            var vagas = _todasVagas.Where(v => v.CorredorId == cor.Id).OrderBy(v => v.Codigo).ToList();
+                            <div class="corredor-hd">@cor.Nome</div>
+                            <div class="vaga-row">
+                                <span class="vaga-lbl">@ShortLabel(cor.Nome)</span>
+                                @foreach (var v in vagas)
+                                {
+                                    var css    = StatusCss(v.Status);
+                                    var embs   = v.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
+                                    var first  = embs.FirstOrDefault();
+                                    var isSel  = _sel?.Id == v.Id;
+                                    var titulo = v.Codigo + (first?.Embarcacao != null ? " · " + first.Embarcacao.Nome : "");
+                                    <div class="vs @css @(isSel ? "sel" : "")"
+                                         @onclick="() => SelecionarAsync(v)" @onclick:stopPropagation="true"
+                                         title="@titulo">
+                                        @if (first?.Embarcacao != null)
+                                        {
+                                            <img src="/images/boats/top/@SvgForTipo(first.Embarcacao.Tipo)" alt="@first.Embarcacao.Nome" class="vs-emb" />
+                                        }
+                                        else
+                                        {
+                                            <span class="vs-cod">@v.Codigo</span>
+                                        }
+                                        @if (embs.Count > 1) { <span class="vs-cnt">@embs.Count</span> }
+                                    </div>
+                                }
+                                <button class="vs-add" title="Nova vaga"
+                                        @onclick="() => AbrirModalNova(tipoVaga, cor.Id)" @onclick:stopPropagation="true">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (_corredores.Any(c => c.SecaoId == null))
+    {
+        var corsSemSecao = _corredores.Where(c => c.SecaoId == null).OrderBy(c => c.Nome).ToList();
+        <div class="secao-blk" style="border-color:rgba(255,255,255,.06);">
+            <div class="secao-hd" style="background:#0a0f1c;">
+                <div class="secao-hd-left">
+                    <span class="secao-hd-nome" style="color:rgba(255,255,255,.35);">Sem Seção</span>
+                    <span class="secao-count">@corsSemSecao.Count corredor@(corsSemSecao.Count != 1 ? "es" : "")</span>
+                </div>
+            </div>
+            <div class="mapa-body" @onclick="Deselecionar">
+                <div class="mapa-grid">
+                    @foreach (var cor in corsSemSecao)
                     {
-                        <div style="font-size:.58rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,168,76,.35);margin-top:1.5rem;margin-bottom:.2rem;padding-left:50px;">
-                            ◆ @secGrp.Key.SecaoNome
-                        </div>
-                    }
-                    @foreach (var corGrp in secGrp.GroupBy(v => new { CorredorId = v.CorredorId ?? 0, CorredorNome = v.Corredor?.Nome ?? "Sem Corredor" }).OrderBy(g => g.Key.CorredorNome))
-                    {
-                        <div class="corredor-hd">@corGrp.Key.CorredorNome</div>
+                        var vagas = _todasVagas.Where(v => v.CorredorId == cor.Id).OrderBy(v => v.Codigo).ToList();
+                        <div class="corredor-hd">@cor.Nome</div>
                         <div class="vaga-row">
-                            <span class="vaga-lbl">@ShortLabel(corGrp.Key.CorredorNome)</span>
-                            @foreach (var v in corGrp.OrderBy(v => v.Codigo))
+                            <span class="vaga-lbl">@ShortLabel(cor.Nome)</span>
+                            @foreach (var v in vagas)
                             {
                                 var css    = StatusCss(v.Status);
                                 var embs   = v.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
                                 var first  = embs.FirstOrDefault();
                                 var isSel  = _sel?.Id == v.Id;
-                                var titulo = v.Codigo + (first?.Embarcacao != null ? " · " + first.Embarcacao.Nome : "");
                                 <div class="vs @css @(isSel ? "sel" : "")"
                                      @onclick="() => SelecionarAsync(v)" @onclick:stopPropagation="true"
-                                     title="@titulo">
+                                     title="@v.Codigo">
                                     @if (first?.Embarcacao != null)
-                                    {
-                                        <img src="/images/boats/top/@SvgForTipo(first.Embarcacao.Tipo)" alt="@first.Embarcacao.Nome" class="vs-emb" />
-                                    }
+                                    { <img src="/images/boats/top/@SvgForTipo(first.Embarcacao.Tipo)" alt="@first.Embarcacao.Nome" class="vs-emb" /> }
                                     else
-                                    {
-                                        <span class="vs-cod">@v.Codigo</span>
-                                    }
+                                    { <span class="vs-cod">@v.Codigo</span> }
                                     @if (embs.Count > 1) { <span class="vs-cnt">@embs.Count</span> }
                                 </div>
                             }
-                            <button class="vs-add" title="Nova vaga seca"
-                                    @onclick="() => AbrirModalNova(TipoVaga.Seco)" @onclick:stopPropagation="true">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            </button>
                         </div>
                     }
-                }
+                </div>
             </div>
-        }
-    </div>
-</div>
+        </div>
+    }
+}
 
 }
 
@@ -268,28 +238,18 @@ else
 {
     var embsAtivas  = _sel.EmbarcacoesNaVaga.Where(e => e.Ativa).ToList();
     var disponiveis = _todasEmb.Where(e => embsAtivas.All(ea => ea.EmbarcacaoId != e.Id)).ToList();
-    var badgeCss    = StatusCss(_sel.Status);
-    var badgeLbl    = _sel.Status switch {
-        StatusVaga.Livre          => "Livre",
-        StatusVaga.Ocupada        => "Ocupada",
-        StatusVaga.EmMovimentacao => "Em Movimentação",
-        StatusVaga.Manutencao     => "Manutenção",
-        _                         => "",
-    };
 
     <Modal Title="@($"Vaga {_sel.Codigo}")" OnClose="FecharModais" Width="480px">
 
-        <!-- status + detalhes -->
         <div style="display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;margin-bottom:1rem;">
             <StatusVagaBadge Status="@_sel.Status" />
             <span style="font-size:.8rem;color:var(--ink-400);">@(_sel.Tipo == TipoVaga.Agua ? "Molhada" : "Seca")</span>
             @if (_sel.Corredor != null)
             { <span style="font-size:.8rem;color:var(--ink-400);">· Corredor @_sel.Corredor.Nome</span> }
             @if (_sel.TamanhoMaxPes > 0)
-            { <span style="font-size:.8rem;color:var(--ink-400);">· @_sel.TamanhoMaxPes pes</span> }
+            { <span style="font-size:.8rem;color:var(--ink-400);">· @_sel.TamanhoMaxPes pés</span> }
         </div>
 
-        <!-- embarcações na vaga -->
         <div class="modal-sec">Embarcações na vaga</div>
 
         @if (!embsAtivas.Any())
@@ -313,12 +273,11 @@ else
             }
         }
 
-        <!-- vincular nova embarcação -->
         @if (disponiveis.Any() && _sel.Status != StatusVaga.Manutencao)
         {
             <div class="modal-sec">Vincular embarcação</div>
             <div class="field" style="margin-bottom:.75rem;">
-                <select @bind="_embIdStr">
+                <select value="@_embIdStr" @onchange="e => _embIdStr = e.Value?.ToString() ?? string.Empty">
                     <option value="">Selecione a embarcação...</option>
                     @foreach (var e in disponiveis)
                     { <option value="@e.Id">@e.Nome@(e.Cliente != null ? $" ({e.Cliente.Nome})" : "")</option> }
@@ -353,9 +312,9 @@ else
                     <input @bind="_novaSecaoNome" @bind:event="oninput" placeholder="Ex: Molhadas, Secas, Píer A..." maxlength="60" />
                 </div>
                 <div class="field">
-                    <label>Tipo preferencial</label>
+                    <label>Tipo *</label>
                     <select value="@_novaSecaoTipoStr" @onchange="e => _novaSecaoTipoStr = e.Value?.ToString() ?? string.Empty">
-                        <option value="">Qualquer</option>
+                        <option value="">Selecione...</option>
                         <option value="Agua">Molhada (Água)</option>
                         <option value="Seco">Seca</option>
                     </select>
@@ -370,7 +329,8 @@ else
 
         <div class="form-actions">
             <button class="btn btn-ghost" @onclick="FecharModais">Cancelar</button>
-            <button class="btn btn-primary" @onclick="SalvarNovaSecaoAsync" disabled="@(_novaSecaoNome.Trim() == "" || _salvandoVaga)">
+            <button class="btn btn-primary" @onclick="SalvarNovaSecaoAsync"
+                    disabled="@(_novaSecaoNome.Trim() == "" || _novaSecaoTipoStr == "" || _salvandoVaga)">
                 @(_salvandoVaga ? "Criando..." : "Criar Seção")
             </button>
         </div>
@@ -388,10 +348,10 @@ else
                     <input @bind="_novaCorredorNome" @bind:event="oninput" placeholder="Ex: Corredor A" maxlength="60" />
                 </div>
                 <div class="field">
-                    <label>Seção</label>
-                    <select @bind="_novaCorredorSecaoIdStr">
-                        <option value="">Sem seção</option>
-                        @foreach (var s in _secoes)
+                    <label>Seção *</label>
+                    <select value="@_novaCorredorSecaoIdStr" @onchange="e => _novaCorredorSecaoIdStr = e.Value?.ToString() ?? string.Empty">
+                        <option value="">Selecione a seção...</option>
+                        @foreach (var s in _secoes.OrderBy(s => s.Ordem).ThenBy(s => s.Nome))
                         { <option value="@s.Id">@s.Nome</option> }
                     </select>
                 </div>
@@ -405,7 +365,8 @@ else
 
         <div class="form-actions">
             <button class="btn btn-ghost" @onclick="FecharModais">Cancelar</button>
-            <button class="btn btn-primary" @onclick="SalvarNovoCorredorAsync" disabled="@(_novaCorredorNome.Trim() == "" || _salvandoVaga)">
+            <button class="btn btn-primary" @onclick="SalvarNovoCorredorAsync"
+                    disabled="@(_novaCorredorNome.Trim() == "" || _novaCorredorSecaoIdStr == "" || _salvandoVaga)">
                 @(_salvandoVaga ? "Criando..." : "Criar Corredor")
             </button>
         </div>
@@ -424,10 +385,10 @@ else
                     <input @bind="_novaCod" @bind:event="oninput" placeholder="Ex: A-01" maxlength="20" />
                 </div>
                 <div class="field">
-                    <label>Corredor</label>
-                    <select @bind="_novaCorredorIdStr">
-                        <option value="">Sem corredor</option>
-                        @foreach (var c in _corredores)
+                    <label>Corredor *</label>
+                    <select value="@_novaCorredorIdStr" @onchange="e => _novaCorredorIdStr = e.Value?.ToString() ?? string.Empty">
+                        <option value="">Selecione o corredor...</option>
+                        @foreach (var c in _corredores.OrderBy(c => c.Nome))
                         { <option value="@c.Id">@c.Nome</option> }
                     </select>
                 </div>
@@ -441,7 +402,8 @@ else
 
         <div class="form-actions">
             <button class="btn btn-ghost" @onclick="FecharModais">Cancelar</button>
-            <button class="btn btn-primary" @onclick="SalvarNovaVagaAsync" disabled="@(_novaCod.Trim() == "" || _salvandoVaga)">
+            <button class="btn btn-primary" @onclick="SalvarNovaVagaAsync"
+                    disabled="@(_novaCod.Trim() == "" || _novaCorredorIdStr == "" || _salvandoVaga)">
                 @(_salvandoVaga ? "Criando..." : "Criar Vaga")
             </button>
         </div>
@@ -450,12 +412,12 @@ else
 }
 
 @code {
-    private List<Vaga>       _vagasMol  = new();
-    private List<Vaga>       _vagasSec  = new();
-    private List<Embarcacao> _todasEmb  = new();
+    private List<Vaga>       _todasVagas = new();
+    private List<Embarcacao> _todasEmb   = new();
     private List<Corredor>   _corredores = new();
+    private List<Secao>      _secoes     = new();
     private Vaga?            _sel;
-    private bool             _load      = true;
+    private bool             _load       = true;
 
     // modais
     private bool     _modalDetalhe;
@@ -470,8 +432,8 @@ else
     private string? _erroPanel;
 
     // nova vaga (quick-add)
-    private string  _novaCod            = "";
-    private string  _novaCorredorIdStr  = "";
+    private string  _novaCod           = "";
+    private string  _novaCorredorIdStr = "";
     private string? _novaErro;
     private bool    _salvandoVaga;
 
@@ -483,8 +445,6 @@ else
     private string _novaCorredorNome       = "";
     private string _novaCorredorSecaoIdStr = "";
 
-    private List<Secao> _secoes = new();
-
     protected override async Task OnInitializedAsync()
     {
         await UserCtx.InitAsync();
@@ -495,10 +455,8 @@ else
 
     private async Task RecarregarAsync()
     {
-        var todas  = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
-        _vagasMol  = todas.Where(v => v.Tipo == TipoVaga.Agua).OrderBy(v => v.Codigo).ToList();
-        _vagasSec  = todas.Where(v => v.Tipo == TipoVaga.Seco).OrderBy(v => v.Codigo).ToList();
-        _todasEmb  = await MovService.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
+        _todasVagas = await VagaService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+        _todasEmb   = await MovService.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
 
         if (_sel != null)
         {
@@ -519,13 +477,13 @@ else
 
     private void Deselecionar() { _sel = null; _erroPanel = null; _embIdStr = ""; }
 
-    private void AbrirModalNova(TipoVaga tipo)
+    private void AbrirModalNova(TipoVaga tipo, int? corredorId = null)
     {
-        _modalTipo          = tipo;
-        _novaCod            = "";
-        _novaCorredorIdStr  = "";
-        _novaErro           = null;
-        _modalNovaVaga      = true;
+        _modalTipo         = tipo;
+        _novaCod           = "";
+        _novaCorredorIdStr = corredorId?.ToString() ?? "";
+        _novaErro          = null;
+        _modalNovaVaga     = true;
     }
 
     private void AbrirModalNovaSecao()
@@ -536,10 +494,10 @@ else
         _modalNovaSecao   = true;
     }
 
-    private void AbrirModalNovoCorredor()
+    private void AbrirModalNovoCorredor(int? secaoId = null)
     {
         _novaCorredorNome       = "";
-        _novaCorredorSecaoIdStr = "";
+        _novaCorredorSecaoIdStr = secaoId?.ToString() ?? "";
         _novaErro               = null;
         _modalNovoCorredor      = true;
     }
@@ -585,6 +543,7 @@ else
     {
         _novaErro = null;
         if (_novaCod.Trim() == "") { _novaErro = "Informe o código da vaga."; return; }
+        if (_novaCorredorIdStr == "") { _novaErro = "Selecione o corredor."; return; }
         _salvandoVaga = true;
         try
         {
@@ -611,18 +570,19 @@ else
     {
         _novaErro = null;
         if (_novaSecaoNome.Trim() == "") { _novaErro = "Informe o nome da seção."; return; }
+        if (_novaSecaoTipoStr == "") { _novaErro = "Selecione o tipo (Molhada ou Seca)."; return; }
         _salvandoVaga = true;
         try
         {
             await SecaoSvc.CriarAsync(new Secao
             {
-                EmpresaId       = UserCtx.EmpresaId,
-                Nome            = _novaSecaoNome.Trim(),
-                Ativo           = true,
+                EmpresaId        = UserCtx.EmpresaId,
+                Nome             = _novaSecaoNome.Trim(),
+                Ativo            = true,
                 TipoPreferencial = Enum.TryParse<TipoVaga>(_novaSecaoTipoStr, out var t) ? t : null,
             });
-            _secoes            = await SecaoSvc.ListarPorEmpresaAsync(UserCtx.EmpresaId);
-            _modalNovaSecao    = false;
+            _secoes         = await SecaoSvc.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+            _modalNovaSecao = false;
         }
         catch (Exception ex) { _novaErro = ex.Message; }
         finally { _salvandoVaga = false; }
@@ -632,6 +592,7 @@ else
     {
         _novaErro = null;
         if (_novaCorredorNome.Trim() == "") { _novaErro = "Informe o nome do corredor."; return; }
+        if (_novaCorredorSecaoIdStr == "") { _novaErro = "Selecione a seção."; return; }
         _salvandoVaga = true;
         try
         {
