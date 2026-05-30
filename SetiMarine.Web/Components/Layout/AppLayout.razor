@@ -1,11 +1,13 @@
 @inherits LayoutComponentBase
 @using System.Security.Claims
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+@implements IDisposable
 
 <link rel="stylesheet" href="css/app-layout.css" />
 
 <CascadingAuthenticationState>
-<div class="shell @(_light ? "light" : "")">
+<div class="shell @(_collapsed ? "collapsed" : "") @(_light ? "light" : "")">
 
   <!-- Sidebar -->
   <aside class="sb">
@@ -15,7 +17,7 @@
         <img src="/images/marina/Logo_Setimarine_horizontal.png" alt="SetiMarine" class="sb-logo-h" />
         <img src="/images/marina/Logo_Setimarine.png" alt="" class="sb-logo-icon-img" aria-hidden="true" />
       </a>
-      <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Recolher menu">
+      <button class="sb-collapse-btn" @onclick="ToggleCollapse" title="Recolher menu">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
           <path d="M7 1L3 5l4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
         </svg>
@@ -247,7 +249,7 @@
 
   <!-- Topbar -->
   <div class="topbar">
-    <button class="topbar-toggle sb-collapse-btn" onclick="toggleSidebar()" title="Expandir menu">
+    <button class="topbar-toggle sb-collapse-btn" @onclick="ToggleCollapse" title="Expandir menu">
       <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
         <path d="M3 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
       </svg>
@@ -270,6 +272,7 @@
 </CascadingAuthenticationState>
 
 @code {
+    private bool _collapsed;
     private bool _light;
     private string _nome = "", _role = "", _ini = "U", _empresa = "";
 
@@ -289,5 +292,27 @@
                  : "Operacional";
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var saved = await JS.InvokeAsync<string>("eval", "localStorage.getItem('sb-col')");
+            if (saved == "1" && !_collapsed)
+            {
+                _collapsed = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task ToggleCollapse()
+    {
+        _collapsed = !_collapsed;
+        await JS.InvokeVoidAsync("eval",
+            $"localStorage.setItem('sb-col','{(_collapsed ? "1" : "0")}')");
+    }
+
     private void ToggleTheme() => _light = !_light;
+
+    public void Dispose() { }
 }

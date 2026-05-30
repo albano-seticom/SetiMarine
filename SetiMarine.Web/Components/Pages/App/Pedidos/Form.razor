@@ -793,11 +793,21 @@ else
             {
                 _pedido.Status = Enum.Parse<StatusPedido>(_statusStr);
                 await PedidoSvc.EditarAsync(_pedido, itens, servicos);
+
+                // Rebusca do banco para garantir estado sincronizado (inclui Status, ConcluidoEm, etc.)
+                var atualizado = await PedidoSvc.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
+                if (atualizado != null)
+                {
+                    _pedido             = atualizado;
+                    _statusStr          = atualizado.Status.ToString();
+                    _servicosConcluidos = atualizado.Servicos.Count(s => s.Concluido);
+                }
+
                 _salvo = true;
                 StateHasChanged();
                 await Task.Delay(800);
                 _salvo = false;
-                // Fica na página — botão já reflete o status salvo (_pedido.Status atualizado acima)
+                StateHasChanged();
             }
         }
         catch (Exception ex)
