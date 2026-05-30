@@ -74,6 +74,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // MARINA - Agenda de Uso
     // ============================================================
     public DbSet<AgendamentoUso> AgendamentosUso { get; set; }
+    public DbSet<ConsumoPlano> ConsumoPlano { get; set; }
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -123,6 +124,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         mb.Entity<PlanoContratoServico>().ToTable("cfg_plano_contrato_servicos");
 
         mb.Entity<AgendamentoUso>().ToTable("mar_agendamentos_uso");
+        mb.Entity<ConsumoPlano>().ToTable("cfg_consumo_plano");
 
         mb.Entity<PedidoItem>().Ignore(i => i.ValorTotal);
 
@@ -229,5 +231,39 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany()
             .HasForeignKey(s => s.TipoServicoConfigId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // ============================================================
+        // Relacionamentos - ConsumoPlano
+        // ============================================================
+        mb.Entity<ConsumoPlano>()
+            .HasOne(cp => cp.Contrato)
+            .WithMany()
+            .HasForeignKey(cp => cp.ContratoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        mb.Entity<ConsumoPlano>()
+            .HasOne(cp => cp.PlanoContratoServico)
+            .WithMany()
+            .HasForeignKey(cp => cp.PlanoContratoServicoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        mb.Entity<ConsumoPlano>()
+            .HasIndex(cp => new { cp.ContratoId, cp.PlanoContratoServicoId, cp.Periodo })
+            .IsUnique();
+
+        // ============================================================
+        // Relacionamentos - AgendamentoUso (plano opcional)
+        // ============================================================
+        mb.Entity<AgendamentoUso>()
+            .HasOne(a => a.Contrato)
+            .WithMany()
+            .HasForeignKey(a => a.ContratoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<AgendamentoUso>()
+            .HasOne(a => a.PlanoContratoServicoUsado)
+            .WithMany()
+            .HasForeignKey(a => a.PlanoContratoServicoId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

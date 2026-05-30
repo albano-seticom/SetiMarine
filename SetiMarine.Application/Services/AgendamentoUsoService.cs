@@ -37,14 +37,17 @@ public class AgendamentoUsoService(ISetiMarineDbContext ctx)
             .FirstOrDefaultAsync(a => a.Id == ag.Id && a.EmpresaId == ag.EmpresaId)
             ?? throw new InvalidOperationException("Agendamento não encontrado.");
 
-        ex.ClienteId           = ag.ClienteId;
-        ex.EmbarcacaoId        = ag.EmbarcacaoId;
-        ex.DataHoraUso         = ag.DataHoraUso;
-        ex.MinutosAntecedencia = ag.MinutosAntecedencia;
-        ex.DataHoraPreparacao  = ag.DataHoraUso.AddMinutes(-ag.MinutosAntecedencia);
-        ex.TipoUso             = ag.TipoUso;
-        ex.Status              = ag.Status;
-        ex.Observacoes         = ag.Observacoes;
+        ex.ClienteId                 = ag.ClienteId;
+        ex.EmbarcacaoId              = ag.EmbarcacaoId;
+        ex.DataHoraUso               = ag.DataHoraUso;
+        ex.MinutosAntecedencia       = ag.MinutosAntecedencia;
+        ex.DataHoraPreparacao        = ag.DataHoraUso.AddMinutes(-ag.MinutosAntecedencia);
+        ex.TipoUso                   = ag.TipoUso;
+        ex.Status                    = ag.Status;
+        ex.Observacoes               = ag.Observacoes;
+        ex.ContratoId                = ag.ContratoId;
+        ex.PlanoContratoServicoId    = ag.PlanoContratoServicoId;
+        ex.CobrancaExtra             = ag.CobrancaExtra;
         await ctx.SaveChangesAsync();
     }
 

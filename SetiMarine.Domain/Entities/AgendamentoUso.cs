@@ -18,4 +18,11 @@ public class AgendamentoUso
     public StatusAgendamento Status { get; set; } = StatusAgendamento.Pendente;
     public string? Observacoes { get; set; }
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+
+    // Vínculo com plano do contrato (opcional)
+    public int? ContratoId { get; set; }
+    public Contrato? Contrato { get; set; }
+    public int? PlanoContratoServicoId { get; set; }
+    public PlanoContratoServico? PlanoContratoServicoUsado { get; set; }
+    public bool CobrancaExtra { get; set; } = false;
 }

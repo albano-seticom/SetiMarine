@@ -5,6 +5,7 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject AgendamentoUsoService AgSvc
+@inject ConsumoPlanoService ConsumoPlanoSvc
 @inject UsuarioContextService UserCtx
 @inject IJSRuntime JS
 
@@ -87,6 +88,22 @@
 .ag-status-btn.sel-confirmado { background:rgba(0,53,128,.1);   border-color:var(--navy-700); color:var(--navy-700); }
 .ag-status-btn.sel-concluido  { background:rgba(30,120,60,.1);  border-color:#1e783c; color:#1e5030; }
 .ag-status-btn.sel-cancelado  { background:rgba(0,0,0,.07);     border-color:var(--ink-400); color:var(--ink-500); }
+/* Cotas */
+.cota-box { background:rgba(0,53,128,.04); border:1px solid rgba(0,53,128,.12); border-radius:4px; padding:.75rem 1rem; margin-top:.5rem; }
+.cota-title { font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--navy-700); font-weight:700; margin-bottom:.55rem; }
+.cota-row { display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem; }
+.cota-label { font-size:.75rem; color:var(--ink-700); flex:1; }
+.cota-nums  { font-size:.72rem; color:var(--ink-500); white-space:nowrap; }
+.cota-bar   { height:5px; border-radius:2px; background:var(--line); flex:1; min-width:60px; overflow:hidden; }
+.cota-bar-fill { height:100%; border-radius:2px; background:var(--navy-700); transition:width .3s; }
+.cota-bar-fill.esgotado { background:#c0392b; }
+.aviso-cota {
+    margin-top:.75rem; padding:.85rem 1rem;
+    background:rgba(164,68,54,.08); border:1px solid rgba(164,68,54,.28);
+    border-radius:4px;
+}
+.aviso-cota-title { font-size:.8rem; font-weight:600; color:var(--s-maint); margin-bottom:.5rem; }
+.aviso-cota-btns  { display:flex; gap:.5rem; margin-top:.65rem; flex-wrap:wrap; }
 </style>
 
 <div class="page-head">
@@ -117,7 +134,7 @@ else
             <div class="form-row">
                 <div class="field" style="flex:2;">
                     <label>Cliente</label>
-                    <select @onchange="OnClienteChanged" style="height:34px;">
+                    <select @onchange="OnClienteChangedAsync" style="height:34px;">
                         <option value="" selected="@(_form.ClienteIdStr == "")">Sem cliente específico</option>
                         @foreach (var c in _clientes)
                         { <option value="@c.Id" selected="@(_form.ClienteIdStr == c.Id.ToString())">@c.Nome</option> }
@@ -171,9 +188,72 @@ else
                 <input @bind="_form.Observacoes" placeholder="Ex: cliente pede limpeza pós-uso, levar colete..." />
             </div>
 
+            @* ── Painel de cotas do plano ── *@
+            @if (_contratoCliente?.PlanoContrato != null && _cotas.Any())
+            {
+                <div class="cota-box">
+                    <div class="cota-title">
+                        Plano: @_contratoCliente.PlanoContrato.Nome
+                        <span style="font-size:.65rem;font-weight:400;color:var(--ink-400);margin-left:.4rem;">@_periodoAtual</span>
+                    </div>
+
+                    @foreach (var cota in _cotas)
+                    {
+                        var pct = cota.Limite > 0 ? (double)cota.Usado / cota.Limite * 100 : 0;
+                        <div class="cota-row">
+                            <span class="cota-label">@cota.ServicoNome</span>
+                            <div class="cota-bar">
+                                <div class="cota-bar-fill @(cota.Excedido ? "esgotado" : "")"
+                                     style="width:@Math.Min(pct, 100).ToString("F0")%;"></div>
+                            </div>
+                            <span class="cota-nums @(cota.Excedido ? "text-danger" : "")">
+                                @cota.Usado/@cota.Limite
+                                @if (cota.Excedido) { <text> ⚠</text> }
+                            </span>
+                        </div>
+                    }
+
+                    <div class="field" style="margin-top:.6rem;margin-bottom:0;">
+                        <label>Serviço do Plano (opcional)</label>
+                        <select value="@_form.PlanoContratoServicoIdStr"
+                                @onchange="OnServicoPlanoChanged"
+                                style="height:34px;">
+                            <option value="">— Sem vínculo de serviço —</option>
+                            @foreach (var cota in _cotas)
+                            {
+                                <option value="@cota.PlanoContratoServicoId"
+                                        selected="@(_form.PlanoContratoServicoIdStr == cota.PlanoContratoServicoId.ToString())">
+                                    @cota.ServicoNome (@cota.Disponivel disponível)
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    @* ── Aviso de cota esgotada ── *@
+                    @if (_avisoExcedido)
+                    {
+                        <div class="aviso-cota">
+                            <div class="aviso-cota-title">Cota do mês esgotada para "@_servicoExcedidoNome"</div>
+                            <div style="font-size:.8rem;color:var(--ink-600);">Este cliente já usou todos os @_cotaExcedidaLimite serviços incluídos no plano este mês. Como deseja proceder?</div>
+                            <div class="aviso-cota-btns">
+                                <button type="button" class="btn btn-danger btn-sm" @onclick="() => SalvarComCobrancaExtraAsync(true)">
+                                    Cobrar à Parte
+                                </button>
+                                <button type="button" class="btn btn-ghost btn-sm" @onclick="() => SalvarComCobrancaExtraAsync(false)">
+                                    Liberar Gratuitamente
+                                </button>
+                                <button type="button" class="btn btn-ghost btn-sm" @onclick="() => _avisoExcedido = false">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
             @if (_form.Id > 0)
             {
-                <div class="field">
+                <div class="field" style="margin-top:.75rem;">
                     <label>Status</label>
                     <div class="ag-status-row">
                         @foreach (var s in Enum.GetValues<StatusAgendamento>())
@@ -200,7 +280,7 @@ else
                             @onclick="ExcluirAsync">Excluir</button>
                 }
                 <button type="button" class="btn btn-ghost" @onclick="FecharForm">Cancelar</button>
-                <button type="button" class="btn btn-primary" @onclick="SalvarAsync" disabled="@_salvando">
+                <button type="button" class="btn btn-primary" @onclick="SalvarAsync" disabled="@(_salvando || _avisoExcedido)">
                     @(_salvando ? "Salvando..." : "Salvar")
                 </button>
             </div>
@@ -252,6 +332,10 @@ else
                             {
                                 <div class="agenda-card-sub" style="margin-top:.12rem;font-style:italic;">@ev.Observacoes</div>
                             }
+                            @if (ev.CobrancaExtra)
+                            {
+                                <div style="font-size:.62rem;font-weight:700;color:var(--s-maint);margin-top:.1rem;">Cobrado à parte</div>
+                            }
                         </div>
                     }
                     <div class="agenda-add">
@@ -294,17 +378,27 @@ else
     private string?  _erroForm;
     private FormModel _form = new();
 
+    // Cotas
+    private Contrato?      _contratoCliente      = null;
+    private List<CotaInfo> _cotas                = new();
+    private bool           _avisoExcedido        = false;
+    private string         _servicoExcedidoNome  = "";
+    private int            _cotaExcedidaLimite   = 0;
+    private string         _periodoAtual         = DateTime.Now.ToString("yyyy-MM");
+
     private class FormModel
     {
-        public int      Id                  { get; set; }
-        public string   ClienteIdStr        { get; set; } = "";
-        public string   EmbarcacaoIdStr     { get; set; } = "";
-        public string   TipoUsoStr          { get; set; } = "DescidaNaAgua";
-        public string   StatusStr           { get; set; } = "Pendente";
-        public DateTime Data                { get; set; } = DateTime.Today;
-        public string   HoraUso             { get; set; } = "08:00";
-        public int      MinutosAntecedencia { get; set; } = 60;
-        public string?  Observacoes         { get; set; }
+        public int      Id                         { get; set; }
+        public string   ClienteIdStr               { get; set; } = "";
+        public string   EmbarcacaoIdStr            { get; set; } = "";
+        public string   TipoUsoStr                 { get; set; } = "DescidaNaAgua";
+        public string   StatusStr                  { get; set; } = "Pendente";
+        public DateTime Data                       { get; set; } = DateTime.Today;
+        public string   HoraUso                    { get; set; } = "08:00";
+        public int      MinutosAntecedencia        { get; set; } = 60;
+        public string?  Observacoes                { get; set; }
+        public string   PlanoContratoServicoIdStr  { get; set; } = "";
+        public bool     CobrancaExtra              { get; set; } = false;
 
         public string HoraPrep
         {
@@ -341,6 +435,10 @@ else
 
     private void AbrirForm(AgendamentoUso? ag, DateTime? dia)
     {
+        _avisoExcedido   = false;
+        _contratoCliente = null;
+        _cotas           = new();
+
         if (ag != null)
         {
             var local = ag.DataHoraUso.ToLocalTime();
@@ -355,6 +453,7 @@ else
                 HoraUso             = local.ToString("HH:mm"),
                 MinutosAntecedencia = ag.MinutosAntecedencia,
                 Observacoes         = ag.Observacoes,
+                PlanoContratoServicoIdStr = ag.PlanoContratoServicoId?.ToString() ?? "",
             };
         }
         else
@@ -364,14 +463,42 @@ else
         FiltrarEmbarcacoes();
         _erroForm   = null;
         _formAberto = true;
+
+        // Carrega cotas se cliente já estava preenchido (edição)
+        if (!string.IsNullOrEmpty(_form.ClienteIdStr))
+            _ = CarregarCotasAsync();
     }
 
-    private void FecharForm() { _formAberto = false; _erroForm = null; }
+    private void FecharForm()
+    {
+        _formAberto    = false;
+        _erroForm      = null;
+        _avisoExcedido = false;
+    }
 
-    private void OnClienteChanged(ChangeEventArgs e)
+    private async Task OnClienteChangedAsync(ChangeEventArgs e)
     {
         _form.ClienteIdStr = e.Value?.ToString() ?? "";
+        _form.PlanoContratoServicoIdStr = "";
+        _avisoExcedido   = false;
+        _contratoCliente = null;
+        _cotas           = new();
         FiltrarEmbarcacoes();
+        await CarregarCotasAsync();
+    }
+
+    private async Task CarregarCotasAsync()
+    {
+        if (!int.TryParse(_form.ClienteIdStr, out var cid) || cid == 0) return;
+        _contratoCliente = await ConsumoPlanoSvc.ObterContratoComPlanoAsync(cid, UserCtx.EmpresaId);
+        if (_contratoCliente != null)
+            _cotas = await ConsumoPlanoSvc.ObterCotasMesAsync(_contratoCliente.Id, _periodoAtual);
+    }
+
+    private void OnServicoPlanoChanged(ChangeEventArgs e)
+    {
+        _form.PlanoContratoServicoIdStr = e.Value?.ToString() ?? string.Empty;
+        _avisoExcedido = false;
     }
 
     private void FiltrarEmbarcacoes()
@@ -383,9 +510,36 @@ else
 
     private async Task SalvarAsync()
     {
-        _erroForm = null;
+        _erroForm      = null;
+        _avisoExcedido = false;
         if (_form.Data == default) { _erroForm = "Informe a data."; return; }
 
+        // Verifica cota antes de salvar
+        if (_contratoCliente != null
+            && int.TryParse(_form.PlanoContratoServicoIdStr, out var svcId) && svcId > 0)
+        {
+            var cota = _cotas.FirstOrDefault(c => c.PlanoContratoServicoId == svcId);
+            if (cota != null && cota.Excedido)
+            {
+                _servicoExcedidoNome = cota.ServicoNome;
+                _cotaExcedidaLimite  = cota.Limite;
+                _avisoExcedido       = true;
+                return;
+            }
+        }
+
+        await ExecutarSalvarAsync(cobrancaExtra: false);
+    }
+
+    private async Task SalvarComCobrancaExtraAsync(bool cobrar)
+    {
+        _avisoExcedido       = false;
+        _form.CobrancaExtra  = cobrar;
+        await ExecutarSalvarAsync(cobrancaExtra: cobrar);
+    }
+
+    private async Task ExecutarSalvarAsync(bool cobrancaExtra)
+    {
         _salvando = true;
         try
         {
@@ -393,21 +547,30 @@ else
             var local    = DateTime.SpecifyKind(_form.Data.Add(horaSpan), DateTimeKind.Local);
             var utc      = local.ToUniversalTime();
 
+            int? svcId = int.TryParse(_form.PlanoContratoServicoIdStr, out var sid) && sid > 0 ? sid : null;
+
             var ag = new AgendamentoUso
             {
-                Id                  = _form.Id,
-                EmpresaId           = UserCtx.EmpresaId,
-                ClienteId           = int.TryParse(_form.ClienteIdStr,    out var c) && c > 0 ? c : null,
-                EmbarcacaoId        = int.TryParse(_form.EmbarcacaoIdStr, out var e) && e > 0 ? e : null,
-                DataHoraUso         = utc,
-                MinutosAntecedencia = _form.MinutosAntecedencia,
-                TipoUso             = Enum.Parse<TipoUsoEmbarcacao>(_form.TipoUsoStr),
-                Status              = Enum.Parse<StatusAgendamento>(_form.StatusStr),
-                Observacoes         = string.IsNullOrWhiteSpace(_form.Observacoes) ? null : _form.Observacoes.Trim(),
+                Id                       = _form.Id,
+                EmpresaId                = UserCtx.EmpresaId,
+                ClienteId                = int.TryParse(_form.ClienteIdStr,    out var c) && c > 0 ? c : null,
+                EmbarcacaoId             = int.TryParse(_form.EmbarcacaoIdStr, out var e) && e > 0 ? e : null,
+                DataHoraUso              = utc,
+                MinutosAntecedencia      = _form.MinutosAntecedencia,
+                TipoUso                  = Enum.Parse<TipoUsoEmbarcacao>(_form.TipoUsoStr),
+                Status                   = Enum.Parse<StatusAgendamento>(_form.StatusStr),
+                Observacoes              = string.IsNullOrWhiteSpace(_form.Observacoes) ? null : _form.Observacoes.Trim(),
+                ContratoId               = _contratoCliente?.Id,
+                PlanoContratoServicoId   = svcId,
+                CobrancaExtra            = cobrancaExtra,
             };
 
             if (_form.Id == 0) await AgSvc.CriarAsync(ag);
             else               await AgSvc.EditarAsync(ag);
+
+            // Incrementa cota somente se serviço vinculado e não é cobrança extra
+            if (_contratoCliente != null && svcId.HasValue && !cobrancaExtra)
+                await ConsumoPlanoSvc.IncrementarAsync(_contratoCliente.Id, svcId.Value, _periodoAtual);
 
             _formAberto = false;
             await CarregarAsync();

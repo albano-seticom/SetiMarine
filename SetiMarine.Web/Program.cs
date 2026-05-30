@@ -51,6 +51,7 @@ builder.Services.AddScoped<SeederService>();
 builder.Services.AddScoped<SuperAdminService>();
 builder.Services.AddScoped<PlanoContratoService>();
 builder.Services.AddScoped<AgendamentoUsoService>();
+builder.Services.AddScoped<ConsumoPlanoService>();
 
 var app = builder.Build();
 
