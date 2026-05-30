@@ -87,6 +87,20 @@ public enum StatusAgendamento
     Cancelado  = 3,
 }
 
+public enum TipoMovimentoEstoque { Entrada = 0, Saida = 1, Ajuste = 2 }
+
+public enum TipoMovimentoCaixa { Entrada = 0, Saida = 1 }
+
+public enum OrigemMovimentoCaixa
+{
+    VendaProduto       = 0,
+    ServicoPedido      = 1,
+    MensalidadeContrato = 2,
+    Sangria            = 3,
+    Suprimento         = 4,
+    AjusteManual       = 5,
+}
+
 public enum TipoPedido    { Venda = 0, Emprestimo = 1, OrdemServico = 2 }
 public enum TipoItemPedido { Venda = 0, Emprestimo = 1 }
 public enum StatusPedido

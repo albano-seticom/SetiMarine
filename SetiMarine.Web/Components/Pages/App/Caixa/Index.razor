@@ -1,0 +1,445 @@
+@page "/caixa"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject CaixaService CaixaSvc
+@inject ConfiguracaoMarinaService CfgSvc
+@inject UsuarioContextService UserCtx
+@inject IJSRuntime JS
+
+<PageTitle>Caixa — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Financeiro</span>
+        <h1>Caixa</h1>
+    </div>
+    <div class="page-head-actions">
+        @if (_sessao != null)
+        {
+            <button class="btn btn-ghost btn-sm" @onclick="AbrirMovimento">+ Movimento</button>
+            <button class="btn btn-danger btn-sm" @onclick="AbrirFechamento">Fechar Caixa</button>
+        }
+        else
+        {
+            <button class="btn btn-primary btn-sm" @onclick="AbrirAbertura">Abrir Caixa</button>
+        }
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    @* ── Painel de abertura ── *@
+    @if (_painelAbertura)
+    {
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1rem;max-width:420px;">
+            <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;margin-bottom:1rem;">Abrir Caixa</div>
+
+            <div class="field">
+                <label>Troco Inicial (R$)</label>
+                <InputNumber @bind-Value="_valorAbertura" style="height:34px;max-width:180px;" />
+            </div>
+
+            @if (_erro != null)
+            { <div style="margin:.6rem 0;padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div> }
+
+            <div class="form-actions" style="margin-top:1rem;">
+                <button type="button" class="btn btn-ghost" @onclick="() => _painelAbertura = false">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="AbrirCaixaAsync" disabled="@_salvando">
+                    @(_salvando ? "Abrindo..." : "Abrir Caixa")
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Painel de fechamento ── *@
+    @if (_painelFechamento && _sessao != null)
+    {
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1rem;max-width:480px;">
+            <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;margin-bottom:1rem;">Fechar Caixa</div>
+
+            <div style="margin-bottom:1rem;display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);text-transform:uppercase;letter-spacing:.1em;">Troco inicial</div>
+                    <div style="font-size:1.1rem;font-weight:600;">@_sessao.ValorAbertura.ToString("C2")</div>
+                </div>
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);text-transform:uppercase;letter-spacing:.1em;">Entradas</div>
+                    <div style="font-size:1.1rem;font-weight:600;color:#1e783c;">+@_totalEntradas.ToString("C2")</div>
+                </div>
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);text-transform:uppercase;letter-spacing:.1em;">Saídas</div>
+                    <div style="font-size:1.1rem;font-weight:600;color:var(--s-maint);">-@_totalSaidas.ToString("C2")</div>
+                </div>
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);text-transform:uppercase;letter-spacing:.1em;">Esperado</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:var(--navy-700);">@_saldoEsperado.ToString("C2")</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Valor Contado (R$) *</label>
+                <InputNumber @bind-Value="_valorFechamento" style="height:34px;max-width:180px;" />
+            </div>
+            @if (_valorFechamento > 0)
+            {
+                var diff = _valorFechamento - _saldoEsperado;
+                var cor  = diff >= 0 ? "#1e783c" : "var(--s-maint)";
+                <div style="font-size:.82rem;color:@cor;margin-top:.2rem;">
+                    Diferença: @(diff >= 0 ? "+" : "")@diff.ToString("C2")
+                </div>
+            }
+
+            <div class="field">
+                <label>Observações</label>
+                <input @bind="_obsF" placeholder="Opcional" />
+            </div>
+
+            @if (_erro != null)
+            { <div style="margin:.6rem 0;padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div> }
+
+            <div class="form-actions" style="margin-top:1rem;">
+                <button type="button" class="btn btn-ghost" @onclick="() => _painelFechamento = false">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="FecharCaixaAsync" disabled="@_salvando">
+                    @(_salvando ? "Fechando..." : "Confirmar Fechamento")
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Painel de movimento manual ── *@
+    @if (_painelMovimento && _sessao != null)
+    {
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1rem;max-width:480px;">
+            <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;margin-bottom:1rem;">Registrar Movimento</div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Tipo</label>
+                    <select @bind="_movTipoStr" style="height:34px;">
+                        <option value="Entrada">Entrada</option>
+                        <option value="Saida">Saída</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Origem</label>
+                    <select @bind="_movOrigemStr" style="height:34px;">
+                        <option value="MensalidadeContrato">Mensalidade</option>
+                        <option value="ServicoPedido">Serviço / Pedido</option>
+                        <option value="VendaProduto">Venda de Produto</option>
+                        <option value="Sangria">Sangria</option>
+                        <option value="Suprimento">Suprimento</option>
+                        <option value="AjusteManual">Ajuste Manual</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Valor (R$) *</label>
+                    <InputNumber @bind-Value="_movValor" style="height:34px;max-width:160px;" />
+                </div>
+                <div class="field" style="flex:2;">
+                    <label>Descrição *</label>
+                    <input @bind="_movDescricao" placeholder="Ex: Mensalidade João Silva - Junho/2026" />
+                </div>
+            </div>
+
+            @if (_erro != null)
+            { <div style="margin:.6rem 0;padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div> }
+
+            <div class="form-actions" style="margin-top:1rem;">
+                <button type="button" class="btn btn-ghost" @onclick="() => _painelMovimento = false">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="SalvarMovimentoAsync" disabled="@_salvando">
+                    @(_salvando ? "Salvando..." : "Registrar")
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Status do caixa ── *@
+    @if (_sessao != null)
+    {
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+            <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1rem 1.25rem;">
+                <div style="font-size:.65rem;color:var(--ink-400);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Abertura</div>
+                <div style="font-weight:700;font-size:1.15rem;">@_sessao.ValorAbertura.ToString("C2")</div>
+                <div style="font-size:.72rem;color:var(--ink-400);margin-top:.15rem;">@_sessao.DataAbertura.ToLocalTime().ToString("dd/MM HH:mm")</div>
+            </div>
+            <div style="background:rgba(30,120,60,.06);border:1px solid rgba(30,120,60,.2);border-radius:6px;padding:1rem 1.25rem;">
+                <div style="font-size:.65rem;color:#1e5030;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Entradas</div>
+                <div style="font-weight:700;font-size:1.15rem;color:#1e783c;">+@_totalEntradas.ToString("C2")</div>
+                <div style="font-size:.72rem;color:#1e5030;margin-top:.15rem;">@_movimentos.Count(m => m.Tipo == TipoMovimentoCaixa.Entrada) movimentos</div>
+            </div>
+            <div style="background:rgba(164,68,54,.06);border:1px solid rgba(164,68,54,.2);border-radius:6px;padding:1rem 1.25rem;">
+                <div style="font-size:.65rem;color:var(--s-maint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Saídas</div>
+                <div style="font-weight:700;font-size:1.15rem;color:var(--s-maint);">-@_totalSaidas.ToString("C2")</div>
+                <div style="font-size:.72rem;color:var(--s-maint);margin-top:.15rem;">@_movimentos.Count(m => m.Tipo == TipoMovimentoCaixa.Saida) movimentos</div>
+            </div>
+            <div style="background:rgba(0,53,128,.06);border:1px solid rgba(0,53,128,.2);border-radius:6px;padding:1rem 1.25rem;">
+                <div style="font-size:.65rem;color:var(--navy-700);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Saldo Atual</div>
+                <div style="font-weight:700;font-size:1.15rem;color:var(--navy-700);">@_saldoEsperado.ToString("C2")</div>
+                <div style="font-size:.72rem;color:var(--ink-400);margin-top:.15rem;">
+                    @if (_cfg.CaixaAutomatico)
+                    { <text>Modo automático</text> }
+                    else
+                    { <text>Modo manual</text> }
+                </div>
+            </div>
+        </div>
+
+        @* ── Movimentos da sessão ── *@
+        <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;margin-bottom:.65rem;">
+            Movimentos da Sessão
+        </div>
+
+        @if (_movimentos.Any())
+        {
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Tipo</th>
+                            <th>Origem</th>
+                            <th>Descrição</th>
+                            <th style="text-align:right;">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in _movimentos.OrderByDescending(x => x.CriadoEm))
+                        {
+                            <tr>
+                                <td style="font-size:.78rem;color:var(--ink-500);">@m.CriadoEm.ToLocalTime().ToString("HH:mm")</td>
+                                <td>@BadgeTipoMov(m.Tipo)</td>
+                                <td style="font-size:.78rem;color:var(--ink-500);">@LabelOrigem(m.Origem)</td>
+                                <td style="font-size:.82rem;">@m.Descricao</td>
+                                <td style="text-align:right;font-weight:600;color:@(m.Tipo == TipoMovimentoCaixa.Entrada ? "#1e783c" : "var(--s-maint)");">
+                                    @(m.Tipo == TipoMovimentoCaixa.Entrada ? "+" : "-")@m.Valor.ToString("C2")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div style="color:var(--ink-300);font-size:.82rem;">Nenhum movimento registrado nesta sessão.</div>
+        }
+    }
+    else
+    {
+        @* ── Caixa fechado ── *@
+        <div style="padding:3rem 2rem;text-align:center;border:1px solid var(--line);border-radius:6px;background:var(--paper);margin-bottom:2rem;">
+            <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">🏧</div>
+            <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-400);margin-bottom:1.25rem;">Caixa Fechado</p>
+            <button class="btn btn-primary btn-sm" @onclick="AbrirAbertura">Abrir Caixa</button>
+        </div>
+
+        @* ── Histórico de sessões ── *@
+        @if (_sessoes.Any())
+        {
+            <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;margin-bottom:.65rem;">
+                Histórico de Sessões
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Abertura</th>
+                            <th>Fechamento</th>
+                            <th>Operador</th>
+                            <th style="text-align:right;">Abertura</th>
+                            <th style="text-align:right;">Esperado</th>
+                            <th style="text-align:right;">Contado</th>
+                            <th style="text-align:right;">Diferença</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in _sessoes)
+                        {
+                            var dif = s.Diferenca ?? 0;
+                            <tr>
+                                <td style="font-size:.78rem;">@s.DataAbertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td style="font-size:.78rem;color:var(--ink-500);">@(s.DataFechamento?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")</td>
+                                <td style="font-size:.82rem;">@(s.Operador?.Nome ?? "—")</td>
+                                <td style="text-align:right;font-size:.82rem;">@s.ValorAbertura.ToString("C2")</td>
+                                <td style="text-align:right;font-size:.82rem;">@(s.ValorFechamentoEsperado?.ToString("C2") ?? "—")</td>
+                                <td style="text-align:right;font-size:.82rem;font-weight:600;">@(s.ValorFechamentoContado?.ToString("C2") ?? "—")</td>
+                                <td style="text-align:right;font-size:.82rem;font-weight:600;color:@(dif >= 0 ? "#1e783c" : "var(--s-maint)");">
+                                    @if (s.Diferenca.HasValue) { <text>@(dif >= 0 ? "+" : "")@dif.ToString("C2")</text> }
+                                    else { <text>—</text> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+    @* ── Config automático ── *@
+    <div style="margin-top:2rem;padding:.85rem 1rem;background:var(--paper);border:1px solid var(--line);border-radius:4px;display:flex;align-items:center;gap:1rem;">
+        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;color:var(--ink-700);">
+            <input type="checkbox" checked="@_cfg.CaixaAutomatico"
+                   @onchange="async e => { _cfg.CaixaAutomatico = (bool)(e.Value ?? false); await CfgSvc.SalvarAsync(_cfg); }" />
+            Controle automático de caixa
+        </label>
+        <span style="font-size:.75rem;color:var(--ink-400);">
+            @if (_cfg.CaixaAutomatico)
+            { <text>Pedidos e vendas finalizadas geram movimentos no caixa automaticamente.</text> }
+            else
+            { <text>Apenas movimentos manuais são registrados.</text> }
+        </span>
+    </div>
+}
+
+@code {
+    private SessaoCaixa?         _sessao    = null;
+    private List<MovimentoCaixa> _movimentos = new();
+    private List<SessaoCaixa>    _sessoes    = new();
+    private ConfiguracaoMarina   _cfg       = new();
+
+    private bool    _carregando      = true;
+    private bool    _salvando;
+    private bool    _painelAbertura;
+    private bool    _painelFechamento;
+    private bool    _painelMovimento;
+    private string? _erro;
+
+    // Abertura
+    private decimal _valorAbertura;
+
+    // Fechamento
+    private decimal _valorFechamento;
+    private string? _obsF;
+
+    // Movimento manual
+    private string  _movTipoStr   = "Entrada";
+    private string  _movOrigemStr = "MensalidadeContrato";
+    private decimal _movValor;
+    private string  _movDescricao = "";
+
+    private decimal _totalEntradas  => _movimentos.Where(m => m.Tipo == TipoMovimentoCaixa.Entrada).Sum(m => m.Valor);
+    private decimal _totalSaidas    => _movimentos.Where(m => m.Tipo == TipoMovimentoCaixa.Saida).Sum(m => m.Valor);
+    private decimal _saldoEsperado  => (_sessao?.ValorAbertura ?? 0) + _totalEntradas - _totalSaidas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _cfg = await CfgSvc.ObterAsync(UserCtx.EmpresaId);
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        _sessao     = await CaixaSvc.ObterSessaoAbertaAsync(UserCtx.EmpresaId);
+        if (_sessao != null)
+            _movimentos = await CaixaSvc.ListarMovimentosSessaoAsync(_sessao.Id, UserCtx.EmpresaId);
+        else
+        {
+            _movimentos = new();
+            _sessoes    = await CaixaSvc.ListarSessoesAsync(UserCtx.EmpresaId);
+        }
+        _carregando = false;
+    }
+
+    private void AbrirAbertura()
+    {
+        _valorAbertura = 0; _erro = null;
+        _painelAbertura = true; _painelFechamento = false; _painelMovimento = false;
+    }
+
+    private void AbrirFechamento()
+    {
+        _valorFechamento = 0; _obsF = null; _erro = null;
+        _painelFechamento = true; _painelAbertura = false; _painelMovimento = false;
+    }
+
+    private void AbrirMovimento()
+    {
+        _movTipoStr = "Entrada"; _movOrigemStr = "MensalidadeContrato"; _movValor = 0; _movDescricao = ""; _erro = null;
+        _painelMovimento = true; _painelAbertura = false; _painelFechamento = false;
+    }
+
+    private async Task AbrirCaixaAsync()
+    {
+        _erro = null; _salvando = true;
+        try
+        {
+            await CaixaSvc.AbrirAsync(UserCtx.EmpresaId, _valorAbertura, UserCtx.UsuarioId);
+            _painelAbertura = false;
+            await CarregarAsync();
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+
+    private async Task FecharCaixaAsync()
+    {
+        if (_sessao == null) return;
+        if (_valorFechamento <= 0 && !await JS.InvokeAsync<bool>("confirm", "O valor contado é zero. Confirmar?")) return;
+
+        _erro = null; _salvando = true;
+        try
+        {
+            await CaixaSvc.FecharAsync(_sessao.Id, UserCtx.EmpresaId, _valorFechamento, _obsF);
+            _painelFechamento = false;
+            await CarregarAsync();
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+
+    private async Task SalvarMovimentoAsync()
+    {
+        _erro = null;
+        if (_movValor <= 0) { _erro = "Informe o valor."; return; }
+        if (string.IsNullOrWhiteSpace(_movDescricao)) { _erro = "Informe a descrição."; return; }
+        if (_sessao == null) return;
+
+        _salvando = true;
+        try
+        {
+            await CaixaSvc.RegistrarMovimentoAsync(
+                UserCtx.EmpresaId, _sessao.Id,
+                Enum.Parse<TipoMovimentoCaixa>(_movTipoStr),
+                Enum.Parse<OrigemMovimentoCaixa>(_movOrigemStr),
+                _movValor, _movDescricao.Trim());
+
+            _painelMovimento = false;
+            await CarregarAsync();
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+        finally { _salvando = false; }
+    }
+
+    private static MarkupString BadgeTipoMov(TipoMovimentoCaixa t)
+    {
+        var (label, style) = t == TipoMovimentoCaixa.Entrada
+            ? ("Entrada", "background:rgba(30,120,60,.1);color:#1e5030;")
+            : ("Saída",   "background:rgba(164,68,54,.1);color:var(--s-maint);");
+        return new MarkupString($"<span style=\"font-size:.68rem;font-weight:700;padding:.15rem .5rem;border-radius:3px;{style}\">{label}</span>");
+    }
+
+    private static string LabelOrigem(OrigemMovimentoCaixa o) => o switch
+    {
+        OrigemMovimentoCaixa.VendaProduto        => "Venda",
+        OrigemMovimentoCaixa.ServicoPedido       => "Serviço/Pedido",
+        OrigemMovimentoCaixa.MensalidadeContrato => "Mensalidade",
+        OrigemMovimentoCaixa.Sangria             => "Sangria",
+        OrigemMovimentoCaixa.Suprimento          => "Suprimento",
+        _                                        => "Ajuste",
+    };
+}

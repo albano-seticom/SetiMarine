@@ -52,6 +52,9 @@ builder.Services.AddScoped<SuperAdminService>();
 builder.Services.AddScoped<PlanoContratoService>();
 builder.Services.AddScoped<AgendamentoUsoService>();
 builder.Services.AddScoped<ConsumoPlanoService>();
+builder.Services.AddScoped<EstoqueService>();
+builder.Services.AddScoped<CaixaService>();
+builder.Services.AddScoped<ConfiguracaoMarinaService>();
 
 var app = builder.Build();
 

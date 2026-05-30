@@ -17,6 +17,7 @@ public class Produto
     public decimal? PrecoAluguelHora { get; set; }
     public decimal? PrecoAluguelDia  { get; set; }
 
+    public bool ControlaEstoque { get; set; } = false;
     public int Estoque { get; set; } = 0;
     public int EstoqueMinimo { get; set; } = 0;
 

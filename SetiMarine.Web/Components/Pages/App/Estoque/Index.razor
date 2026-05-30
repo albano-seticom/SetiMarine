@@ -1,0 +1,269 @@
+@page "/estoque"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject EstoqueService EstoqueSvc
+@inject UsuarioContextService UserCtx
+@inject IJSRuntime JS
+
+<PageTitle>Estoque — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Operacional</span>
+        <h1>Controle de Estoque</h1>
+    </div>
+    <div class="page-head-actions">
+        <button class="btn btn-primary btn-sm" @onclick="AbrirEntrada">+ Entrada</button>
+        <button class="btn btn-ghost btn-sm" @onclick="AbrirAjuste">Ajustar Saldo</button>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    @* ── Painel de movimentação ── *@
+    @if (_painelAberto)
+    {
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1rem;max-width:560px;">
+            <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;margin-bottom:1rem;">
+                @(_modoAjuste ? "Ajustar Saldo" : "Entrada de Estoque")
+            </div>
+
+            <div class="form-row">
+                <div class="field" style="flex:2;">
+                    <label>Produto *</label>
+                    <select value="@_movProdutoIdStr" @onchange="e => _movProdutoIdStr = e.Value?.ToString() ?? string.Empty" style="height:34px;">
+                        <option value="">Selecione...</option>
+                        @foreach (var p in _produtos)
+                        { <option value="@p.Id">@p.Nome (@p.Estoque @p.Unidade)</option> }
+                    </select>
+                </div>
+                @if (_modoAjuste)
+                {
+                    <div class="field" style="flex:1;">
+                        <label>Novo Saldo *</label>
+                        <input type="number" @bind="_movNovoSaldo" min="0" style="height:34px;width:100px;" />
+                    </div>
+                }
+                else
+                {
+                    <div class="field" style="flex:1;">
+                        <label>Quantidade *</label>
+                        <input type="number" @bind="_movQuantidade" min="1" style="height:34px;width:100px;" />
+                    </div>
+                }
+            </div>
+
+            <div class="field">
+                <label>Motivo / Nota</label>
+                <input @bind="_movMotivo" placeholder="@(_modoAjuste ? "Ex: inventário mensal" : "Ex: compra de fornecedor")" />
+            </div>
+
+            @if (_erroMov != null)
+            {
+                <div style="margin:.6rem 0;padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erroMov</div>
+            }
+
+            <div class="form-actions" style="margin-top:1rem;">
+                <button type="button" class="btn btn-ghost" @onclick="FecharPainel">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="SalvarMovimentoAsync" disabled="@_salvando">
+                    @(_salvando ? "Salvando..." : "Confirmar")
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Tabela de produtos com estoque ── *@
+    @if (!_produtos.Any())
+    {
+        <div style="padding:4rem 2rem;text-align:center;color:var(--ink-300);">
+            <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1rem;">
+                Nenhum produto com controle de estoque ativo
+            </p>
+            <a href="/produtos" class="btn btn-ghost btn-sm">Ir para Produtos →</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap" style="margin-bottom:2rem;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Unidade</th>
+                        <th style="text-align:right;">Estoque Atual</th>
+                        <th style="text-align:right;">Mínimo</th>
+                        <th style="width:80px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in _produtos)
+                    {
+                        var abaixoMin = p.EstoqueMinimo > 0 && p.Estoque <= p.EstoqueMinimo;
+                        <tr>
+                            <td><strong style="font-weight:500;">@p.Nome</strong></td>
+                            <td style="color:var(--ink-500);font-size:.82rem;">@LabelCategoria(p.Categoria)</td>
+                            <td style="color:var(--ink-500);font-size:.82rem;">@p.Unidade</td>
+                            <td style="text-align:right;font-weight:600;@(abaixoMin ? "color:var(--s-maint);" : "")">
+                                @p.Estoque
+                                @if (abaixoMin) { <text> ⚠</text> }
+                            </td>
+                            <td style="text-align:right;color:var(--ink-400);font-size:.82rem;">@(p.EstoqueMinimo > 0 ? p.EstoqueMinimo.ToString() : "—")</td>
+                            <td>
+                                <button class="btn btn-ghost btn-sm" title="Entrada rápida"
+                                        @onclick="() => AbrirEntradaRapida(p)">+</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* ── Histórico de movimentos ── *@
+        <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;margin-bottom:.65rem;">
+            Últimos Movimentos
+        </div>
+
+        @if (_movimentos.Any())
+        {
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Produto</th>
+                            <th>Tipo</th>
+                            <th style="text-align:right;">Qtd</th>
+                            <th style="text-align:right;">Antes</th>
+                            <th style="text-align:right;">Depois</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in _movimentos)
+                        {
+                            <tr>
+                                <td style="font-size:.78rem;color:var(--ink-500);">@m.CriadoEm.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                                <td style="font-size:.82rem;">@(m.Produto?.Nome ?? "—")</td>
+                                <td>@BadgeTipo(m.Tipo)</td>
+                                <td style="text-align:right;font-weight:600;">@m.Quantidade</td>
+                                <td style="text-align:right;color:var(--ink-400);font-size:.82rem;">@m.EstoqueAntes</td>
+                                <td style="text-align:right;font-size:.82rem;">@m.EstoqueDepois</td>
+                                <td style="color:var(--ink-500);font-size:.78rem;">@(m.Motivo ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div style="color:var(--ink-300);font-size:.82rem;">Nenhum movimento registrado.</div>
+        }
+    }
+}
+
+@code {
+    private List<Produto>          _produtos    = new();
+    private List<MovimentoEstoque> _movimentos  = new();
+
+    private bool    _carregando = true;
+    private bool    _painelAberto;
+    private bool    _modoAjuste;
+    private bool    _salvando;
+    private string? _erroMov;
+
+    private string  _movProdutoIdStr = "";
+    private int     _movQuantidade   = 1;
+    private int     _movNovoSaldo    = 0;
+    private string? _movMotivo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        _produtos   = await EstoqueSvc.ListarProdutosComEstoqueAsync(UserCtx.EmpresaId);
+        _movimentos = await EstoqueSvc.ListarMovimentosAsync(UserCtx.EmpresaId);
+        _carregando = false;
+    }
+
+    private void AbrirEntrada()
+    {
+        _modoAjuste = false; _movProdutoIdStr = ""; _movQuantidade = 1; _movMotivo = null; _erroMov = null;
+        _painelAberto = true;
+    }
+
+    private void AbrirEntradaRapida(Produto p)
+    {
+        _modoAjuste = false; _movProdutoIdStr = p.Id.ToString(); _movQuantidade = 1; _movMotivo = null; _erroMov = null;
+        _painelAberto = true;
+    }
+
+    private void AbrirAjuste()
+    {
+        _modoAjuste = true; _movProdutoIdStr = ""; _movNovoSaldo = 0; _movMotivo = null; _erroMov = null;
+        _painelAberto = true;
+    }
+
+    private void FecharPainel() { _painelAberto = false; _erroMov = null; }
+
+    private async Task SalvarMovimentoAsync()
+    {
+        _erroMov = null;
+        if (!int.TryParse(_movProdutoIdStr, out var pid) || pid == 0) { _erroMov = "Selecione o produto."; return; }
+
+        _salvando = true;
+        try
+        {
+            if (_modoAjuste)
+                await EstoqueSvc.AjustarAsync(UserCtx.EmpresaId, pid, _movNovoSaldo, _movMotivo, UserCtx.UsuarioId);
+            else
+            {
+                if (_movQuantidade < 1) { _erroMov = "Quantidade deve ser maior que zero."; return; }
+                await EstoqueSvc.RegistrarEntradaAsync(UserCtx.EmpresaId, pid, _movQuantidade, _movMotivo, UserCtx.UsuarioId);
+            }
+
+            _painelAberto = false;
+            await CarregarAsync();
+        }
+        catch (Exception ex) { _erroMov = ex.Message; }
+        finally { _salvando = false; }
+    }
+
+    private static string LabelCategoria(CategoriaProduto c) => c switch
+    {
+        CategoriaProduto.Combustivel  => "Combustível",
+        CategoriaProduto.Lubrificante => "Lubrificante",
+        CategoriaProduto.Acessorio    => "Acessório",
+        CategoriaProduto.Peca         => "Peça",
+        CategoriaProduto.Equipamento  => "Equipamento",
+        CategoriaProduto.Alimento     => "Alimento",
+        _                             => "Outro",
+    };
+
+    private static MarkupString BadgeTipo(TipoMovimentoEstoque t)
+    {
+        var (label, style) = t switch
+        {
+            TipoMovimentoEstoque.Entrada => ("Entrada", "background:rgba(30,120,60,.1);color:#1e5030;"),
+            TipoMovimentoEstoque.Saida   => ("Saída",   "background:rgba(164,68,54,.1);color:var(--s-maint);"),
+            _                            => ("Ajuste",  "background:rgba(194,120,0,.1);color:#7a4c00;"),
+        };
+        return new MarkupString($"<span style=\"font-size:.68rem;font-weight:700;padding:.15rem .5rem;border-radius:3px;{style}\">{label}</span>");
+    }
+}

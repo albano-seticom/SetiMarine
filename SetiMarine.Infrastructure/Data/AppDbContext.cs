@@ -76,6 +76,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AgendamentoUso> AgendamentosUso { get; set; }
     public DbSet<ConsumoPlano> ConsumoPlano { get; set; }
 
+    // ============================================================
+    // MARINA - Estoque
+    // ============================================================
+    public DbSet<MovimentoEstoque> MovimentosEstoque { get; set; }
+
+    // ============================================================
+    // MARINA - Caixa
+    // ============================================================
+    public DbSet<SessaoCaixa> SessoesCaixa { get; set; }
+    public DbSet<MovimentoCaixa> MovimentosCaixa { get; set; }
+
+    // ============================================================
+    // MARINA - Configuração
+    // ============================================================
+    public DbSet<ConfiguracaoMarina> ConfiguracoesMarina { get; set; }
+
     protected override void OnModelCreating(ModelBuilder mb)
     {
         base.OnModelCreating(mb);
@@ -125,6 +141,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         mb.Entity<AgendamentoUso>().ToTable("mar_agendamentos_uso");
         mb.Entity<ConsumoPlano>().ToTable("cfg_consumo_plano");
+        mb.Entity<MovimentoEstoque>().ToTable("mar_movimentos_estoque");
+        mb.Entity<SessaoCaixa>().ToTable("mar_sessoes_caixa");
+        mb.Entity<MovimentoCaixa>().ToTable("mar_movimentos_caixa");
+        mb.Entity<ConfiguracaoMarina>().ToTable("cfg_configuracao_marina");
+
+        mb.Entity<ConfiguracaoMarina>()
+            .HasIndex(c => c.EmpresaId)
+            .IsUnique();
 
         mb.Entity<PedidoItem>().Ignore(i => i.ValorTotal);
 
@@ -264,6 +288,60 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(a => a.PlanoContratoServicoUsado)
             .WithMany()
             .HasForeignKey(a => a.PlanoContratoServicoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // ============================================================
+        // Relacionamentos - MovimentoEstoque
+        // ============================================================
+        mb.Entity<MovimentoEstoque>()
+            .HasOne(m => m.Produto)
+            .WithMany()
+            .HasForeignKey(m => m.ProdutoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        mb.Entity<MovimentoEstoque>()
+            .HasOne(m => m.Usuario)
+            .WithMany()
+            .HasForeignKey(m => m.UsuarioId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<MovimentoEstoque>()
+            .HasOne(m => m.Pedido)
+            .WithMany()
+            .HasForeignKey(m => m.PedidoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<MovimentoEstoque>()
+            .HasOne(m => m.VendaProduto)
+            .WithMany()
+            .HasForeignKey(m => m.VendaProdutoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // ============================================================
+        // Relacionamentos - Caixa
+        // ============================================================
+        mb.Entity<SessaoCaixa>()
+            .HasOne(s => s.Operador)
+            .WithMany()
+            .HasForeignKey(s => s.OperadorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<MovimentoCaixa>()
+            .HasOne(m => m.SessaoCaixa)
+            .WithMany(s => s.Movimentos)
+            .HasForeignKey(m => m.SessaoCaixaId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        mb.Entity<MovimentoCaixa>()
+            .HasOne(m => m.Pedido)
+            .WithMany()
+            .HasForeignKey(m => m.PedidoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<MovimentoCaixa>()
+            .HasOne(m => m.VendaProduto)
+            .WithMany()
+            .HasForeignKey(m => m.VendaProdutoId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }
