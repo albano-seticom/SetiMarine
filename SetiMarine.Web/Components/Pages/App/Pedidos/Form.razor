@@ -490,6 +490,7 @@ else
 
                 <div class="form-actions" style="margin-top:0;padding-bottom:.1rem;">
                     <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
+
                     @if (!_isNovo && _pedido.Status == StatusPedido.Concluido)
                     {
                         <button type="button" @onclick="ReabrirAsync" disabled="@_salvando"
@@ -497,16 +498,31 @@ else
                             @(_salvando ? "Reabrindo..." : "Reabrir Pedido")
                         </button>
                     }
+                    else if (_painelPagamento)
+                    {
+                        @* Painel aberto: só botão de confirmar *@
+                        <button type="button" @onclick="SalvarAsync"
+                                disabled="@(_salvando || string.IsNullOrEmpty(_formaPagamentoStr))"
+                                style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--navy-700);border:1px solid var(--navy-700);color:#fff;">
+                            @(_salvando ? "Salvando..." : "Confirmar e Fechar Pedido")
+                        </button>
+                    }
                     else
                     {
-                        <button type="button" @onclick="SalvarAsync"
-                                disabled="@(_salvando || _salvo || (_painelPagamento && string.IsNullOrEmpty(_formaPagamentoStr)))"
+                        @* Estado normal: Salvar rascunho + Fechar *@
+                        <button type="button" @onclick="SalvarAsync" disabled="@(_salvando || _salvo)"
                                 style="@(_salvo ? "background:#2a7a2a;border-color:#2a7a2a;color:#fff;" : "") padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;">
                             @if (_salvo)        { <text>✓ Pedido salvo!</text> }
                             else if (_salvando) { <text>Salvando...</text> }
-                            else if (_painelPagamento) { <text>Confirmar e Fechar Pedido</text> }
-                            else                { <text>Salvar Pedido</text> }
+                            else                { <text>Salvar</text> }
                         </button>
+                        @if (_linhas.Any())
+                        {
+                            <button type="button" @onclick="IniciarFechamento" disabled="@_salvando"
+                                    style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--s-free);border:1px solid var(--s-free);color:#fff;">
+                                Fechar Pedido
+                            </button>
+                        }
                     }
                 </div>
             </div>
@@ -813,8 +829,31 @@ else
         finally { _salvando = false; }
     }
 
+    private void IniciarFechamento()
+    {
+        _statusStr         = "Concluido";
+        _painelPagamento   = true;
+        _formaPagamentoStr = "";
+        _valorPago         = _linhas.Sum(l => l.Total);
+        _erro              = null;
+    }
+
     private async Task SalvarAsync()
     {
+        // Safety-net: se status vai ser Concluido mas o painel ainda não foi mostrado, mostra agora
+        if (_statusStr == "Concluido" && _statusOriginal != "Concluido" && !_painelPagamento)
+        {
+            IniciarFechamento();
+            return;
+        }
+
+        // Painel aberto mas sem forma selecionada → bloqueia
+        if (_painelPagamento && string.IsNullOrEmpty(_formaPagamentoStr))
+        {
+            _erro = "Selecione a forma de pagamento para fechar o pedido.";
+            return;
+        }
+
         if (!_isNovo && _servicosConcluidos > 0)
         {
             _erro = $"Não é possível salvar: {_servicosConcluidos} serviço(s) já concluído(s). Cancele-os em Tarefas antes de editar o pedido.";
@@ -871,7 +910,24 @@ else
 
             if (_isNovo)
             {
+                _pedido.Status = fechando ? StatusPedido.Concluido : StatusPedido.Aberto;
                 await PedidoSvc.CriarAsync(_pedido, itens, servicos);
+
+                if (fechando && _cfg.CaixaAutomatico)
+                {
+                    var total     = _linhas.Sum(l => l.Total);
+                    var cliente   = _clientes.FirstOrDefault(c => c.Id.ToString() == _clienteIdStr);
+                    var fpLabel   = _formasPagamento.GetValueOrDefault(_formaPagamentoStr, _formaPagamentoStr);
+                    var descricao = $"Pedido #{_pedido.Id}" +
+                                    (cliente != null ? $" — {cliente.Nome}" : "") +
+                                    $" ({fpLabel})";
+                    await CaixaSvc.RegistrarAutomaticoAsync(
+                        UserCtx.EmpresaId,
+                        TipoMovimentoCaixa.Entrada,
+                        OrigemMovimentoCaixa.ServicoPedido,
+                        total, descricao, pedidoId: _pedido.Id);
+                }
+
                 _salvo = true;
                 StateHasChanged();
                 await Task.Delay(800);

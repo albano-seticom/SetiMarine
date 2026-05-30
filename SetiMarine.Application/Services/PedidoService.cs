@@ -38,7 +38,10 @@ public class PedidoService(ISetiMarineDbContext ctx)
     public async Task CriarAsync(Pedido pedido, List<PedidoItem> itens, List<PedidoServico> servicos)
     {
         pedido.CriadoEm = DateTime.UtcNow;
-        pedido.Status   = StatusPedido.Aberto;
+        if (pedido.Status != StatusPedido.Concluido)
+            pedido.Status = StatusPedido.Aberto;
+        else
+            pedido.ConcluidoEm = DateTime.UtcNow;
         pedido.Itens    = itens;
         pedido.Servicos = servicos;
         ctx.Pedidos.Add(pedido);
