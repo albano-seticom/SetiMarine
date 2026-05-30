@@ -35,6 +35,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<UsuarioContextService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<SecaoService>();
 builder.Services.AddScoped<CorredorService>();
 builder.Services.AddScoped<VagaService>();
 builder.Services.AddScoped<AlocacaoService>();

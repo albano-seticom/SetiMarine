@@ -23,8 +23,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Contrato> Contratos { get; set; }
 
     // ============================================================
-    // MARINA - Vagas e Corredores
+    // MARINA - Vagas, Corredores e Secoes
     // ============================================================
+    public DbSet<Secao> Secoes { get; set; }
     public DbSet<Corredor> Corredores { get; set; }
     public DbSet<Vaga> Vagas { get; set; }
     public DbSet<VagaEmbarcacao> VagaEmbarcacoes { get; set; }
@@ -112,6 +113,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         mb.Entity<Embarcacao>().ToTable("mar_embarcacoes");
         mb.Entity<Contrato>().ToTable("mar_contratos");
 
+        mb.Entity<Secao>().ToTable("mar_secoes");
         mb.Entity<Corredor>().ToTable("mar_corredores");
         mb.Entity<Vaga>().ToTable("mar_vagas");
         mb.Entity<VagaEmbarcacao>().ToTable("mar_vaga_embarcacoes");
@@ -185,6 +187,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(e => e.VagaFixa)
             .WithOne(v => v.EmbarcacaoAtual)
             .HasForeignKey<Embarcacao>(e => e.VagaFixaId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        mb.Entity<Corredor>()
+            .HasOne(c => c.Secao)
+            .WithMany(s => s.Corredores)
+            .HasForeignKey(c => c.SecaoId)
             .OnDelete(DeleteBehavior.SetNull);
 
         mb.Entity<Vaga>()

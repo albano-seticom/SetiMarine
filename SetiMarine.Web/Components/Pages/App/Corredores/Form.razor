@@ -5,6 +5,7 @@
 @using SetiMarine.Application.Services
 @using SetiMarine.Domain.Entities
 @inject CorredorService CorredorService
+@inject SecaoService SecaoSvc
 @inject NavigationManager Nav
 @inject UsuarioContextService UserCtx
 
@@ -31,6 +32,17 @@ else
 
         <div class="form-section">
             <div class="form-section-title">Dados do Corredor</div>
+
+            <div class="form-row" style="grid-template-columns:1fr 1fr;">
+                <div class="field">
+                    <label>Seção</label>
+                    <select @bind="_secaoIdStr">
+                        <option value="">Sem seção</option>
+                        @foreach (var s in _secoes)
+                        { <option value="@s.Id">@s.Nome</option> }
+                    </select>
+                </div>
+            </div>
 
             <div class="form-row">
                 <div class="field">
@@ -84,20 +96,25 @@ else
 @code {
     [Parameter] public int? Id { get; set; }
 
-    private Corredor _corredor = new();
-    private bool _isNovo => Id is null;
-    private bool _carregando = true;
-    private bool _salvando;
-    private string? _erro;
+    private Corredor      _corredor   = new();
+    private List<Secao>   _secoes     = new();
+    private string        _secaoIdStr = "";
+    private bool          _isNovo     => Id is null;
+    private bool          _carregando = true;
+    private bool          _salvando;
+    private string?       _erro;
 
     protected override async Task OnInitializedAsync()
     {
         await UserCtx.InitAsync();
+        _secoes = await SecaoSvc.ListarPorEmpresaAsync(UserCtx.EmpresaId);
+
         if (!_isNovo)
         {
             var existente = await CorredorService.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
             if (existente == null) { Nav.NavigateTo("/corredores"); return; }
-            _corredor = existente;
+            _corredor   = existente;
+            _secaoIdStr = _corredor.SecaoId?.ToString() ?? "";
         }
         else
         {
@@ -112,6 +129,8 @@ else
         _erro = null;
         try
         {
+            _corredor.SecaoId = int.TryParse(_secaoIdStr, out var sid) && sid > 0 ? sid : null;
+
             if (_isNovo) await CorredorService.CriarAsync(_corredor);
             else         await CorredorService.EditarAsync(_corredor);
             Nav.NavigateTo("/corredores");

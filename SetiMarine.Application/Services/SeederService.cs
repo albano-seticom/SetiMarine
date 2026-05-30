@@ -212,6 +212,22 @@ public class SeederService(ISetiMarineDbContext ctx)
 
         await SeedClientesAsync(empresaId);
 
+        var secao = await ctx.Secoes
+            .FirstOrDefaultAsync(s => s.EmpresaId == empresaId && s.Nome == "Seção A");
+        if (secao == null)
+        {
+            secao = new Secao
+            {
+                EmpresaId = empresaId,
+                Nome      = "Seção A",
+                Ordem     = 1,
+                Ativo     = true,
+                CriadoEm  = DateTime.UtcNow,
+            };
+            ctx.Secoes.Add(secao);
+            await ctx.SaveChangesAsync();
+        }
+
         var corredor = await ctx.Corredores
             .FirstOrDefaultAsync(c => c.EmpresaId == empresaId && c.Nome == "Corredor A");
         if (corredor == null)
@@ -223,11 +239,17 @@ public class SeederService(ISetiMarineDbContext ctx)
             {
                 EmpresaId = empresaId,
                 Nome      = "Corredor A",
+                SecaoId   = secao.Id,
                 Ordem     = ordem + 1,
                 Ativo     = true,
                 CriadoEm  = DateTime.UtcNow,
             };
             ctx.Corredores.Add(corredor);
+            await ctx.SaveChangesAsync();
+        }
+        else if (corredor.SecaoId == null)
+        {
+            corredor.SecaoId = secao.Id;
             await ctx.SaveChangesAsync();
         }
 
@@ -239,6 +261,20 @@ public class SeederService(ISetiMarineDbContext ctx)
                 CorredorId = corredor.Id,
                 Codigo     = "A01",
                 Tipo       = TipoVaga.Agua,
+                Status     = StatusVaga.Livre,
+                Ativa      = true,
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        if (!await ctx.Vagas.AnyAsync(v => v.EmpresaId == empresaId && v.Codigo == "S01"))
+        {
+            ctx.Vagas.Add(new Vaga
+            {
+                EmpresaId  = empresaId,
+                CorredorId = corredor.Id,
+                Codigo     = "S01",
+                Tipo       = TipoVaga.Seco,
                 Status     = StatusVaga.Livre,
                 Ativa      = true,
             });

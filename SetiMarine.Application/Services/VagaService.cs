@@ -20,7 +20,7 @@ public class VagaService
     {
         var query = _context.Vagas
             .Where(v => v.EmpresaId == empresaId && v.Ativa)
-            .Include(v => v.Corredor)
+            .Include(v => v.Corredor).ThenInclude(c => c!.Secao)
             .Include(v => v.EmbarcacoesNaVaga.Where(e => e.Ativa))
                 .ThenInclude(ve => ve.Embarcacao)
             .AsQueryable();
@@ -37,7 +37,7 @@ public class VagaService
     public async Task<Vaga?> ObterPorIdAsync(int id, int empresaId)
     {
         return await _context.Vagas
-            .Include(v => v.Corredor)
+            .Include(v => v.Corredor).ThenInclude(c => c!.Secao)
             .Include(v => v.EmbarcacoesNaVaga.Where(e => e.Ativa))
                 .ThenInclude(ve => ve.Embarcacao)
             .FirstOrDefaultAsync(v => v.Id == id && v.EmpresaId == empresaId);

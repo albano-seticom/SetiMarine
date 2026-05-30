@@ -13,6 +13,7 @@ namespace SetiMarine.Domain.Data
         DbSet<Cliente> Clientes { get; set; }
         DbSet<Embarcacao> Embarcacoes { get; set; }
         DbSet<Contrato> Contratos { get; set; }
+        DbSet<Secao> Secoes { get; set; }
         DbSet<Corredor> Corredores { get; set; }
         DbSet<Vaga> Vagas { get; set; }
         DbSet<VagaEmbarcacao> VagaEmbarcacoes { get; set; }

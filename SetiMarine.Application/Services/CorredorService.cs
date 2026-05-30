@@ -20,6 +20,7 @@ public class CorredorService
         return await _context.Corredores
             .Where(c => c.EmpresaId == empresaId && c.Ativo)
             .OrderBy(c => c.Ordem)
+            .Include(c => c.Secao)
             .Include(c => c.Vagas)
             .ToListAsync();
     }
@@ -27,6 +28,7 @@ public class CorredorService
     public async Task<Corredor?> ObterPorIdAsync(int id, int empresaId)
     {
         return await _context.Corredores
+            .Include(c => c.Secao)
             .FirstOrDefaultAsync(c => c.Id == id && c.EmpresaId == empresaId);
     }
 
