@@ -444,86 +444,83 @@ else
                     <InputTextArea @bind-Value="_pedido.Observacoes" rows="2" style="resize:none;width:100%;" placeholder="Observações do pedido..." />
                 </div>
 
-                @* ── Painel de Pagamento ── *@
-                @if (_painelPagamento)
-                {
-                    <div style="border:1px solid rgba(0,53,128,.2);border-radius:5px;padding:.75rem 1rem;background:rgba(0,53,128,.03);margin-top:.25rem;">
-                        <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--navy-700);font-weight:700;margin-bottom:.6rem;">
-                            Forma de Pagamento · Total: @_linhas.Sum(l => l.Total).ToString("C2")
-                        </div>
-
-                        <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.6rem;">
-                            @foreach (var fp in _formasPagamento)
-                            {
-                                var sel = _formaPagamentoStr == fp.Key;
-                                <button type="button"
-                                        style="padding:.3rem .75rem;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;transition:.12s;border:1px solid @(sel ? "var(--navy-700)" : "var(--line)");background:@(sel ? "var(--navy-700)" : "transparent");color:@(sel ? "#fff" : "var(--ink-500)");"
-                                        @onclick="() => _formaPagamentoStr = fp.Key">
-                                    @fp.Value
-                                </button>
-                            }
-                        </div>
-
-                        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
-                            <div class="field" style="margin:0;flex:1;min-width:130px;">
-                                <label style="font-size:.66rem;">Valor Recebido (R$)</label>
-                                <InputNumber @bind-Value="_valorPago" style="height:28px;font-size:.83rem;" />
-                            </div>
-                            @if (_valorPago > 0 && _linhas.Any())
-                            {
-                                var troco = _valorPago - _linhas.Sum(l => l.Total);
-                                @if (troco > 0 && _formaPagamentoStr == "Dinheiro")
-                                {
-                                    <div style="font-size:.82rem;color:#1e783c;font-weight:600;padding-top:1.1rem;">
-                                        Troco: @troco.ToString("C2")
-                                    </div>
-                                }
-                            }
-                        </div>
-                    </div>
-                }
-
                 @if (_erro != null)
                 {
                     <div style="padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
                 }
 
-                <div class="form-actions" style="margin-top:0;padding-bottom:.1rem;">
-                    <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
+                @* ── Linha de ação: pagamento inline + botões ── *@
+                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding-bottom:.1rem;">
 
-                    @if (!_isNovo && _pedido.Status == StatusPedido.Concluido)
+                    @* Forma de pagamento — visível quando há itens e pedido não está já concluído *@
+                    @if (_linhas.Any() && !(!_isNovo && _pedido.Status == StatusPedido.Concluido))
                     {
-                        <button type="button" @onclick="ReabrirAsync" disabled="@_salvando"
-                                style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--s-mov);border:1px solid var(--s-mov);color:#fff;">
-                            @(_salvando ? "Reabrindo..." : "Reabrir Pedido")
-                        </button>
-                    }
-                    else if (_painelPagamento)
-                    {
-                        @* Painel aberto: só botão de confirmar *@
-                        <button type="button" @onclick="SalvarAsync"
-                                disabled="@(_salvando || string.IsNullOrEmpty(_formaPagamentoStr))"
-                                style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--navy-700);border:1px solid var(--navy-700);color:#fff;">
-                            @(_salvando ? "Salvando..." : "Confirmar e Fechar Pedido")
-                        </button>
+                        <div style="display:flex;gap:.25rem;flex-wrap:wrap;align-items:center;flex:1;min-width:0;">
+                            @foreach (var fp in _formasPagamento)
+                            {
+                                var sel = _formaPagamentoStr == fp.Key;
+                                <button type="button"
+                                        style="padding:.25rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;transition:.12s;border:1px solid @(sel ? "var(--navy-700)" : "var(--line)");background:@(sel ? "var(--navy-700)" : "transparent");color:@(sel ? "#fff" : "var(--ink-500)");"
+                                        @onclick="() => { _formaPagamentoStr = fp.Key; _precisaTroco = false; }">
+                                    @fp.Value
+                                </button>
+                            }
+                            @if (_formaPagamentoStr == "Dinheiro")
+                            {
+                                <label style="display:flex;align-items:center;gap:.3rem;font-size:.76rem;color:var(--ink-500);cursor:pointer;margin-left:.2rem;white-space:nowrap;flex-shrink:0;">
+                                    <input type="checkbox" @bind="_precisaTroco" style="width:auto;margin:0;" />
+                                    Troco?
+                                </label>
+                                @if (_precisaTroco)
+                                {
+                                    <InputNumber @bind-Value="_valorPago"
+                                                 style="height:26px;width:90px;font-size:.78rem;"
+                                                 placeholder="Valor rec." />
+                                    @if (_valorPago > 0 && _linhas.Any())
+                                    {
+                                        var troco = _valorPago - _linhas.Sum(l => l.Total);
+                                        @if (troco > 0)
+                                        {
+                                            <span style="font-size:.78rem;color:#1e783c;font-weight:600;white-space:nowrap;">→ @troco.ToString("C2")</span>
+                                        }
+                                    }
+                                }
+                            }
+                        </div>
                     }
                     else
                     {
-                        @* Estado normal: Salvar rascunho + Fechar *@
-                        <button type="button" @onclick="SalvarAsync" disabled="@(_salvando || _salvo)"
-                                style="@(_salvo ? "background:#2a7a2a;border-color:#2a7a2a;color:#fff;" : "") padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;">
-                            @if (_salvo)        { <text>✓ Pedido salvo!</text> }
-                            else if (_salvando) { <text>Salvando...</text> }
-                            else                { <text>Salvar</text> }
-                        </button>
-                        @if (_linhas.Any())
+                        <div style="flex:1;"></div>
+                    }
+
+                    @* Botões *@
+                    <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0;">
+                        <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
+
+                        @if (!_isNovo && _pedido.Status == StatusPedido.Concluido)
                         {
-                            <button type="button" @onclick="IniciarFechamento" disabled="@_salvando"
-                                    style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--s-free);border:1px solid var(--s-free);color:#fff;">
-                                Fechar Pedido
+                            <button type="button" @onclick="ReabrirAsync" disabled="@_salvando"
+                                    style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--s-mov);border:1px solid var(--s-mov);color:#fff;">
+                                @(_salvando ? "Reabrindo..." : "Reabrir Pedido")
                             </button>
                         }
-                    }
+                        else
+                        {
+                            <button type="button" @onclick="SalvarAsync" disabled="@(_salvando || _salvo)"
+                                    style="@(_salvo ? "background:#2a7a2a;border-color:#2a7a2a;color:#fff;" : "") padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;">
+                                @if (_salvo)        { <text>✓ Pedido salvo!</text> }
+                                else if (_salvando) { <text>Salvando...</text> }
+                                else                { <text>Salvar</text> }
+                            </button>
+                            @if (_linhas.Any())
+                            {
+                                <button type="button" @onclick="FecharPedidoAsync" disabled="@_salvando"
+                                        style="padding:.5rem 1.25rem;border-radius:3px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;background:var(--s-free);border:1px solid var(--s-free);color:#fff;">
+                                    Fechar Pedido
+                                </button>
+                            }
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -558,9 +555,9 @@ else
     private string? _erro;
 
     // Pagamento
-    private bool    _painelPagamento   = false;
-    private string  _formaPagamentoStr = "";
+    private string  _formaPagamentoStr = "Dinheiro";
     private decimal _valorPago;
+    private bool    _precisaTroco      = false;
     private string  _statusOriginal    = "";
     private ConfiguracaoMarina _cfg = new();
 
@@ -649,6 +646,19 @@ else
         else
         {
             _pedido = new Pedido { EmpresaId = UserCtx.EmpresaId, Tipo = TipoPedido.OrdemServico };
+
+            // Pré-selecionar responsável = usuário logado
+            _responsavelIdStr = UserCtx.UsuarioId.ToString();
+
+            // Pré-selecionar cliente "Consumidor"
+            var consumidor = _clientes.FirstOrDefault(c => c.Nome.Equals("Consumidor", StringComparison.OrdinalIgnoreCase));
+            if (consumidor != null)
+            {
+                _clienteIdStr = consumidor.Id.ToString();
+                AtualizarEmbarcacoes();
+                if (_embarcacoesFiltradas.Count == 1)
+                    _embarcacaoIdStr = _embarcacoesFiltradas[0].Id.ToString();
+            }
         }
 
         _carregando = false;
@@ -656,20 +666,7 @@ else
 
     private void OnStatusChanged(ChangeEventArgs e)
     {
-        var novo = e.Value?.ToString() ?? "Aberto";
-        _statusStr = novo;
-
-        // Abre painel de pagamento só ao transicionar PARA Concluido
-        if (novo == "Concluido" && _statusOriginal != "Concluido")
-        {
-            _painelPagamento   = true;
-            _formaPagamentoStr = "";
-            _valorPago         = _linhas.Sum(l => l.Total);
-        }
-        else
-        {
-            _painelPagamento = false;
-        }
+        _statusStr = e.Value?.ToString() ?? "Aberto";
     }
 
     private void OnClienteChanged(ChangeEventArgs e)
@@ -825,35 +822,18 @@ else
                 _servicosConcluidos = atualizado.Servicos.Count(s => s.Concluido);
             }
         }
-        catch (Exception ex) { _erro = ex.Message; }
+        catch (Exception ex) { _erro = ex.InnerException?.Message ?? ex.Message; }
         finally { _salvando = false; }
     }
 
-    private void IniciarFechamento()
+    private Task FecharPedidoAsync()
     {
-        _statusStr         = "Concluido";
-        _painelPagamento   = true;
-        _formaPagamentoStr = "";
-        _valorPago         = _linhas.Sum(l => l.Total);
-        _erro              = null;
+        _statusStr = "Concluido";
+        return SalvarAsync();
     }
 
     private async Task SalvarAsync()
     {
-        // Safety-net: se status vai ser Concluido mas o painel ainda não foi mostrado, mostra agora
-        if (_statusStr == "Concluido" && _statusOriginal != "Concluido" && !_painelPagamento)
-        {
-            IniciarFechamento();
-            return;
-        }
-
-        // Painel aberto mas sem forma selecionada → bloqueia
-        if (_painelPagamento && string.IsNullOrEmpty(_formaPagamentoStr))
-        {
-            _erro = "Selecione a forma de pagamento para fechar o pedido.";
-            return;
-        }
-
         if (!_isNovo && _servicosConcluidos > 0)
         {
             _erro = $"Não é possível salvar: {_servicosConcluidos} serviço(s) já concluído(s). Cancele-os em Tarefas antes de editar o pedido.";
@@ -896,14 +876,14 @@ else
                 {
                     Descricao     = l.Nome,
                     Valor         = l.Preco > 0 ? l.Preco : null,
-                    ResponsavelId = int.TryParse(l.ResponsavelIdStr, out var rid) && rid > 0 ? rid : null,
+                    ResponsavelId = int.TryParse(l.ResponsavelIdStr, out var sid) && sid > 0 ? sid : null,
                 })
                 .ToList();
 
-            // Dados de pagamento — preenchidos somente ao concluir
             var fechando = _statusStr == "Concluido" && _statusOriginal != "Concluido";
-            if (fechando && _painelPagamento && !string.IsNullOrEmpty(_formaPagamentoStr))
+            if (fechando)
             {
+                if (string.IsNullOrEmpty(_formaPagamentoStr)) _formaPagamentoStr = "Dinheiro";
                 _pedido.FormaPagamento = Enum.Parse<FormaPagamento>(_formaPagamentoStr);
                 _pedido.ValorPago      = _valorPago > 0 ? _valorPago : _linhas.Sum(l => l.Total);
             }
@@ -938,7 +918,6 @@ else
                 _pedido.Status = Enum.Parse<StatusPedido>(_statusStr);
                 await PedidoSvc.EditarAsync(_pedido, itens, servicos);
 
-                // Lançamento automático no caixa ao fechar pedido
                 if (fechando && _cfg.CaixaAutomatico)
                 {
                     var total      = _linhas.Sum(l => l.Total);
@@ -955,15 +934,13 @@ else
                         total, descricao, pedidoId: Id);
                 }
 
-                // Rebusca do banco para garantir estado sincronizado (inclui Status, ConcluidoEm, etc.)
                 var atualizado = await PedidoSvc.ObterPorIdAsync(Id!.Value, UserCtx.EmpresaId);
                 if (atualizado != null)
                 {
-                    _pedido             = atualizado;
-                    _statusStr          = atualizado.Status.ToString();
-                    _statusOriginal     = atualizado.Status.ToString();
+                    _pedido         = atualizado;
+                    _statusStr      = atualizado.Status.ToString();
+                    _statusOriginal = atualizado.Status.ToString();
                     _servicosConcluidos = atualizado.Servicos.Count(s => s.Concluido);
-                    _painelPagamento    = false;
                 }
 
                 _salvo = true;
@@ -975,7 +952,7 @@ else
         }
         catch (Exception ex)
         {
-            _erro = ex.Message;
+            _erro  = ex.InnerException?.Message ?? ex.Message;
             _salvo = false;
         }
         finally { _salvando = false; }
