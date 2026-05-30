@@ -135,7 +135,7 @@ else
 @code {
     [Parameter] public int? Id { get; set; }
 
-    private Movimentacao _mov = new() { AgendadoPara = DateTime.Now.AddHours(1) };
+    private Movimentacao _mov = new() { AgendadoPara = DateTime.UtcNow.AddHours(1) };
     private List<Embarcacao> _embarcacoes  = new();
     private List<Vaga>       _vagas        = new();
     private List<Usuario>    _colaboradores = new();
@@ -196,6 +196,7 @@ else
             _mov.VagaId        = vagId;
             _mov.EmpresaId     = UserCtx.EmpresaId;
             _mov.ResponsavelId = int.TryParse(_responsavelIdStr, out var rid) ? rid : null;
+            _mov.AgendadoPara  = DateTime.SpecifyKind(_mov.AgendadoPara, DateTimeKind.Utc);
 
             if (_isNovo) await MovService.CriarAsync(_mov);
             else
@@ -205,13 +206,13 @@ else
             }
             Nav.NavigateTo("/movimentacoes");
         }
-        catch (Exception ex) { _erro = ex.Message; }
+        catch (Exception ex) { _erro = ex.InnerException?.Message ?? ex.Message; }
         finally { _salvando = false; }
     }
 
     private async Task AvancarStatusAsync()
     {
         try { await MovService.AvancarStatusAsync(_mov.Id, UserCtx.EmpresaId); Nav.NavigateTo("/movimentacoes"); }
-        catch (Exception ex) { _erro = ex.Message; }
+        catch (Exception ex) { _erro = ex.InnerException?.Message ?? ex.Message; }
     }
 }

@@ -227,7 +227,7 @@ else
             _contrato = new Contrato
             {
                 EmpresaId = UserCtx.EmpresaId,
-                Inicio    = DateTime.Today,
+                Inicio    = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc),
                 Ativo     = true,
             };
         }
@@ -261,12 +261,16 @@ else
             _contrato.Tipo             = Enum.Parse<TipoContrato>(_tipoStr);
             _contrato.PlanoContratoId  = int.TryParse(_planoIdStr, out var plId) && plId > 0 ? plId : null;
 
+            _contrato.Inicio = DateTime.SpecifyKind(_contrato.Inicio, DateTimeKind.Utc);
+            if (_contrato.Fim.HasValue)
+                _contrato.Fim = DateTime.SpecifyKind(_contrato.Fim.Value, DateTimeKind.Utc);
+
             if (_isNovo) await ContratoService.CriarAsync(_contrato);
             else         await ContratoService.EditarAsync(_contrato);
 
             Nav.NavigateTo("/contratos");
         }
-        catch (Exception ex) { _erro = ex.Message; }
+        catch (Exception ex) { _erro = ex.InnerException?.Message ?? ex.Message; }
         finally { _salvando = false; }
     }
 }
