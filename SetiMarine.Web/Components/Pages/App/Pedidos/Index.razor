@@ -6,6 +6,8 @@
 @using SetiMarine.Domain.Enums
 @inject PedidoService PedidoSvc
 @inject UsuarioContextService UserCtx
+@inject NotaService NotaSvc
+@inject NavigationManager Nav
 
 <PageTitle>Pedidos — SetiMarine</PageTitle>
 
@@ -134,6 +136,11 @@ else
                                 }
                                 @if (p.Status == StatusPedido.Concluido)
                                 {
+                                    <button class="btn btn-ghost btn-sm" title="Gerar Nota Fiscal"
+                                            @onclick="() => GerarNota(p)"
+                                            style="color:var(--navy-700);">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                    </button>
                                     <button class="btn btn-ghost btn-sm" title="Reabrir pedido"
                                             @onclick="() => ReabrirPedido(p)"
                                             style="color:var(--s-mov);">
@@ -192,6 +199,20 @@ else
         {
             await PedidoSvc.ReabrirAsync(p.Id, UserCtx.EmpresaId);
             await CarregarAsync();
+        }
+        catch (Exception ex)
+        {
+            _aviso = ex.Message;
+        }
+    }
+
+    private async Task GerarNota(Pedido p)
+    {
+        _aviso = null;
+        try
+        {
+            await NotaSvc.GerarDePedidoAsync(p.Id, UserCtx.EmpresaId);
+            Nav.NavigateTo("/notas");
         }
         catch (Exception ex)
         {

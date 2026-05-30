@@ -151,4 +151,21 @@ public class SeederService(ISetiMarineDbContext ctx)
         await ctx.SaveChangesAsync();
         return servicos.Count;
     }
+
+    public async Task<int> SeedClientesAsync(int empresaId)
+    {
+        if (await ctx.Clientes.AnyAsync(c => c.EmpresaId == empresaId && c.Nome == "Consumidor"))
+            return 0;
+
+        ctx.Clientes.Add(new Cliente
+        {
+            EmpresaId = empresaId,
+            Nome      = "Consumidor",
+            Telefone  = "00000000000",
+            Ativo     = true,
+            CriadoEm  = DateTime.UtcNow,
+        });
+        await ctx.SaveChangesAsync();
+        return 1;
+    }
 }
