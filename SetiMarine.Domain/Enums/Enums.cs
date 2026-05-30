@@ -71,6 +71,22 @@ public enum TipoTransacao { Venda = 0, Aluguel = 1 }
 
 public enum StatusAluguel { Ativo = 0, Devolvido = 1, Atrasado = 2 }
 
+public enum TipoUsoEmbarcacao
+{
+    DescidaNaAgua = 0,
+    UsoPier       = 1,
+    Passeio       = 2,
+    Outro         = 99,
+}
+
+public enum StatusAgendamento
+{
+    Pendente   = 0,
+    Confirmado = 1,
+    Concluido  = 2,
+    Cancelado  = 3,
+}
+
 public enum TipoPedido    { Venda = 0, Emprestimo = 1, OrdemServico = 2 }
 public enum TipoItemPedido { Venda = 0, Emprestimo = 1 }
 public enum StatusPedido

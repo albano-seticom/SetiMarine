@@ -70,6 +70,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PlanoContrato> PlanosContrato { get; set; }
     public DbSet<PlanoContratoServico> PlanoContratoServicos { get; set; }
 
+    // ============================================================
+    // MARINA - Agenda de Uso
+    // ============================================================
+    public DbSet<AgendamentoUso> AgendamentosUso { get; set; }
+
     protected override void OnModelCreating(ModelBuilder mb)
     {
         base.OnModelCreating(mb);
@@ -116,6 +121,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         mb.Entity<PlanoContrato>().ToTable("cfg_planos_contrato");
         mb.Entity<PlanoContratoServico>().ToTable("cfg_plano_contrato_servicos");
+
+        mb.Entity<AgendamentoUso>().ToTable("mar_agendamentos_uso");
 
         mb.Entity<PedidoItem>().Ignore(i => i.ValorTotal);
 

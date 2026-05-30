@@ -33,6 +33,7 @@ namespace SetiMarine.Domain.Data
         DbSet<PedidoServico> PedidoServicos { get; set; }
         DbSet<PlanoContrato> PlanosContrato { get; set; }
         DbSet<PlanoContratoServico> PlanoContratoServicos { get; set; }
+        DbSet<AgendamentoUso> AgendamentosUso { get; set; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
         int SaveChanges();
     }

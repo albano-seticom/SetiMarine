@@ -1,0 +1,473 @@
+@page "/agenda"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject AgendamentoUsoService AgSvc
+@inject UsuarioContextService UserCtx
+@inject IJSRuntime JS
+
+<PageTitle>Agenda — SetiMarine</PageTitle>
+
+<style>
+.agenda-nav { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+.agenda-nav-period { font-size:.95rem; font-weight:600; color:var(--ink-700); flex:1; text-align:center; }
+.agenda-grid {
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:.5rem;
+    margin-top:.85rem;
+}
+.agenda-day {
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--paper);
+    display:flex;
+    flex-direction:column;
+    min-height:280px;
+}
+.agenda-day.today { border-color:var(--navy-700); }
+.agenda-day-hdr {
+    padding:.45rem .55rem .4rem;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.05rem;
+}
+.agenda-day-name { font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-400); font-weight:600; }
+.agenda-day-num  { font-size:1.15rem; font-weight:700; line-height:1.1; color:var(--ink-700); }
+.agenda-day.today .agenda-day-num {
+    background:var(--navy-700); color:#fff;
+    width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.88rem;
+}
+.agenda-day-body { flex:1; padding:.4rem; display:flex; flex-direction:column; gap:.35rem; }
+.agenda-card {
+    border-radius:4px;
+    padding:.4rem .55rem;
+    cursor:pointer;
+    transition:opacity .12s;
+    border-left:3px solid transparent;
+}
+.agenda-card:hover { opacity:.82; }
+.agenda-card-time  { font-size:.67rem; font-weight:700; letter-spacing:.06em; opacity:.8; }
+.agenda-card-title { font-size:.78rem; font-weight:600; line-height:1.25; margin-top:.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.agenda-card-sub   { font-size:.68rem; opacity:.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.agenda-card-prep  { font-size:.65rem; margin-top:.2rem; opacity:.65; font-style:italic; }
+.ac-pendente   { background:rgba(194,120,0,.09); border-left-color:#c27800; color:#7a4c00; }
+.ac-confirmado { background:rgba(0,53,128,.08);  border-left-color:var(--navy-700); color:var(--navy-700); }
+.ac-concluido  { background:rgba(30,120,60,.08); border-left-color:#1e783c; color:#1e5030; }
+.ac-cancelado  { background:rgba(0,0,0,.05);     border-left-color:var(--ink-300); color:var(--ink-400); text-decoration:line-through; }
+.agenda-type {
+    display:inline-block; font-size:.6rem; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; padding:.1rem .3rem; border-radius:2px;
+    background:rgba(0,0,0,.08); margin-right:.25rem;
+}
+.agenda-add { margin-top:auto; display:flex; justify-content:center; padding:.35rem; }
+.agenda-add button {
+    width:22px; height:22px; border-radius:50%;
+    border:1px dashed var(--ink-300); background:transparent;
+    color:var(--ink-300); font-size:1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:.12s; line-height:1;
+}
+.agenda-add button:hover { border-color:var(--navy-700); color:var(--navy-700); background:rgba(0,53,128,.05); }
+.ag-form-panel { background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:1.25rem 1.5rem; margin-bottom:1rem; }
+.ag-form-title { font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-400); font-weight:600; margin-bottom:1rem; }
+.ag-status-row { display:flex; gap:.4rem; flex-wrap:wrap; }
+.ag-status-btn {
+    padding:.28rem .75rem; border-radius:20px; border:1px solid var(--line);
+    font-size:.72rem; font-weight:600; cursor:pointer; transition:.12s;
+    background:transparent; color:var(--ink-500);
+}
+.ag-status-btn.sel-pendente   { background:rgba(194,120,0,.12); border-color:#c27800; color:#7a4c00; }
+.ag-status-btn.sel-confirmado { background:rgba(0,53,128,.1);   border-color:var(--navy-700); color:var(--navy-700); }
+.ag-status-btn.sel-concluido  { background:rgba(30,120,60,.1);  border-color:#1e783c; color:#1e5030; }
+.ag-status-btn.sel-cancelado  { background:rgba(0,0,0,.07);     border-color:var(--ink-400); color:var(--ink-500); }
+</style>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Operacional</span>
+        <h1>Agenda de Uso</h1>
+    </div>
+    <div class="page-head-actions">
+        <button class="btn btn-primary btn-sm" @onclick="() => AbrirForm(null, null)">+ Agendar</button>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    @* ── Formulário ── *@
+    @if (_formAberto)
+    {
+        <div class="ag-form-panel">
+            <div class="ag-form-title">@(_form.Id == 0 ? "Novo Agendamento" : "Editar Agendamento")</div>
+
+            <div class="form-row">
+                <div class="field" style="flex:2;">
+                    <label>Cliente</label>
+                    <select value="@_form.ClienteIdStr" @onchange="OnClienteChanged" style="height:34px;">
+                        <option value="">Sem cliente específico</option>
+                        @foreach (var c in _clientes)
+                        { <option value="@c.Id" selected="@(_form.ClienteIdStr == c.Id.ToString())">@c.Nome</option> }
+                    </select>
+                </div>
+                <div class="field" style="flex:2;">
+                    <label>Embarcação</label>
+                    <select value="@_form.EmbarcacaoIdStr"
+                            @onchange="@(ev => _form.EmbarcacaoIdStr = ev.Value?.ToString() ?? "")"
+                            style="height:34px;">
+                        <option value="">—</option>
+                        @foreach (var e in _embarcacoesFiltradas)
+                        { <option value="@e.Id" selected="@(_form.EmbarcacaoIdStr == e.Id.ToString())">@e.Nome</option> }
+                    </select>
+                </div>
+                <div class="field" style="flex:1.5;">
+                    <label>Tipo de Uso</label>
+                    <select value="@_form.TipoUsoStr"
+                            @onchange="@(ev => _form.TipoUsoStr = ev.Value?.ToString() ?? "DescidaNaAgua")"
+                            style="height:34px;">
+                        <option value="DescidaNaAgua">Descida na Água</option>
+                        <option value="UsoPier">Uso no Pier</option>
+                        <option value="Passeio">Passeio</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label>Data</label>
+                    <input type="date" @bind="_form.Data" @bind:format="yyyy-MM-dd" style="height:34px;" />
+                </div>
+                <div class="field">
+                    <label>Hora do Uso</label>
+                    <input type="time" value="@_form.HoraUso"
+                           @oninput="@(ev => { _form.HoraUso = ev.Value?.ToString() ?? "08:00"; })"
+                           style="height:34px;" />
+                </div>
+                <div class="field">
+                    <label>Antecedência (min)</label>
+                    <input type="number"
+                           value="@_form.MinutosAntecedencia"
+                           @oninput="@(ev => { if (int.TryParse(ev.Value?.ToString(), out var m)) _form.MinutosAntecedencia = m; })"
+                           min="0" max="480" style="height:34px;width:100px;" />
+                </div>
+                <div class="field">
+                    <label>Hora de Preparação</label>
+                    <input type="time" value="@_form.HoraPrep" disabled style="height:34px;opacity:.55;" />
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Observações</label>
+                <input @bind="_form.Observacoes" placeholder="Ex: cliente pede limpeza pós-uso, levar colete..." />
+            </div>
+
+            @if (_form.Id > 0)
+            {
+                <div class="field">
+                    <label>Status</label>
+                    <div class="ag-status-row">
+                        @foreach (var s in Enum.GetValues<StatusAgendamento>())
+                        {
+                            <button type="button"
+                                    class="ag-status-btn @(_form.StatusStr == s.ToString() ? "sel-" + s.ToString().ToLower() : "")"
+                                    @onclick="() => _form.StatusStr = s.ToString()">
+                                @LabelStatus(s)
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (_erroForm != null)
+            {
+                <div style="margin-top:.6rem;padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erroForm</div>
+            }
+
+            <div class="form-actions" style="margin-top:1rem;">
+                @if (_form.Id > 0)
+                {
+                    <button type="button" class="btn btn-danger btn-sm" style="margin-right:auto;"
+                            @onclick="ExcluirAsync">Excluir</button>
+                }
+                <button type="button" class="btn btn-ghost" @onclick="FecharForm">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="SalvarAsync" disabled="@_salvando">
+                    @(_salvando ? "Salvando..." : "Salvar")
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Navegação de semana ── *@
+    <div class="agenda-nav">
+        <button class="btn btn-ghost btn-sm" @onclick="SemanaAnterior">← Anterior</button>
+        <span class="agenda-nav-period">
+            Semana de @_seg.ToString("dd/MM") a @_seg.AddDays(6).ToString("dd/MM/yyyy")
+        </span>
+        <button class="btn btn-ghost btn-sm" @onclick="SemanaHoje">Hoje</button>
+        <button class="btn btn-ghost btn-sm" @onclick="ProximaSemana">Próxima →</button>
+    </div>
+
+    @* ── Grade semanal ── *@
+    <div class="agenda-grid">
+        @for (int d = 0; d < 7; d++)
+        {
+            var dia    = _seg.AddDays(d);
+            var isHoje = dia.Date == DateTime.Today;
+            var eventos = _agendamentos
+                .Where(a => a.DataHoraUso.ToLocalTime().Date == dia.Date)
+                .OrderBy(a => a.DataHoraUso)
+                .ToList();
+
+            <div class="agenda-day @(isHoje ? "today" : "")">
+                <div class="agenda-day-hdr">
+                    <span class="agenda-day-name">@DiaNome(dia)</span>
+                    <span class="agenda-day-num">@dia.Day</span>
+                </div>
+                <div class="agenda-day-body">
+                    @foreach (var ev in eventos)
+                    {
+                        var cls = "ac-" + ev.Status.ToString().ToLower();
+                        <div class="agenda-card @cls" @onclick="() => AbrirForm(ev, dia)">
+                            <div class="agenda-card-time">
+                                <span class="agenda-type">@LabelTipoShort(ev.TipoUso)</span>
+                                @ev.DataHoraUso.ToLocalTime().ToString("HH:mm")
+                            </div>
+                            <div class="agenda-card-title">@(ev.Cliente?.Nome ?? "—")</div>
+                            <div class="agenda-card-sub">@(ev.Embarcacao?.Nome ?? "—")</div>
+                            @if (ev.DataHoraPreparacao.HasValue)
+                            {
+                                <div class="agenda-card-prep">Prep: @ev.DataHoraPreparacao.Value.ToLocalTime().ToString("HH:mm")</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(ev.Observacoes))
+                            {
+                                <div class="agenda-card-sub" style="margin-top:.12rem;font-style:italic;">@ev.Observacoes</div>
+                            }
+                        </div>
+                    }
+                    <div class="agenda-add">
+                        <button type="button" title="Agendar neste dia" @onclick="() => AbrirForm(null, dia)">+</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @* ── Legenda ── *@
+    <div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:.68rem;color:var(--ink-400);letter-spacing:.1em;text-transform:uppercase;">Legenda:</span>
+        <span class="ac-pendente"   style="font-size:.72rem;font-weight:600;padding:.2rem .65rem;border-radius:4px;border-left:3px solid #c27800;">Pendente</span>
+        <span class="ac-confirmado" style="font-size:.72rem;font-weight:600;padding:.2rem .65rem;border-radius:4px;border-left:3px solid var(--navy-700);">Confirmado</span>
+        <span class="ac-concluido"  style="font-size:.72rem;font-weight:600;padding:.2rem .65rem;border-radius:4px;border-left:3px solid #1e783c;">Concluído</span>
+        <span class="ac-cancelado"  style="font-size:.72rem;font-weight:600;padding:.2rem .65rem;border-radius:4px;border-left:3px solid var(--ink-300);">Cancelado</span>
+    </div>
+
+    @if (_erro != null)
+    {
+        <div style="margin-top:1rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;display:flex;justify-content:space-between;align-items:center;">
+            @_erro
+            <button @onclick="() => _erro = null" style="background:none;border:none;cursor:pointer;color:inherit;font-size:1rem;line-height:1;padding:0 0 0 1rem;">×</button>
+        </div>
+    }
+}
+
+@code {
+    private List<AgendamentoUso> _agendamentos         = new();
+    private List<Cliente>        _clientes             = new();
+    private List<Embarcacao>     _embarcacoes          = new();
+    private List<Embarcacao>     _embarcacoesFiltradas = new();
+
+    private DateTime _seg;
+    private bool     _carregando = true;
+    private bool     _formAberto;
+    private bool     _salvando;
+    private string?  _erro;
+    private string?  _erroForm;
+    private FormModel _form = new();
+
+    private class FormModel
+    {
+        public int      Id                  { get; set; }
+        public string   ClienteIdStr        { get; set; } = "";
+        public string   EmbarcacaoIdStr     { get; set; } = "";
+        public string   TipoUsoStr          { get; set; } = "DescidaNaAgua";
+        public string   StatusStr           { get; set; } = "Pendente";
+        public DateTime Data                { get; set; } = DateTime.Today;
+        public string   HoraUso             { get; set; } = "08:00";
+        public int      MinutosAntecedencia { get; set; } = 60;
+        public string?  Observacoes         { get; set; }
+
+        public string HoraPrep
+        {
+            get
+            {
+                if (!TimeSpan.TryParse(HoraUso, out var h)) return "--:--";
+                var prep = h.TotalMinutes > MinutosAntecedencia
+                    ? h - TimeSpan.FromMinutes(MinutosAntecedencia)
+                    : TimeSpan.Zero;
+                return prep.ToString(@"hh\:mm");
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _seg         = InicioSemana(DateTime.Today);
+        _clientes    = await AgSvc.ListarClientesAsync(UserCtx.EmpresaId);
+        _embarcacoes = await AgSvc.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
+        _embarcacoesFiltradas = _embarcacoes;
+
+        await AgSvc.SeedDemoAsync(UserCtx.EmpresaId);
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        var ini = DateTime.SpecifyKind(_seg, DateTimeKind.Utc);
+        _agendamentos = await AgSvc.ListarPeriodoAsync(UserCtx.EmpresaId, ini, ini.AddDays(7));
+        _carregando   = false;
+    }
+
+    private void AbrirForm(AgendamentoUso? ag, DateTime? dia)
+    {
+        if (ag != null)
+        {
+            var local = ag.DataHoraUso.ToLocalTime();
+            _form = new FormModel
+            {
+                Id                  = ag.Id,
+                ClienteIdStr        = ag.ClienteId?.ToString()    ?? "",
+                EmbarcacaoIdStr     = ag.EmbarcacaoId?.ToString() ?? "",
+                TipoUsoStr          = ag.TipoUso.ToString(),
+                StatusStr           = ag.Status.ToString(),
+                Data                = local.Date,
+                HoraUso             = local.ToString("HH:mm"),
+                MinutosAntecedencia = ag.MinutosAntecedencia,
+                Observacoes         = ag.Observacoes,
+            };
+        }
+        else
+        {
+            _form = new FormModel { Data = dia?.Date ?? DateTime.Today };
+        }
+        FiltrarEmbarcacoes();
+        _erroForm   = null;
+        _formAberto = true;
+    }
+
+    private void FecharForm() { _formAberto = false; _erroForm = null; }
+
+    private void OnClienteChanged(ChangeEventArgs e)
+    {
+        _form.ClienteIdStr = e.Value?.ToString() ?? "";
+        FiltrarEmbarcacoes();
+    }
+
+    private void FiltrarEmbarcacoes()
+    {
+        _embarcacoesFiltradas = int.TryParse(_form.ClienteIdStr, out var cid) && cid > 0
+            ? _embarcacoes.Where(e => e.ClienteId == cid).ToList()
+            : _embarcacoes;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _erroForm = null;
+        if (_form.Data == default) { _erroForm = "Informe a data."; return; }
+
+        _salvando = true;
+        try
+        {
+            var horaSpan = TimeSpan.TryParse(_form.HoraUso, out var h) ? h : TimeSpan.Zero;
+            var local    = DateTime.SpecifyKind(_form.Data.Add(horaSpan), DateTimeKind.Local);
+            var utc      = local.ToUniversalTime();
+
+            var ag = new AgendamentoUso
+            {
+                Id                  = _form.Id,
+                EmpresaId           = UserCtx.EmpresaId,
+                ClienteId           = int.TryParse(_form.ClienteIdStr,    out var c) && c > 0 ? c : null,
+                EmbarcacaoId        = int.TryParse(_form.EmbarcacaoIdStr, out var e) && e > 0 ? e : null,
+                DataHoraUso         = utc,
+                MinutosAntecedencia = _form.MinutosAntecedencia,
+                TipoUso             = Enum.Parse<TipoUsoEmbarcacao>(_form.TipoUsoStr),
+                Status              = Enum.Parse<StatusAgendamento>(_form.StatusStr),
+                Observacoes         = string.IsNullOrWhiteSpace(_form.Observacoes) ? null : _form.Observacoes.Trim(),
+            };
+
+            if (_form.Id == 0) await AgSvc.CriarAsync(ag);
+            else               await AgSvc.EditarAsync(ag);
+
+            _formAberto = false;
+            await CarregarAsync();
+        }
+        catch (Exception ex) { _erroForm = ex.Message; }
+        finally { _salvando = false; }
+    }
+
+    private async Task ExcluirAsync()
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", "Excluir este agendamento?")) return;
+        try
+        {
+            await AgSvc.ExcluirAsync(_form.Id, UserCtx.EmpresaId);
+            _formAberto = false;
+            await CarregarAsync();
+        }
+        catch (Exception ex) { _erro = ex.Message; }
+    }
+
+    private void SemanaAnterior() { _seg = _seg.AddDays(-7); _ = CarregarAsync(); }
+    private void ProximaSemana()  { _seg = _seg.AddDays(7);  _ = CarregarAsync(); }
+    private void SemanaHoje()     { _seg = InicioSemana(DateTime.Today); _ = CarregarAsync(); }
+
+    private static DateTime InicioSemana(DateTime dt)
+    {
+        int diff = ((int)dt.DayOfWeek - 1 + 7) % 7;
+        return dt.AddDays(-diff).Date;
+    }
+
+    private static string DiaNome(DateTime dt) => dt.DayOfWeek switch
+    {
+        DayOfWeek.Monday    => "SEG",
+        DayOfWeek.Tuesday   => "TER",
+        DayOfWeek.Wednesday => "QUA",
+        DayOfWeek.Thursday  => "QUI",
+        DayOfWeek.Friday    => "SEX",
+        DayOfWeek.Saturday  => "SAB",
+        DayOfWeek.Sunday    => "DOM",
+        _                   => "",
+    };
+
+    private static string LabelTipoShort(TipoUsoEmbarcacao t) => t switch
+    {
+        TipoUsoEmbarcacao.DescidaNaAgua => "Descida",
+        TipoUsoEmbarcacao.UsoPier       => "Pier",
+        TipoUsoEmbarcacao.Passeio       => "Passeio",
+        _                               => "Outro",
+    };
+
+    private static string LabelStatus(StatusAgendamento s) => s switch
+    {
+        StatusAgendamento.Pendente   => "Pendente",
+        StatusAgendamento.Confirmado => "Confirmado",
+        StatusAgendamento.Concluido  => "Concluído",
+        StatusAgendamento.Cancelado  => "Cancelado",
+        _                            => s.ToString(),
+    };
+}
