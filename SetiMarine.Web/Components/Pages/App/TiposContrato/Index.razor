@@ -1,0 +1,348 @@
+@page "/tipos-contrato"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@inject PlanoContratoService PlanSvc
+@inject UsuarioContextService UserCtx
+@inject IJSRuntime JS
+
+<PageTitle>Tipos de Contrato — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Produtos e Serviços</span>
+        <h1>Tipos de Contrato</h1>
+    </div>
+    <div class="page-head-actions">
+        <button class="btn btn-primary btn-sm" @onclick="NovoPlano">+ Novo Tipo</button>
+    </div>
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else
+{
+    @* ── Formulário (novo / editar) ── *@
+    @if (_editando)
+    {
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+            <div style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);margin-bottom:1rem;font-weight:600;">
+                @(_form.Id == 0 ? "Novo Tipo de Contrato" : "Editar Tipo de Contrato")
+            </div>
+
+            <div class="form-row">
+                <div class="field" style="flex:2;">
+                    <label>Nome do Plano <span style="color:var(--s-maint);">*</span></label>
+                    <input @bind="_form.Nome" placeholder="Ex: Plano Básico, Plano Premium..." />
+                </div>
+                <div class="field" style="flex:1;min-width:140px;">
+                    <label>Mensalidade (R$)</label>
+                    <input type="number" @bind="_form.MensalidadeStr" min="0" step="0.01" placeholder="0,00" />
+                </div>
+                <div class="field" style="align-self:flex-end;">
+                    <label>&nbsp;</label>
+                    <label style="display:flex;align-items:center;gap:.5rem;height:36px;cursor:pointer;">
+                        <input type="checkbox" @bind="_form.Ativo" /> Ativo
+                    </label>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Descrição</label>
+                <input @bind="_form.Descricao" placeholder="Descrição resumida do plano..." />
+            </div>
+
+            @* Serviços incluídos no plano *@
+            <div style="margin-top:1rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;">
+                    <span style="font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);font-weight:600;">Serviços Incluídos</span>
+                    <button type="button" class="btn btn-ghost btn-sm" @onclick="AdicionarServico">+ Adicionar Serviço</button>
+                </div>
+
+                @if (_form.Servicos.Any())
+                {
+                    <div style="border:1px solid var(--line);border-radius:4px;overflow:hidden;">
+                        @foreach (var (sv, i) in _form.Servicos.Select((sv, i) => (sv, i)))
+                        {
+                            <div style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-bottom:1px solid var(--line);background:@(i%2==0?"var(--paper)":"rgba(0,0,0,.012)");">
+                                <div style="flex:2;">
+                                    <select value="@sv.TipoServicoConfigIdStr"
+                                            @onchange="@(ev => sv.TipoServicoConfigIdStr = ev.Value?.ToString() ?? "")"
+                                            style="height:30px;font-size:.82rem;width:100%;">
+                                        <option value="">Selecione o serviço...</option>
+                                        @foreach (var ts in _tiposServico)
+                                        { <option value="@ts.Id" selected="@(sv.TipoServicoConfigIdStr == ts.Id.ToString())">@ts.Nome</option> }
+                                    </select>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:.35rem;flex-shrink:0;">
+                                    <span style="font-size:.78rem;color:var(--ink-400);">Qtd:</span>
+                                    <input type="number" @bind="sv.Quantidade" min="1" style="width:56px;height:30px;text-align:center;font-size:.82rem;" />
+                                </div>
+                                <div style="flex:1.5;">
+                                    <input type="text" @bind="sv.Observacao" placeholder="Obs. (ex: por mês)"
+                                           style="height:30px;font-size:.81rem;width:100%;" />
+                                </div>
+                                <button type="button" @onclick="() => _form.Servicos.RemoveAt(i)"
+                                        style="background:none;border:none;cursor:pointer;color:var(--ink-300);padding:2px;display:flex;flex-shrink:0;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="padding:1.25rem;text-align:center;color:var(--ink-300);font-size:.8rem;border:1px dashed var(--line);border-radius:4px;">
+                        Nenhum serviço adicionado. Clique em "+ Adicionar Serviço" para incluir serviços neste plano.
+                    </div>
+                }
+            </div>
+
+            @if (_erroForm != null)
+            {
+                <div style="margin-top:.75rem;padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erroForm</div>
+            }
+
+            <div class="form-actions" style="margin-top:1rem;">
+                <button type="button" class="btn btn-ghost" @onclick="Cancelar">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="SalvarAsync" disabled="@_salvando">
+                    @(_salvando ? "Salvando..." : "Salvar")
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Lista ── *@
+    @if (!_planos.Any())
+    {
+        <div style="padding:4rem 2rem;text-align:center;color:var(--ink-300);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin:0 auto 1rem;display:block;opacity:.4;">
+                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+            </svg>
+            <p style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.25rem;">Nenhum tipo de contrato cadastrado</p>
+            <button class="btn btn-primary btn-sm" @onclick="NovoPlano">Criar Primeiro Tipo</button>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome do Plano</th>
+                        <th>Mensalidade</th>
+                        <th>Serviços Incluídos</th>
+                        <th>Status</th>
+                        <th style="width:80px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in _planos)
+                    {
+                        <tr>
+                            <td>
+                                <strong style="font-weight:500;">@p.Nome</strong>
+                                @if (!string.IsNullOrWhiteSpace(p.Descricao))
+                                { <div style="font-size:.75rem;color:var(--ink-400);margin-top:.1rem;">@p.Descricao</div> }
+                            </td>
+                            <td>
+                                @if (p.Mensalidade.HasValue)
+                                { <span style="font-weight:500;color:var(--navy-700);">@p.Mensalidade.Value.ToString("C2")</span> }
+                                else
+                                { <span style="color:var(--ink-300);">—</span> }
+                            </td>
+                            <td>
+                                @if (p.Servicos.Any())
+                                {
+                                    <div style="display:flex;flex-wrap:wrap;gap:.3rem;">
+                                        @foreach (var sv in p.Servicos)
+                                        {
+                                            <span class="badge badge-mov" style="font-size:.7rem;font-weight:500;">
+                                                @sv.Quantidade× @(sv.TipoServico?.Nome ?? "—")
+                                                @if (!string.IsNullOrWhiteSpace(sv.Observacao))
+                                                { <text> (@sv.Observacao)</text> }
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                { <span style="color:var(--ink-300);font-size:.78rem;">Sem serviços vinculados</span> }
+                            </td>
+                            <td>
+                                @if (p.Ativo)
+                                { <span class="badge badge-free">Ativo</span> }
+                                else
+                                { <span class="badge" style="background:var(--line);color:var(--ink-500);">Inativo</span> }
+                            </td>
+                            <td>
+                                <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                                    <button class="btn btn-ghost btn-sm" title="Editar" @onclick="() => EditarPlano(p)">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" title="Excluir" @onclick="() => ExcluirAsync(p)">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (_erro != null)
+    {
+        <div style="margin-top:1.5rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;display:flex;justify-content:space-between;align-items:center;">
+            @_erro
+            <button @onclick="() => _erro = null" style="background:none;border:none;cursor:pointer;color:inherit;font-size:1rem;line-height:1;padding:0 0 0 1rem;">x</button>
+        </div>
+    }
+}
+
+@code {
+    private List<PlanoContrato>      _planos       = new();
+    private List<TipoServicoConfig>  _tiposServico = new();
+    private bool   _carregando = true;
+    private bool   _editando;
+    private bool   _salvando;
+    private string? _erro;
+    private string? _erroForm;
+
+    private FormModel _form = new();
+
+    private class FormModel
+    {
+        public int     Id             { get; set; }
+        public string  Nome           { get; set; } = "";
+        public string? Descricao      { get; set; }
+        public string? MensalidadeStr { get; set; }
+        public bool    Ativo          { get; set; } = true;
+        public List<ServicoRow> Servicos { get; set; } = new();
+    }
+
+    private class ServicoRow
+    {
+        public string  TipoServicoConfigIdStr { get; set; } = "";
+        public int     Quantidade             { get; set; } = 1;
+        public string? Observacao             { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _tiposServico = await PlanSvc.ListarTiposServicoAsync(UserCtx.EmpresaId);
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        _planos     = await PlanSvc.ListarAsync(UserCtx.EmpresaId);
+        _carregando = false;
+    }
+
+    private void NovoPlano()
+    {
+        _form     = new FormModel();
+        _erroForm = null;
+        _editando = true;
+    }
+
+    private void EditarPlano(PlanoContrato p)
+    {
+        _form = new FormModel
+        {
+            Id             = p.Id,
+            Nome           = p.Nome,
+            Descricao      = p.Descricao,
+            MensalidadeStr = p.Mensalidade?.ToString("F2"),
+            Ativo          = p.Ativo,
+            Servicos       = p.Servicos.Select(s => new ServicoRow
+            {
+                TipoServicoConfigIdStr = s.TipoServicoConfigId.ToString(),
+                Quantidade             = s.Quantidade,
+                Observacao             = s.Observacao,
+            }).ToList(),
+        };
+        _erroForm = null;
+        _editando = true;
+    }
+
+    private void AdicionarServico() => _form.Servicos.Add(new ServicoRow());
+
+    private void Cancelar()
+    {
+        _editando = false;
+        _erroForm = null;
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_form.Nome))
+        { _erroForm = "Informe o nome do plano."; return; }
+
+        var invalido = _form.Servicos.FirstOrDefault(s => string.IsNullOrWhiteSpace(s.TipoServicoConfigIdStr));
+        if (invalido != null)
+        { _erroForm = "Selecione o tipo de serviço para todos os itens ou remova a linha em branco."; return; }
+
+        _salvando = true;
+        _erroForm = null;
+        try
+        {
+            decimal? mensalidade = null;
+            if (!string.IsNullOrWhiteSpace(_form.MensalidadeStr) &&
+                decimal.TryParse(_form.MensalidadeStr,
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var m))
+                mensalidade = m;
+
+            var plano = new PlanoContrato
+            {
+                Id          = _form.Id,
+                EmpresaId   = UserCtx.EmpresaId,
+                Nome        = _form.Nome.Trim(),
+                Descricao   = string.IsNullOrWhiteSpace(_form.Descricao) ? null : _form.Descricao.Trim(),
+                Mensalidade = mensalidade,
+                Ativo       = _form.Ativo,
+            };
+
+            var servicos = _form.Servicos
+                .Where(s => int.TryParse(s.TipoServicoConfigIdStr, out _))
+                .Select(s => new PlanoContratoServico
+                {
+                    TipoServicoConfigId = int.Parse(s.TipoServicoConfigIdStr),
+                    Quantidade          = s.Quantidade < 1 ? 1 : s.Quantidade,
+                    Observacao          = string.IsNullOrWhiteSpace(s.Observacao) ? null : s.Observacao.Trim(),
+                })
+                .ToList();
+
+            if (_form.Id == 0)
+                await PlanSvc.CriarAsync(plano, servicos);
+            else
+                await PlanSvc.EditarAsync(plano, servicos);
+
+            _editando = false;
+            await CarregarAsync();
+        }
+        catch (Exception ex) { _erroForm = ex.Message; }
+        finally { _salvando = false; }
+    }
+
+    private async Task ExcluirAsync(PlanoContrato p)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Excluir o plano '{p.Nome}'?")) return;
+        try
+        {
+            await PlanSvc.ExcluirAsync(p.Id, UserCtx.EmpresaId);
+            await CarregarAsync();
+        }
+        catch (InvalidOperationException ex) { _erro = ex.Message; }
+    }
+}

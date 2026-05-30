@@ -64,6 +64,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PedidoItem> PedidoItens { get; set; }
     public DbSet<PedidoServico> PedidoServicos { get; set; }
 
+    // ============================================================
+    // MARINA - Planos de Contrato
+    // ============================================================
+    public DbSet<PlanoContrato> PlanosContrato { get; set; }
+    public DbSet<PlanoContratoServico> PlanoContratoServicos { get; set; }
+
     protected override void OnModelCreating(ModelBuilder mb)
     {
         base.OnModelCreating(mb);
@@ -107,6 +113,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         mb.Entity<Pedido>().ToTable("mar_pedidos");
         mb.Entity<PedidoItem>().ToTable("mar_pedido_itens");
         mb.Entity<PedidoServico>().ToTable("mar_pedido_servicos");
+
+        mb.Entity<PlanoContrato>().ToTable("cfg_planos_contrato");
+        mb.Entity<PlanoContratoServico>().ToTable("cfg_plano_contrato_servicos");
 
         mb.Entity<PedidoItem>().Ignore(i => i.ValorTotal);
 
@@ -192,5 +201,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithOne(s => s.Pedido)
             .HasForeignKey(s => s.PedidoId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // ============================================================
+        // Relacionamentos - PlanoContrato
+        // ============================================================
+        mb.Entity<PlanoContrato>()
+            .HasMany(p => p.Servicos)
+            .WithOne(s => s.PlanoContrato)
+            .HasForeignKey(s => s.PlanoContratoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        mb.Entity<PlanoContratoServico>()
+            .HasOne(s => s.TipoServico)
+            .WithMany()
+            .HasForeignKey(s => s.TipoServicoConfigId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

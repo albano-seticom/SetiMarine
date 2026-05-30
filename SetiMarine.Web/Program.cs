@@ -49,6 +49,7 @@ builder.Services.AddScoped<ProdutoService>();
 builder.Services.AddScoped<PedidoService>();
 builder.Services.AddScoped<SeederService>();
 builder.Services.AddScoped<SuperAdminService>();
+builder.Services.AddScoped<PlanoContratoService>();
 
 var app = builder.Build();
 
