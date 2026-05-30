@@ -13,6 +13,8 @@ public class Contrato
     public int VagaId { get; set; }
     public Vaga? Vaga { get; set; }
     public TipoContrato Tipo { get; set; }
+    public int? PlanoContratoId { get; set; }
+    public PlanoContrato? PlanoContrato { get; set; }
     public decimal ValorMensal { get; set; }
     public DateTime Inicio { get; set; }
     public DateTime? Fim { get; set; }

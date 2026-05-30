@@ -218,6 +218,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(s => s.PlanoContratoId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        mb.Entity<Contrato>()
+            .HasOne(c => c.PlanoContrato)
+            .WithMany()
+            .HasForeignKey(c => c.PlanoContratoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         mb.Entity<PlanoContratoServico>()
             .HasOne(s => s.TipoServico)
             .WithMany()

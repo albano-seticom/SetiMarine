@@ -13,6 +13,7 @@ public class ContratoService(ISetiMarineDbContext ctx)
             .Include(c => c.Cliente)
             .Include(c => c.Embarcacao)
             .Include(c => c.Vaga)
+            .Include(c => c.PlanoContrato)
             .Where(c => c.EmpresaId == empresaId);
 
         if (apenasAtivos.HasValue)
@@ -26,7 +27,15 @@ public class ContratoService(ISetiMarineDbContext ctx)
             .Include(c => c.Cliente)
             .Include(c => c.Embarcacao)
             .Include(c => c.Vaga)
+            .Include(c => c.PlanoContrato).ThenInclude(p => p!.Servicos).ThenInclude(s => s.TipoServico)
             .FirstOrDefaultAsync(c => c.Id == id && c.EmpresaId == empresaId);
+
+    public async Task<List<PlanoContrato>> ListarPlanosAsync(int empresaId)
+        => await ctx.PlanosContrato
+            .Include(p => p.Servicos).ThenInclude(s => s.TipoServico)
+            .Where(p => p.EmpresaId == empresaId && p.Ativo)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
 
     public async Task CriarAsync(Contrato contrato)
     {

@@ -6,6 +6,7 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject ContratoService ContratoService
+@inject PlanoContratoService PlanoSvc
 @inject NavigationManager Nav
 @inject UsuarioContextService UserCtx
 
@@ -27,7 +28,7 @@
 }
 else
 {
-    <EditForm Model="_contrato" OnValidSubmit="SalvarAsync" style="max-width:680px;">
+    <EditForm Model="_contrato" OnValidSubmit="SalvarAsync" style="max-width:720px;">
         <DataAnnotationsValidator />
 
         <div class="form-section">
@@ -73,12 +74,71 @@ else
         </div>
 
         <div class="form-section">
+            <div class="form-section-title">Plano de Serviços</div>
+
+            <div class="field">
+                <label>Plano de Contrato</label>
+                <select value="@_planoIdStr" @onchange="OnPlanoChanged" style="height:36px;">
+                    <option value="">Sem plano vinculado</option>
+                    @foreach (var p in _planos)
+                    {
+                        <option value="@p.Id">
+                            @p.Nome @(p.Mensalidade.HasValue ? $"— {p.Mensalidade.Value.ToString("C2")}/mês" : "— sem mensalidade fixa")
+                        </option>
+                    }
+                </select>
+            </div>
+
+            @if (_planoSelecionado != null)
+            {
+                <div style="padding:.75rem 1rem;background:rgba(0,53,128,.04);border:1px solid rgba(0,53,128,.12);border-radius:4px;margin-top:.25rem;">
+                    @if (!string.IsNullOrWhiteSpace(_planoSelecionado.Descricao))
+                    {
+                        <div style="font-size:.8rem;color:var(--ink-600);margin-bottom:.5rem;">@_planoSelecionado.Descricao</div>
+                    }
+                    @if (_planoSelecionado.Servicos.Any())
+                    {
+                        <div style="font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.4rem;font-weight:600;">Serviços incluídos</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:.35rem;">
+                            @foreach (var sv in _planoSelecionado.Servicos)
+                            {
+                                <span class="badge badge-mov" style="font-size:.72rem;">
+                                    @sv.Quantidade× @(sv.TipoServico?.Nome ?? "—")
+                                    @if (!string.IsNullOrWhiteSpace(sv.Observacao))
+                                    { <text> (@sv.Observacao)</text> }
+                                </span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <span style="font-size:.78rem;color:var(--ink-400);">Nenhum serviço vinculado a este plano.</span>
+                    }
+                </div>
+            }
+
+            @if (!_planos.Any())
+            {
+                <div style="font-size:.78rem;color:var(--ink-400);margin-top:.35rem;">
+                    Nenhum plano cadastrado.
+                    <a href="/tipos-contrato" style="color:var(--navy-700);">Cadastrar em Tipos de Contrato →</a>
+                </div>
+            }
+        </div>
+
+        <div class="form-section">
             <div class="form-section-title">Valores e Vigência</div>
 
             <div class="form-row">
                 <div class="field">
                     <label>Valor Mensal (R$)</label>
                     <InputNumber @bind-Value="_contrato.ValorMensal" />
+                    @if (_planoSelecionado?.Mensalidade.HasValue == true)
+                    {
+                        <span style="font-size:.72rem;color:var(--ink-400);margin-top:.2rem;display:block;">
+                            Preenchido automaticamente pelo plano — pode ajustar.
+                        </span>
+                    }
                 </div>
             </div>
 
@@ -120,15 +180,18 @@ else
 @code {
     [Parameter] public int? Id { get; set; }
 
-    private Contrato _contrato = new();
-    private List<Cliente>    _clientes    = new();
-    private List<Embarcacao> _embarcacoes = new();
-    private List<Vaga>       _vagas       = new();
+    private Contrato          _contrato = new();
+    private List<Cliente>     _clientes    = new();
+    private List<Embarcacao>  _embarcacoes = new();
+    private List<Vaga>        _vagas       = new();
+    private List<PlanoContrato> _planos    = new();
 
     private string _clienteIdStr    = "";
     private string _embarcacaoIdStr = "";
     private string _vagaIdStr       = "";
     private string _tipoStr         = "Mensalista";
+    private string _planoIdStr      = "";
+    private PlanoContrato? _planoSelecionado;
 
     private bool _isNovo    => Id is null;
     private bool _carregando = true;
@@ -138,9 +201,14 @@ else
     protected override async Task OnInitializedAsync()
     {
         await UserCtx.InitAsync();
+
+        // Seed demo planos se ainda não existir nenhum
+        await PlanoSvc.SeedDemoAsync(UserCtx.EmpresaId);
+
         _clientes    = await ContratoService.ListarClientesAsync(UserCtx.EmpresaId);
         _embarcacoes = await ContratoService.ListarEmbarcacoesAsync(UserCtx.EmpresaId);
         _vagas       = await ContratoService.ListarVagasAsync(UserCtx.EmpresaId);
+        _planos      = await ContratoService.ListarPlanosAsync(UserCtx.EmpresaId);
 
         if (!_isNovo)
         {
@@ -151,6 +219,8 @@ else
             _embarcacaoIdStr = _contrato.EmbarcacaoId.ToString();
             _vagaIdStr       = _contrato.VagaId.ToString();
             _tipoStr         = _contrato.Tipo.ToString();
+            _planoIdStr      = _contrato.PlanoContratoId?.ToString() ?? "";
+            _planoSelecionado = _contrato.PlanoContrato;
         }
         else
         {
@@ -158,10 +228,21 @@ else
             {
                 EmpresaId = UserCtx.EmpresaId,
                 Inicio    = DateTime.Today,
-                Ativo     = true
+                Ativo     = true,
             };
         }
         _carregando = false;
+    }
+
+    private void OnPlanoChanged(ChangeEventArgs e)
+    {
+        _planoIdStr = e.Value?.ToString() ?? "";
+        _planoSelecionado = int.TryParse(_planoIdStr, out var pid) && pid > 0
+            ? _planos.FirstOrDefault(p => p.Id == pid)
+            : null;
+
+        if (_planoSelecionado?.Mensalidade.HasValue == true)
+            _contrato.ValorMensal = _planoSelecionado.Mensalidade!.Value;
     }
 
     private async Task SalvarAsync()
@@ -170,14 +251,15 @@ else
         _erro     = null;
         try
         {
-            if (!int.TryParse(_clienteIdStr,    out var cliId) || cliId == 0) { _erro = "Selecione o cliente.";     _salvando = false; return; }
+            if (!int.TryParse(_clienteIdStr,    out var cliId) || cliId == 0) { _erro = "Selecione o cliente.";    _salvando = false; return; }
             if (!int.TryParse(_embarcacaoIdStr, out var embId) || embId == 0) { _erro = "Selecione a embarcação."; _salvando = false; return; }
             if (!int.TryParse(_vagaIdStr,       out var vagId) || vagId == 0) { _erro = "Selecione a vaga.";       _salvando = false; return; }
 
-            _contrato.ClienteId    = cliId;
-            _contrato.EmbarcacaoId = embId;
-            _contrato.VagaId       = vagId;
-            _contrato.Tipo         = Enum.Parse<TipoContrato>(_tipoStr);
+            _contrato.ClienteId        = cliId;
+            _contrato.EmbarcacaoId     = embId;
+            _contrato.VagaId           = vagId;
+            _contrato.Tipo             = Enum.Parse<TipoContrato>(_tipoStr);
+            _contrato.PlanoContratoId  = int.TryParse(_planoIdStr, out var plId) && plId > 0 ? plId : null;
 
             if (_isNovo) await ContratoService.CriarAsync(_contrato);
             else         await ContratoService.EditarAsync(_contrato);

@@ -12,7 +12,7 @@
 
 <div class="page-head">
     <div>
-        <span class="eyebrow">Cadastros</span>
+        <span class="eyebrow">Marina</span>
         <h1>Contratos</h1>
     </div>
     <div class="page-head-actions">
@@ -51,10 +51,9 @@ else
                     <th>Cliente</th>
                     <th>Embarcação</th>
                     <th>Vaga</th>
-                    <th>Tipo</th>
+                    <th>Plano</th>
                     <th>Valor / mês</th>
                     <th>Início</th>
-                    <th>Fim</th>
                     <th>Status</th>
                     <th style="width:100px"></th>
                 </tr>
@@ -63,19 +62,29 @@ else
                 @foreach (var c in _contratos)
                 {
                     <tr>
-                        <td><strong style="font-weight:500;">@(c.Cliente?.Nome ?? "—")</strong></td>
+                        <td>
+                            <strong style="font-weight:500;">@(c.Cliente?.Nome ?? "—")</strong>
+                        </td>
                         <td style="color:var(--ink-500);">@(c.Embarcacao?.Nome ?? "—")</td>
                         <td style="color:var(--ink-500);font-family:monospace;font-size:.8rem;">@(c.Vaga?.Codigo ?? "—")</td>
                         <td>
-                            <span class="badge" style="background:var(--line);color:var(--ink-600);">
-                                @(c.Tipo == TipoContrato.Mensalista ? "Mensalista"
-                                : c.Tipo == TipoContrato.Diaria     ? "Diária"
-                                : "Visitante")
-                            </span>
+                            @if (c.PlanoContrato != null)
+                            {
+                                <span class="badge badge-mov" style="font-size:.72rem;">@c.PlanoContrato.Nome</span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background:var(--line);color:var(--ink-500);font-size:.72rem;">
+                                    @(c.Tipo == TipoContrato.Mensalista ? "Mensalista"
+                                    : c.Tipo == TipoContrato.Diaria     ? "Diária"
+                                    : "Visitante")
+                                </span>
+                            }
                         </td>
-                        <td style="font-weight:500;">@c.ValorMensal.ToString("C2")</td>
+                        <td style="font-weight:500;">
+                            @(c.ValorMensal > 0 ? c.ValorMensal.ToString("C2") : "—")
+                        </td>
                         <td style="color:var(--ink-500);font-size:.8rem;">@c.Inicio.ToString("dd/MM/yyyy")</td>
-                        <td style="color:var(--ink-500);font-size:.8rem;">@(c.Fim.HasValue ? c.Fim.Value.ToString("dd/MM/yyyy") : "—")</td>
                         <td>
                             @if (c.Ativo)
                             { <span class="badge badge-free">Ativo</span> }
