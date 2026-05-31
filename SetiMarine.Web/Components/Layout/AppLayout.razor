@@ -424,12 +424,16 @@
     {
         if (firstRender)
         {
-            var saved = await JS.InvokeAsync<string>("eval", "localStorage.getItem('sb-col')");
-            if (saved == "1" && !_collapsed)
+            try
             {
-                _collapsed = true;
-                StateHasChanged();
+                var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "sb-col");
+                if (saved == "1" && !_collapsed)
+                {
+                    _collapsed = true;
+                    StateHasChanged();
+                }
             }
+            catch { }
         }
     }
 
@@ -466,14 +470,15 @@
     {
         if (!_openGroups.Remove(grupo))
             _openGroups.Add(grupo);
+        StateHasChanged();
     }
 
     private async Task ToggleCollapse()
     {
         _collapsed = !_collapsed;
         StateHasChanged();
-        await JS.InvokeVoidAsync("eval",
-            $"localStorage.setItem('sb-col','{(_collapsed ? "1" : "0")}')");
+        try { await JS.InvokeVoidAsync("localStorage.setItem", "sb-col", _collapsed ? "1" : "0"); }
+        catch { }
     }
 
     private void ToggleTheme() => _light = !_light;
