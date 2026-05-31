@@ -384,6 +384,71 @@ svg {
     scrollbar-color: rgba(250,245,232,.12) transparent;
 }
 
+/* Grupos colapsáveis */
+.sb-group-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem .3rem;
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--f-sans);
+    font-size: .55rem;
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: rgba(250,245,232,.28);
+    font-weight: 500;
+    white-space: nowrap;
+    text-align: left;
+    transition: color .18s;
+}
+
+    .sb-group-hd:hover {
+        color: rgba(250,245,232,.5);
+    }
+
+    .sb-group-hd.gold {
+        color: #c89d5c;
+    }
+
+    .sb-group-hd.gold:hover {
+        color: #d9b070;
+    }
+
+.sb-arrow {
+    color: rgba(250,245,232,.2);
+    transition: transform .2s ease;
+    flex-shrink: 0;
+}
+
+    .sb-group.open .sb-arrow {
+        transform: rotate(90deg);
+    }
+
+    .sb-group-hd.gold .sb-arrow {
+        color: rgba(200,157,92,.4);
+    }
+
+.sb-group-body {
+    display: none;
+    flex-direction: column;
+}
+
+    .sb-group.open .sb-group-body {
+        display: flex;
+    }
+
+    /* Quando a sidebar está colapsada, mostra todos os ícones independente do grupo */
+    .shell.collapsed .sb-group-hd {
+        display: none;
+    }
+
+    .shell.collapsed .sb-group-body {
+        display: flex;
+    }
+
 .sb-label {
     padding: 1.1rem 1.5rem .35rem;
     font-size: .55rem;

@@ -35,223 +35,280 @@
 
     <nav class="sb-nav">
 
-      <span class="sb-label">Principal</span>
+      <!-- Principal -->
+      <div class="sb-group @(_openGroups.Contains("Principal") ? "open" : "")">
+        <button class="sb-group-hd" @onclick='() => ToggleGroup("Principal")'>
+          Principal
+          <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="sb-group-body">
 
-      <NavLink href="/dashboard" Match="NavLinkMatch.All">
-        <span class="ic">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-          </svg>
-        </span>
-        <span>Dashboard</span>
-      </NavLink>
+          <NavLink href="/dashboard" Match="NavLinkMatch.All" title="Dashboard">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+              </svg>
+            </span>
+            <span>Dashboard</span>
+          </NavLink>
 
-      <NavLink href="/vagas/layout">
-        <span class="ic">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
-          </svg>
-        </span>
-        <span>Mapa da Marina</span>
-      </NavLink>
+          <NavLink href="/vagas/layout" title="Mapa da Marina">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+              </svg>
+            </span>
+            <span>Mapa da Marina</span>
+          </NavLink>
 
-      <NavLink href="/pedidos">
-        <span class="ic">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-            <line x1="9" y1="12" x2="15" y2="12"/>
-            <line x1="9" y1="16" x2="13" y2="16"/>
-          </svg>
-        </span>
-        <span>Pedidos</span>
-      </NavLink>
+          <NavLink href="/pedidos" title="Pedidos">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                <line x1="9" y1="12" x2="15" y2="12"/>
+                <line x1="9" y1="16" x2="13" y2="16"/>
+              </svg>
+            </span>
+            <span>Pedidos</span>
+          </NavLink>
 
-      <NavLink href="/tarefas">
-        <span class="ic">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-          </svg>
-        </span>
-        <span>Tarefas</span>
-      </NavLink>
+          <NavLink href="/tarefas" title="Tarefas">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </span>
+            <span>Tarefas</span>
+          </NavLink>
 
-      <NavLink href="/movimentacoes">
-        <span class="ic">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </span>
-        <span>Movimentações</span>
-      </NavLink>
+          <NavLink href="/movimentacoes" title="Movimentacoes">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+            <span>Movimentações</span>
+          </NavLink>
 
-      <NavLink href="/agenda">
-        <span class="ic">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-        </span>
-        <span>Agenda</span>
-      </NavLink>
+          <NavLink href="/agenda" title="Agenda">
+            <span class="ic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+            <span>Agenda</span>
+          </NavLink>
+
+        </div>
+      </div>
 
       <AuthorizeView Roles="Admin,SuperAdmin">
         <Authorized>
-          <span class="sb-label">Marina</span>
 
-          <NavLink href="/secoes">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="11" width="18" height="5" rx="1"/><rect x="3" y="19" width="18" height="2" rx="1"/>
-              </svg>
-            </span>
-            <span>Seções</span>
-          </NavLink>
+          <!-- Marina -->
+          <div class="sb-group @(_openGroups.Contains("Marina") ? "open" : "")">
+            <button class="sb-group-hd" @onclick='() => ToggleGroup("Marina")'>
+              Marina
+              <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="sb-group-body">
 
-          <NavLink href="/corredores">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-              </svg>
-            </span>
-            <span>Corredores</span>
-          </NavLink>
+              <NavLink href="/secoes" title="Secoes">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="11" width="18" height="5" rx="1"/><rect x="3" y="19" width="18" height="2" rx="1"/>
+                  </svg>
+                </span>
+                <span>Seções</span>
+              </NavLink>
 
-          <NavLink href="/vagas">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
-              </svg>
-            </span>
-            <span>Vagas</span>
-          </NavLink>
+              <NavLink href="/corredores" title="Corredores">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                </span>
+                <span>Corredores</span>
+              </NavLink>
 
-          <NavLink href="/embarcacoes">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20l5-5 5 5"/><path d="M12 15V3"/>
-              </svg>
-            </span>
-            <span>Embarcações</span>
-          </NavLink>
+              <NavLink href="/vagas" title="Vagas">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+                  </svg>
+                </span>
+                <span>Vagas</span>
+              </NavLink>
 
-          <NavLink href="/clientes">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-            </span>
-            <span>Clientes</span>
-          </NavLink>
+              <NavLink href="/embarcacoes" title="Embarcacoes">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2"/><path d="M7 20l5-5 5 5"/><path d="M12 15V3"/>
+                  </svg>
+                </span>
+                <span>Embarcações</span>
+              </NavLink>
 
-          <NavLink href="/contratos">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-              </svg>
-            </span>
-            <span>Contratos</span>
-          </NavLink>
+              <NavLink href="/clientes" title="Clientes">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </span>
+                <span>Clientes</span>
+              </NavLink>
 
-          <span class="sb-label">Produtos e Serviços</span>
+              <NavLink href="/contratos" title="Contratos">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                </span>
+                <span>Contratos</span>
+              </NavLink>
 
-          <NavLink href="/produtos">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-              </svg>
-            </span>
-            <span>Produtos</span>
-          </NavLink>
+            </div>
+          </div>
 
-          <NavLink href="/servicos">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-              </svg>
-            </span>
-            <span>Serviços</span>
-          </NavLink>
+          <!-- Produtos e Servicos -->
+          <div class="sb-group @(_openGroups.Contains("Produtos") ? "open" : "")">
+            <button class="sb-group-hd" @onclick='() => ToggleGroup("Produtos")'>
+              Produtos e Serviços
+              <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="sb-group-body">
 
-          <NavLink href="/tipos-contrato">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
-              </svg>
-            </span>
-            <span>Tipos de Contrato</span>
-          </NavLink>
+              <NavLink href="/produtos" title="Produtos">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                  </svg>
+                </span>
+                <span>Produtos</span>
+              </NavLink>
 
-          <NavLink href="/estoque">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </span>
-            <span>Estoque</span>
-          </NavLink>
+              <NavLink href="/servicos" title="Servicos">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                  </svg>
+                </span>
+                <span>Serviços</span>
+              </NavLink>
 
-          <span class="sb-label">Financeiro</span>
+              <NavLink href="/tipos-contrato" title="Tipos de Contrato">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+                  </svg>
+                </span>
+                <span>Tipos de Contrato</span>
+              </NavLink>
 
-          <NavLink href="/notas">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-              </svg>
-            </span>
-            <span>Notas Fiscais</span>
-          </NavLink>
+              <NavLink href="/estoque" title="Estoque">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </span>
+                <span>Estoque</span>
+              </NavLink>
 
-          <NavLink href="/caixa">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-              </svg>
-            </span>
-            <span>Caixa</span>
-          </NavLink>
+            </div>
+          </div>
 
-          <span class="sb-label">Gestão</span>
+          <!-- Financeiro -->
+          <div class="sb-group @(_openGroups.Contains("Financeiro") ? "open" : "")">
+            <button class="sb-group-hd" @onclick='() => ToggleGroup("Financeiro")'>
+              Financeiro
+              <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="sb-group-body">
 
-          <NavLink href="/usuarios">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </span>
-            <span>Usuários</span>
-          </NavLink>
+              <NavLink href="/notas" title="Notas Fiscais">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                </span>
+                <span>Notas Fiscais</span>
+              </NavLink>
 
-          <NavLink href="/relatorios">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-              </svg>
-            </span>
-            <span>Relatórios</span>
-          </NavLink>
+              <NavLink href="/caixa" title="Caixa">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                  </svg>
+                </span>
+                <span>Caixa</span>
+              </NavLink>
 
-          <NavLink href="/minha-empresa">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </span>
-            <span>Minha Empresa</span>
-          </NavLink>
+            </div>
+          </div>
+
+          <!-- Gestao -->
+          <div class="sb-group @(_openGroups.Contains("Gestao") ? "open" : "")">
+            <button class="sb-group-hd" @onclick='() => ToggleGroup("Gestao")'>
+              Gestão
+              <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="sb-group-body">
+
+              <NavLink href="/usuarios" title="Usuarios">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </span>
+                <span>Usuários</span>
+              </NavLink>
+
+              <NavLink href="/relatorios" title="Relatorios">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                </span>
+                <span>Relatórios</span>
+              </NavLink>
+
+              <NavLink href="/minha-empresa" title="Minha Empresa">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </span>
+                <span>Minha Empresa</span>
+              </NavLink>
+
+            </div>
+          </div>
+
         </Authorized>
       </AuthorizeView>
 
       <AuthorizeView Roles="SuperAdmin">
         <Authorized>
-          <span class="sb-label gold">Super Admin</span>
-          <NavLink href="/superadmin" class="sa" Match="NavLinkMatch.All">
-            <span class="ic">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-            </span>
-            <span>Painel SETICOM</span>
-          </NavLink>
+
+          <!-- Super Admin -->
+          <div class="sb-group @(_openGroups.Contains("SuperAdmin") ? "open" : "")">
+            <button class="sb-group-hd gold" @onclick='() => ToggleGroup("SuperAdmin")'>
+              Super Admin
+              <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="sb-group-body">
+              <NavLink href="/superadmin" class="sa" Match="NavLinkMatch.All" title="Painel SETICOM">
+                <span class="ic">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </span>
+                <span>Painel SETICOM</span>
+              </NavLink>
+            </div>
+          </div>
+
         </Authorized>
       </AuthorizeView>
 
@@ -342,6 +399,7 @@
     private bool _collapsed;
     private bool _light;
     private string _nome = "", _role = "", _ini = "U", _empresa = "";
+    private HashSet<string> _openGroups = new();
 
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
@@ -357,6 +415,9 @@
         _role    = u.IsInRole("SuperAdmin") ? "Super Admin"
                  : u.IsInRole("Admin")      ? "Administrador"
                  : "Operacional";
+
+        AbrirGrupoAtivo();
+        Nav.LocationChanged += OnLocationChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -372,6 +433,41 @@
         }
     }
 
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        AbrirGrupoAtivo();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void AbrirGrupoAtivo()
+    {
+        var rel = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0];
+        string? grupo =
+            (rel is "" or "dashboard" || rel.StartsWith("vagas/layout") ||
+             rel.StartsWith("pedidos") || rel.StartsWith("tarefas") ||
+             rel.StartsWith("movimentacoes") || rel.StartsWith("agenda")) ? "Principal"
+          : (rel.StartsWith("secoes") || rel.StartsWith("corredores") ||
+             rel.StartsWith("vagas") || rel.StartsWith("embarcacoes") ||
+             rel.StartsWith("clientes") || rel.StartsWith("contratos")) ? "Marina"
+          : (rel.StartsWith("produtos") || rel.StartsWith("servicos") ||
+             rel.StartsWith("tipos-contrato") || rel.StartsWith("estoque")) ? "Produtos"
+          : (rel.StartsWith("notas") || rel.StartsWith("caixa")) ? "Financeiro"
+          : (rel.StartsWith("usuarios") || rel.StartsWith("relatorios") ||
+             rel.StartsWith("minha-empresa") || rel.StartsWith("assinatura") ||
+             rel.StartsWith("perfil")) ? "Gestao"
+          : rel.StartsWith("superadmin") ? "SuperAdmin"
+          : null;
+
+        if (grupo != null)
+            _openGroups.Add(grupo);
+    }
+
+    private void ToggleGroup(string grupo)
+    {
+        if (!_openGroups.Remove(grupo))
+            _openGroups.Add(grupo);
+    }
+
     private async Task ToggleCollapse()
     {
         _collapsed = !_collapsed;
@@ -382,5 +478,8 @@
 
     private void ToggleTheme() => _light = !_light;
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
 }
