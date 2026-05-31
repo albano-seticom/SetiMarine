@@ -65,7 +65,6 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
 .step.active .step-num { background: rgba(0,212,255,.15); }
 .step-line { flex: 1; height: 1px; background: var(--border); margin: 0 6px; }
 .step-label { display: none; }
-@@media(min-width:480px) { .step-label { display: inline; } }
 
 .cad-title { font-size: 1.3rem; font-weight: 500; margin-bottom: .3rem; }
 .cad-sub   { color: var(--muted); font-size: .88rem; margin-bottom: 1.8rem; }
@@ -154,23 +153,22 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
   <div class="cad-card">
 
     <a href="/" class="cad-logo">
-      <div class="logo-icon">⚓</div>
-      <span class="logo-text">Seti<b>Marine</b></span>
+      <img src="/images/marina/Logo_Setimarine.png" alt="SetiMarine" style="height:72px;width:auto;" />
     </a>
 
     <!-- Indicador de etapas -->
     <div class="steps">
-      <div class="step @(Etapa >= 1 ? (Etapa > 1 ? "done" : "active") : "")">
-        <div class="step-num">@(Etapa > 1 ? "✓" : "1")</div>
+      <div class="step @(_etapa >= 1 ? (_etapa > 1 ? "done" : "active") : "")">
+        <div class="step-num">@(_etapa > 1 ? "✓" : "1")</div>
         <span class="step-label">Empresa</span>
       </div>
       <div class="step-line"></div>
-      <div class="step @(Etapa >= 2 ? (Etapa > 2 ? "done" : "active") : "")">
-        <div class="step-num">@(Etapa > 2 ? "✓" : "2")</div>
+      <div class="step @(_etapa >= 2 ? (_etapa > 2 ? "done" : "active") : "")">
+        <div class="step-num">@(_etapa > 2 ? "✓" : "2")</div>
         <span class="step-label">Administrador</span>
       </div>
       <div class="step-line"></div>
-      <div class="step @(Etapa >= 3 ? "active" : "")">
+      <div class="step @(_etapa >= 3 ? "active" : "")">
         <div class="step-num">3</div>
         <span class="step-label">Confirmação</span>
       </div>
@@ -182,32 +180,32 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
     }
 
     <!-- ===== ETAPA 1: Dados da Empresa ===== -->
-    @if (Etapa == 1)
+    @if (_etapa == 1)
     {
       <div class="cad-title">Dados da empresa</div>
       <div class="cad-sub">Informe os dados da sua marina.</div>
 
       <div class="field">
         <label>Razão Social *</label>
-        <input @bind="RazaoSocial" placeholder="Marina Exemplo Ltda" />
+        <input @bind="_razaoSocial" placeholder="Marina Exemplo Ltda" />
       </div>
       <div class="field">
         <label>Nome Fantasia</label>
-        <input @bind="NomeFantasia" placeholder="Marina Exemplo" />
+        <input @bind="_nomeFantasia" placeholder="Marina Exemplo" />
       </div>
       <div class="row2">
         <div class="field">
           <label>CNPJ *</label>
-          <input @bind="Cnpj" placeholder="00.000.000/0001-00" />
+          <input @bind="_cnpj" placeholder="00.000.000/0001-00" />
         </div>
         <div class="field">
-          <label>Telefone</label>
-          <input @bind="Telefone" placeholder="(00) 00000-0000" />
+          <label>_telefone</label>
+          <input @bind="_telefone" placeholder="(00) 00000-0000" />
         </div>
       </div>
       <div class="field">
         <label>E-mail da empresa *</label>
-        <input type="email" @bind="EmailEmpresa" placeholder="contato@suamarina.com.br" />
+        <input type="email" @bind="_emailEmpresa" placeholder="contato@suamarina.com.br" />
       </div>
 
       <div class="field">
@@ -221,8 +219,8 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
           <div class="planos-grid">
             @foreach (var p in _planos)
             {
-              <div class="plano-opt @(PlanoSelecionadoId == p.Id ? "selected" : "") @(p.Destaque ? "featured" : "")"
-                   @onclick="() => PlanoSelecionadoId = p.Id">
+              <div class="plano-opt @(_planoId == p.Id ? "selected" : "") @(p.Destaque ? "featured" : "")"
+                   @onclick="() => _planoId = p.Id">
                 <div>
                   <div class="plano-nome">@p.Nome</div>
                 </div>
@@ -245,48 +243,48 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
     }
 
     <!-- ===== ETAPA 2: Dados do Admin ===== -->
-    @if (Etapa == 2)
+    @if (_etapa == 2)
     {
       <div class="cad-title">Dados do administrador</div>
       <div class="cad-sub">Você será o primeiro administrador da conta.</div>
 
       <div class="field">
         <label>Nome completo *</label>
-        <input @bind="NomeAdmin" placeholder="João da Silva" />
+        <input @bind="_nomeAdmin" placeholder="João da Silva" />
       </div>
       <div class="field">
         <label>E-mail de acesso *</label>
-        <input type="email" @bind="EmailAdmin" placeholder="joao@suamarina.com.br" />
+        <input type="email" @bind="_emailAdmin" placeholder="joao@suamarina.com.br" />
       </div>
       <div class="field">
         <label>Senha *</label>
-        <input type="password" @bind="Senha" placeholder="Mínimo 6 caracteres" />
+        <input type="password" @bind="_senha" placeholder="Mínimo 6 caracteres" />
       </div>
       <div class="field">
         <label>Confirmar senha *</label>
-        <input type="password" @bind="ConfirmarSenha" placeholder="Repita a senha" />
+        <input type="password" @bind="_confirmarSenha" placeholder="Repita a senha" />
       </div>
 
       <div class="btns">
         <button class="btn-primary" @onclick="AvancarEtapa2">Próximo — Confirmação →</button>
-        <button class="btn-ghost" @onclick="() => { Etapa = 1; _erro = null; }">← Voltar</button>
+        <button class="btn-ghost" @onclick="() => { _etapa = 1; _erro = null; }">← Voltar</button>
       </div>
     }
 
     <!-- ===== ETAPA 3: Confirmação ===== -->
-    @if (Etapa == 3 && !_sucesso)
+    @if (_etapa == 3 && !_sucesso)
     {
       <div class="cad-title">Confirme os dados</div>
       <div class="cad-sub">Revise tudo antes de criar a conta.</div>
 
       <div style="margin-bottom:1.5rem;">
-        <div class="confirm-row"><span class="confirm-label">Razão Social</span><span class="confirm-val">@RazaoSocial</span></div>
-        <div class="confirm-row"><span class="confirm-label">Nome Fantasia</span><span class="confirm-val">@(NomeFantasia ?? "—")</span></div>
-        <div class="confirm-row"><span class="confirm-label">CNPJ</span><span class="confirm-val">@Cnpj</span></div>
-        <div class="confirm-row"><span class="confirm-label">E-mail empresa</span><span class="confirm-val">@EmailEmpresa</span></div>
-        <div class="confirm-row"><span class="confirm-label">Plano</span><span class="confirm-val">@(_planos.FirstOrDefault(p => p.Id == PlanoSelecionadoId)?.Nome ?? "—")</span></div>
-        <div class="confirm-row"><span class="confirm-label">Administrador</span><span class="confirm-val">@NomeAdmin</span></div>
-        <div class="confirm-row"><span class="confirm-label">E-mail de acesso</span><span class="confirm-val">@EmailAdmin</span></div>
+        <div class="confirm-row"><span class="confirm-label">Razão Social</span><span class="confirm-val">@_razaoSocial</span></div>
+        <div class="confirm-row"><span class="confirm-label">Nome Fantasia</span><span class="confirm-val">@(_nomeFantasia ?? "—")</span></div>
+        <div class="confirm-row"><span class="confirm-label">CNPJ</span><span class="confirm-val">@_cnpj</span></div>
+        <div class="confirm-row"><span class="confirm-label">E-mail empresa</span><span class="confirm-val">@_emailEmpresa</span></div>
+        <div class="confirm-row"><span class="confirm-label">Plano</span><span class="confirm-val">@(_planos.FirstOrDefault(p => p.Id == _planoId)?.Nome ?? "—")</span></div>
+        <div class="confirm-row"><span class="confirm-label">Administrador</span><span class="confirm-val">@_nomeAdmin</span></div>
+        <div class="confirm-row"><span class="confirm-label">E-mail de acesso</span><span class="confirm-val">@_emailAdmin</span></div>
       </div>
 
       <div class="btns">
@@ -296,7 +294,7 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
           else
           { <span>✓ Criar conta agora</span> }
         </button>
-        <button class="btn-ghost" @onclick="() => { Etapa = 2; _erro = null; }">← Voltar</button>
+        <button class="btn-ghost" @onclick="() => { _etapa = 2; _erro = null; }">← Voltar</button>
       </div>
     }
 
@@ -324,7 +322,7 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
 </div>
 
 @code {
-    private int Etapa = 1;
+    private int _etapa = 1;
     private bool _sucesso;
     private bool _carregando;
     private bool _carregandoPlanos = true;
@@ -332,18 +330,18 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
     private List<Plano> _planos = new();
 
     // Etapa 1
-    private string RazaoSocial = "";
-    private string? NomeFantasia;
-    private string Cnpj = "";
-    private string? Telefone;
-    private string EmailEmpresa = "";
-    private int? PlanoSelecionadoId;
+    private string _razaoSocial = "";
+    private string? _nomeFantasia;
+    private string _cnpj = "";
+    private string? _telefone;
+    private string _emailEmpresa = "";
+    private int? _planoId;
 
     // Etapa 2
-    private string NomeAdmin = "";
-    private string EmailAdmin = "";
-    private string Senha = "";
-    private string ConfirmarSenha = "";
+    private string _nomeAdmin = "";
+    private string _emailAdmin = "";
+    private string _senha = "";
+    private string _confirmarSenha = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -354,7 +352,7 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
             .ToListAsync();
 
         if (_planos.Any())
-            PlanoSelecionadoId = _planos.FirstOrDefault(p => p.Destaque)?.Id ?? _planos.First().Id;
+            _planoId = _planos.FirstOrDefault(p => p.Destaque)?.Id ?? _planos.First().Id;
 
         _carregandoPlanos = false;
     }
@@ -362,21 +360,21 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
     private void AvancarEtapa1()
     {
         _erro = null;
-        if (string.IsNullOrWhiteSpace(RazaoSocial)) { _erro = "Razão Social é obrigatória."; return; }
-        if (string.IsNullOrWhiteSpace(Cnpj))        { _erro = "CNPJ é obrigatório."; return; }
-        if (string.IsNullOrWhiteSpace(EmailEmpresa)){ _erro = "E-mail da empresa é obrigatório."; return; }
-        if (PlanoSelecionadoId == null)              { _erro = "Selecione um plano."; return; }
-        Etapa = 2;
+        if (string.IsNullOrWhiteSpace(_razaoSocial)) { _erro = "Razão Social é obrigatória."; return; }
+        if (string.IsNullOrWhiteSpace(_cnpj))        { _erro = "CNPJ é obrigatório."; return; }
+        if (string.IsNullOrWhiteSpace(_emailEmpresa)){ _erro = "E-mail da empresa é obrigatório."; return; }
+        if (_planoId == null)              { _erro = "Selecione um plano."; return; }
+        _etapa = 2;
     }
 
     private void AvancarEtapa2()
     {
         _erro = null;
-        if (string.IsNullOrWhiteSpace(NomeAdmin))  { _erro = "Nome do administrador é obrigatório."; return; }
-        if (string.IsNullOrWhiteSpace(EmailAdmin)) { _erro = "E-mail de acesso é obrigatório."; return; }
-        if (Senha.Length < 6)                      { _erro = "A senha deve ter pelo menos 6 caracteres."; return; }
-        if (Senha != ConfirmarSenha)               { _erro = "As senhas não conferem."; return; }
-        Etapa = 3;
+        if (string.IsNullOrWhiteSpace(_nomeAdmin))  { _erro = "Nome do administrador é obrigatório."; return; }
+        if (string.IsNullOrWhiteSpace(_emailAdmin)) { _erro = "E-mail de acesso é obrigatório."; return; }
+        if (_senha.Length < 6)                      { _erro = "A senha deve ter pelo menos 6 caracteres."; return; }
+        if (_senha != _confirmarSenha)               { _erro = "As senhas não conferem."; return; }
+        _etapa = 3;
     }
 
     private async Task FinalizarAsync()
@@ -385,9 +383,9 @@ body { background: var(--ocean); color: var(--text); font-family: 'Outfit', sans
         _erro = null;
 
         var (sucesso, erro) = await AuthService.CadastrarEmpresaAsync(
-            RazaoSocial, NomeFantasia, Cnpj, Telefone, EmailEmpresa,
-            PlanoSelecionadoId!.Value,
-            NomeAdmin, EmailAdmin, Senha);
+            _razaoSocial, _nomeFantasia, _cnpj, _telefone, _emailEmpresa,
+            _planoId!.Value,
+            _nomeAdmin, _emailAdmin, _senha);
 
         if (!sucesso)
         {

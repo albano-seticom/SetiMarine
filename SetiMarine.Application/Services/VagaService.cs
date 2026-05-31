@@ -1,24 +1,15 @@
 using Microsoft.EntityFrameworkCore;
-using SetiMarine.Domain.Entities;
 using SetiMarine.Domain.Data;
-using Microsoft.EntityFrameworkCore;
 using SetiMarine.Domain.Entities;
 using SetiMarine.Domain.Enums;
 
 namespace SetiMarine.Application.Services;
 
-public class VagaService
+public class VagaService(ISetiMarineDbContext ctx)
 {
-    private readonly ISetiMarineDbContext _context;
-
-    public VagaService(ISetiMarineDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<List<Vaga>> ListarPorEmpresaAsync(int empresaId, int? corredorId = null, StatusVaga? status = null)
     {
-        var query = _context.Vagas
+        var query = ctx.Vagas
             .Where(v => v.EmpresaId == empresaId && v.Ativa)
             .Include(v => v.Corredor).ThenInclude(c => c!.Secao)
             .Include(v => v.EmbarcacoesNaVaga.Where(e => e.Ativa))
@@ -35,32 +26,30 @@ public class VagaService
     }
 
     public async Task<Vaga?> ObterPorIdAsync(int id, int empresaId)
-    {
-        return await _context.Vagas
+        => await ctx.Vagas
             .Include(v => v.Corredor).ThenInclude(c => c!.Secao)
             .Include(v => v.EmbarcacoesNaVaga.Where(e => e.Ativa))
                 .ThenInclude(ve => ve.Embarcacao)
             .FirstOrDefaultAsync(v => v.Id == id && v.EmpresaId == empresaId);
-    }
 
     public async Task<Vaga> CriarAsync(Vaga vaga)
     {
         vaga.Status = StatusVaga.Livre;
-        _context.Vagas.Add(vaga);
-        await _context.SaveChangesAsync();
+        ctx.Vagas.Add(vaga);
+        await ctx.SaveChangesAsync();
         return vaga;
     }
 
     public async Task<Vaga> EditarAsync(Vaga vaga)
     {
-        _context.Vagas.Update(vaga);
-        await _context.SaveChangesAsync();
+        ctx.Vagas.Update(vaga);
+        await ctx.SaveChangesAsync();
         return vaga;
     }
 
     public async Task ExcluirAsync(int id, int empresaId)
     {
-        var vaga = await _context.Vagas
+        var vaga = await ctx.Vagas
             .Include(v => v.EmbarcacoesNaVaga)
             .FirstOrDefaultAsync(v => v.Id == id && v.EmpresaId == empresaId)
             ?? throw new InvalidOperationException("Vaga não encontrada.");
@@ -69,36 +58,28 @@ public class VagaService
             throw new InvalidOperationException("Não é possível excluir uma vaga com embarcações alocadas.");
 
         vaga.Ativa = false;
-        await _context.SaveChangesAsync();
+        await ctx.SaveChangesAsync();
     }
 
-    /// <summary>
-    /// Atualiza posição X/Y da vaga — chamado pelo drag-and-drop do layout.
-    /// </summary>
     public async Task AtualizarPosicaoAsync(int vagaId, int empresaId, decimal posX, decimal posY)
     {
-        var vaga = await _context.Vagas
+        var vaga = await ctx.Vagas
             .FirstOrDefaultAsync(v => v.Id == vagaId && v.EmpresaId == empresaId)
             ?? throw new InvalidOperationException("Vaga não encontrada.");
 
         vaga.PosX = posX;
         vaga.PosY = posY;
-        await _context.SaveChangesAsync();
+        await ctx.SaveChangesAsync();
     }
 
-    /// <summary>
-    /// Atualiza largura/altura da vaga — chamado pelo resize do layout.
-    /// </summary>
     public async Task AtualizarDimensoesAsync(int vagaId, int empresaId, decimal largura, decimal altura)
     {
-        var vaga = await _context.Vagas
+        var vaga = await ctx.Vagas
             .FirstOrDefaultAsync(v => v.Id == vagaId && v.EmpresaId == empresaId)
             ?? throw new InvalidOperationException("Vaga não encontrada.");
 
         vaga.Largura = largura;
         vaga.Altura = altura;
-        await _context.SaveChangesAsync();
+        await ctx.SaveChangesAsync();
     }
 }
-
-

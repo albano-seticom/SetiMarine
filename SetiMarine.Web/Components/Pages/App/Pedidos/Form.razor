@@ -780,21 +780,6 @@ else
         });
     }
 
-    private static string LabelTipo(TipoPedido t) => t switch
-    {
-        TipoPedido.Venda        => "Venda",
-        TipoPedido.Emprestimo   => "Empréstimo",
-        TipoPedido.OrdemServico => "Ordem de Serviço",
-        _                       => t.ToString()
-    };
-
-    private static string BadgeTipo(TipoPedido t) => t switch
-    {
-        TipoPedido.OrdemServico => "badge-mov",
-        TipoPedido.Venda        => "badge-free",
-        TipoPedido.Emprestimo   => "badge-occ",
-        _                       => "badge"
-    };
 
     private static void SetPreco(LinhaRow ln, string? val)
     {

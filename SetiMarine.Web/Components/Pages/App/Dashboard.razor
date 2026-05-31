@@ -100,7 +100,7 @@
         </div>
     </div>
 
-    @if (_load)
+    @if (_loading)
     {
         <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
             <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
@@ -296,7 +296,7 @@
 </div>
 
 @code {
-    private bool _load = true;
+    private bool _loading = true;
     private int  _livres, _ocupadas, _emMov, _manut;
     private int  _pedidosAbertos, _pedidosAndamento;
     private List<Movimentacao>  _passeio         = new();
@@ -332,6 +332,6 @@
             .Take(6)
             .ToList();
 
-        _load = false;
+        _loading = false;
     }
 }

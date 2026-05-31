@@ -24,7 +24,7 @@
 <div style="margin-bottom:1.5rem;max-width:340px;">
     <div class="field" style="margin:0;">
         <input type="search" placeholder="Buscar por nome, CPF/CNPJ ou e-mail..."
-               @bind="_busca" @bind:event="oninput" @bind:after="BuscarAsync"
+               @bind="_busca" @bind:event="oninput" @bind:after="CarregarAsync"
                style="width:100%;height:34px;" />
     </div>
 </div>
@@ -135,9 +135,6 @@ else
         _clientes = await ClienteService.ListarPorEmpresaAsync(UserCtx.EmpresaId, _busca);
         _carregando = false;
     }
-
-    private async Task BuscarAsync()
-        => await CarregarAsync();
 
     private async Task ConfirmarExclusao(Cliente cliente)
     {

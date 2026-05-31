@@ -6,24 +6,9 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject SuperAdminService SuperSvc
-@inject NavigationManager Nav
 
 <PageTitle>SuperAdmin — SetiMarine</PageTitle>
 
-<style>
-    .sa-tabs { display:flex; gap:0; border-bottom:2px solid var(--line); margin-bottom:1.75rem; }
-    .sa-tab  { padding:.55rem 1.25rem; font-size:.83rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
-               color:var(--ink-400); cursor:pointer; border:none; background:none; border-bottom:2px solid transparent;
-               margin-bottom:-2px; transition:color .15s,border-color .15s; }
-    .sa-tab.active { color:var(--navy-700); border-bottom-color:var(--navy-700); }
-    .sa-stat-grid  { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2rem; }
-    .sa-stat-card  { padding:1.1rem 1.25rem; border:1px solid var(--line); border-radius:4px; }
-    .sa-stat-val   { font-size:2rem; font-weight:700; line-height:1; color:var(--navy-700); }
-    .sa-stat-lbl   { font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-400); margin-top:.3rem; }
-    .sa-form-wrap  { background:var(--cream-50,#f9f8f6); border:1px solid var(--line); border-radius:4px;
-                     padding:1.25rem 1.5rem 1rem; margin-bottom:1.5rem; }
-    .sa-form-wrap .form-row { grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); }
-</style>
 
 @* ── Header ──────────────────────────────────────────────── *@
 <div class="page-head" style="margin-bottom:1.25rem;">
@@ -708,16 +693,16 @@
     {
         _erroEmpresa = null;
         if (string.IsNullOrWhiteSpace(_modelEmpresa.RazaoSocial))
-        { _erroEmpresa = "Razao Social e obrigatoria."; return; }
+        { _erroEmpresa = "Razão Social é obrigatória."; return; }
         if (string.IsNullOrWhiteSpace(_modelEmpresa.Cnpj))
-        { _erroEmpresa = "CNPJ e obrigatorio."; return; }
+        { _erroEmpresa = "CNPJ é obrigatório."; return; }
 
         try
         {
             if (_modelEmpresa.Id == 0 && _criarAdmin)
             {
                 if (string.IsNullOrWhiteSpace(_adminNome) || string.IsNullOrWhiteSpace(_adminEmail) || string.IsNullOrWhiteSpace(_adminSenha))
-                { _erroEmpresa = "Preencha todos os campos do admin."; return; }
+                { _erroEmpresa = "Preencha todos os campos do administrador."; return; }
                 await SuperSvc.CriarEmpresaComAdminAsync(_modelEmpresa, _adminNome, _adminEmail, _adminSenha);
             }
             else
@@ -780,7 +765,7 @@
     {
         _erroPlano = null;
         if (string.IsNullOrWhiteSpace(_modelPlano.Nome))
-        { _erroPlano = "Nome e obrigatorio."; return; }
+        { _erroPlano = "Nome é obrigatório."; return; }
 
         try
         {
@@ -834,11 +819,11 @@
     {
         _erroUsuario = null;
         if (string.IsNullOrWhiteSpace(_modelUsuario.Nome))
-        { _erroUsuario = "Nome e obrigatorio."; return; }
+        { _erroUsuario = "Nome é obrigatório."; return; }
         if (string.IsNullOrWhiteSpace(_modelUsuario.Email))
-        { _erroUsuario = "E-mail e obrigatorio."; return; }
+        { _erroUsuario = "E-mail é obrigatório."; return; }
         if (_modelUsuario.Id == 0 && string.IsNullOrWhiteSpace(_novaSenhaUsr))
-        { _erroUsuario = "Senha e obrigatoria para novo usuario."; return; }
+        { _erroUsuario = "Senha é obrigatória para novo usuário."; return; }
 
         try
         {

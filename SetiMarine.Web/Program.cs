@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using SetiMarine.Infrastructure.Data;
-using SetiMarine.Infrastructure.Services;
 using SetiMarine.Application.Services;
 using SetiMarine.Domain.Data;
 using SetiMarine.Web.Components;

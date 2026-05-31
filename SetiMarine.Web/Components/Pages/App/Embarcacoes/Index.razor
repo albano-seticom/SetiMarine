@@ -5,8 +5,6 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject EmbarcacaoService EmbarcacaoService
-@inject NavigationManager Nav
-@inject IJSRuntime JS
 @inject UsuarioContextService UserCtx
 
 <PageTitle>Embarcações — SetiMarine</PageTitle>
@@ -25,7 +23,7 @@
 <div style="margin-bottom:1.5rem;max-width:340px;">
     <div class="field" style="margin:0;">
         <input type="search" placeholder="Buscar por nome, registro ou modelo..."
-               @bind="_busca" @bind:event="oninput" @bind:after="BuscarAsync"
+               @bind="_busca" @bind:event="oninput" @bind:after="CarregarAsync"
                style="width:100%;height:34px;" />
     </div>
 </div>
@@ -119,9 +117,6 @@ else
         _embarcacoes = await EmbarcacaoService.ListarPorEmpresaAsync(UserCtx.EmpresaId, _busca);
         _carregando = false;
     }
-
-    private async Task BuscarAsync()
-        => await CarregarAsync();
 
     private static string TipoLabel(TipoEmbarcacao tipo) => tipo switch
     {

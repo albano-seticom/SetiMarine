@@ -88,7 +88,7 @@ else
                 <div class="form-row">
                     <div class="field">
                         <label>Data e hora agendada *</label>
-                        <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="_mov.AgendadoPara" />
+                        <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="_mov!.AgendadoPara" />
                     </div>
                     <div class="field">
                         <label>Responsável</label>
@@ -199,11 +199,7 @@ else
             _mov.AgendadoPara  = DateTime.SpecifyKind(_mov.AgendadoPara, DateTimeKind.Utc);
 
             if (_isNovo) await MovService.CriarAsync(_mov);
-            else
-            {
-                _mov.ResponsavelId = int.TryParse(_responsavelIdStr, out rid) ? rid : null;
-                /* só salva campos editáveis — status é avançado pelo botão separado */
-            }
+            else         await MovService.AtualizarAsync(_mov);
             Nav.NavigateTo("/movimentacoes");
         }
         catch (Exception ex) { _erro = ex.InnerException?.Message ?? ex.Message; }

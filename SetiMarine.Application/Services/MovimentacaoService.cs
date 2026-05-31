@@ -39,6 +39,12 @@ public class MovimentacaoService(ISetiMarineDbContext ctx)
         await RegistrarHistoricoAsync(mov, StatusMovimentacao.Agendado);
     }
 
+    public async Task AtualizarAsync(Movimentacao mov)
+    {
+        ctx.Movimentacoes.Update(mov);
+        await ctx.SaveChangesAsync();
+    }
+
     public async Task AvancarStatusAsync(int id, int empresaId, string? obs = null)
     {
         var mov = await ctx.Movimentacoes

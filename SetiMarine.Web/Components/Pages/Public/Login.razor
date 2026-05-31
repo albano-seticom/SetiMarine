@@ -35,10 +35,7 @@ h2 { font-size:1.4rem; font-weight:500; margin-bottom:.4rem; }
 .sub { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
 
 .field { margin-bottom:1.2rem; }
-.field-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.45rem; }
 .field label { font-size:.82rem; font-weight:500; color:var(--muted); letter-spacing:.03em; text-transform:uppercase; }
-.forgot { font-size:.8rem; color:var(--muted); text-decoration:none; }
-.forgot:hover { color:var(--cyan); }
 
 .field input {
   width:100%; padding:.7rem 1rem;
@@ -88,10 +85,7 @@ h2 { font-size:1.4rem; font-weight:500; margin-bottom:.4rem; }
       </div>
 
       <div class="field">
-        <div class="field-header">
-          <label>Senha</label>
-          <a href="#" class="forgot">Esqueci minha senha</a>
-        </div>
+        <label>Senha</label>
         <input type="password" name="senha" placeholder="••••••••" autocomplete="current-password" required />
       </div>
 
@@ -100,7 +94,7 @@ h2 { font-size:1.4rem; font-weight:500; margin-bottom:.4rem; }
 
     <hr class="divider" />
     <div class="footer">
-      Não tem uma conta? <a href="/cadastro" onclick="irPara('/cadastro')">Criar conta grátis</a>
+      Não tem uma conta? <a href="/cadastro">Criar conta grátis</a>
     </div>
 
   </div>

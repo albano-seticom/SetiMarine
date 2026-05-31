@@ -8,31 +8,22 @@ using System.Text;
 
 namespace SetiMarine.Application.Services;
 
-public class AuthService
+public class AuthService(ISetiMarineDbContext ctx, SeederService seeder)
 {
-    private readonly ISetiMarineDbContext _context;
-    private readonly SeederService _seeder;
-
-    public AuthService(ISetiMarineDbContext context, SeederService seeder)
-    {
-        _context = context;
-        _seeder  = seeder;
-    }
-
     public async Task<(ClaimsPrincipal? principal, string? erro)> LoginAsync(string email, string senha)
     {
-        var usuario = await _context.Usuarios
+        var usuario = await ctx.Usuarios
             .Include(u => u.Empresa)
             .FirstOrDefaultAsync(u => u.Email == email.ToLower().Trim());
 
         if (usuario == null)
-            return (null, "E-mail ou senha invalidos.");
+            return (null, "E-mail ou senha inválidos.");
 
         if (!usuario.Ativo)
-            return (null, "Usuario inativo. Entre em contato com o administrador.");
+            return (null, "Usuário inativo. Entre em contato com o administrador.");
 
         if (!VerificarSenha(senha, usuario.SenhaHash))
-            return (null, "E-mail ou senha invalidos.");
+            return (null, "E-mail ou senha inválidos.");
 
         var sessao = new SessaoAtiva
         {
@@ -42,8 +33,8 @@ public class AuthService
             ExpiraEm   = DateTime.UtcNow.AddHours(12),
             Token      = Guid.NewGuid().ToString()
         };
-        _context.SessoesAtivas.Add(sessao);
-        await _context.SaveChangesAsync();
+        ctx.SessoesAtivas.Add(sessao);
+        await ctx.SaveChangesAsync();
 
         var claims = new List<Claim>
         {
@@ -66,25 +57,25 @@ public class AuthService
         int planoId,
         string nomeAdmin, string emailAdmin, string senhaAdmin)
     {
-        if (await _context.Empresas.AnyAsync(e => e.Cnpj == cnpj))
-            return (false, "Ja existe uma empresa cadastrada com este CNPJ.");
+        if (await ctx.Empresas.AnyAsync(e => e.Cnpj == cnpj))
+            return (false, "Já existe uma empresa cadastrada com este CNPJ.");
 
-        if (await _context.Usuarios.AnyAsync(u => u.Email == emailAdmin.ToLower().Trim()))
-            return (false, "Ja existe um usuario com este e-mail.");
+        if (await ctx.Usuarios.AnyAsync(u => u.Email == emailAdmin.ToLower().Trim()))
+            return (false, "Já existe um usuário com este e-mail.");
 
         var empresa = new Empresa
         {
             RazaoSocial  = razaoSocial.Trim(),
-            NomeFantasia = nomeFantasia?.Trim(),
+            NomeFantasia = nomeFantasia?.Trim() ?? string.Empty,
             Cnpj         = cnpj.Trim(),
-            Telefone     = telefone?.Trim(),
+            Telefone     = telefone?.Trim() ?? string.Empty,
             Email        = emailEmpresa.ToLower().Trim(),
             PlanoId      = planoId,
             Ativa        = true,
             CriadaEm     = DateTime.UtcNow
         };
-        _context.Empresas.Add(empresa);
-        await _context.SaveChangesAsync();
+        ctx.Empresas.Add(empresa);
+        await ctx.SaveChangesAsync();
 
         var admin = new Usuario
         {
@@ -96,10 +87,10 @@ public class AuthService
             Ativo      = true,
             CriadoEm   = DateTime.UtcNow
         };
-        _context.Usuarios.Add(admin);
-        await _context.SaveChangesAsync();
+        ctx.Usuarios.Add(admin);
+        await ctx.SaveChangesAsync();
 
-        await _seeder.SeedEmpresaAsync(empresa.Id);
+        await seeder.SeedEmpresaAsync(empresa.Id);
 
         return (true, null);
     }

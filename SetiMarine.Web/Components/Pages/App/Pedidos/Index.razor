@@ -238,14 +238,6 @@ else
         _                        => s.ToString()
     };
 
-    private static string BadgeTipo(TipoPedido t) => t switch
-    {
-        TipoPedido.OrdemServico => "badge-mov",
-        TipoPedido.Venda        => "badge-free",
-        TipoPedido.Emprestimo   => "badge-occ",
-        _                       => ""
-    };
-
     private static string BadgeStatus(StatusPedido s) => s switch
     {
         StatusPedido.Aberto      => "badge-free",

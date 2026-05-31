@@ -100,3 +100,15 @@ body {
   display: none; left: 0; padding: .6rem 1.25rem .7rem; position: fixed; width: 100%; z-index: 1000;
 }
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .75rem; top: .5rem; }
+
+/* ── PUBLIC PAGES — responsive ──────────────────────────── */
+/* Cadastro: exibe rótulo das etapas em telas médias */
+@media (min-width: 480px) { .step-label { display: inline; } }
+
+/* Home: ajustes de layout em mobile */
+@media (max-width: 640px) {
+  .nav-logo-img { height: 58px; }
+  .stats-bar    { gap: 1.5rem; }
+  .stat-num     { font-size: 1.4rem; }
+  .slip         { width: 42px; height: 42px; }
+}
