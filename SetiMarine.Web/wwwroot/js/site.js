@@ -2,6 +2,10 @@ function toggleSidebar() {
     document.querySelector('.shell')?.classList.toggle('collapsed');
 }
 
+function toggleGroup(btn) {
+    btn.closest('.sb-group').classList.toggle('open');
+}
+
 // SetiMarine — Video Hero Controller
 window.SetiMarineVideo = {
     init: function () {

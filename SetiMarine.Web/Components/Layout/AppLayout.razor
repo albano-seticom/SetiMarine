@@ -37,7 +37,7 @@
 
       <!-- Principal -->
       <div class="sb-group @(_openGroups.Contains("Principal") ? "open" : "")">
-        <button class="sb-group-hd" @onclick='() => ToggleGroup("Principal")'>
+        <button class="sb-group-hd" onclick="toggleGroup(this)">
           Principal
           <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -108,7 +108,7 @@
 
           <!-- Marina -->
           <div class="sb-group @(_openGroups.Contains("Marina") ? "open" : "")">
-            <button class="sb-group-hd" @onclick='() => ToggleGroup("Marina")'>
+            <button class="sb-group-hd" onclick="toggleGroup(this)">
               Marina
               <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
@@ -173,7 +173,7 @@
 
           <!-- Produtos e Servicos -->
           <div class="sb-group @(_openGroups.Contains("Produtos") ? "open" : "")">
-            <button class="sb-group-hd" @onclick='() => ToggleGroup("Produtos")'>
+            <button class="sb-group-hd" onclick="toggleGroup(this)">
               Produtos e Serviços
               <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
@@ -220,7 +220,7 @@
 
           <!-- Financeiro -->
           <div class="sb-group @(_openGroups.Contains("Financeiro") ? "open" : "")">
-            <button class="sb-group-hd" @onclick='() => ToggleGroup("Financeiro")'>
+            <button class="sb-group-hd" onclick="toggleGroup(this)">
               Financeiro
               <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
@@ -249,7 +249,7 @@
 
           <!-- Gestao -->
           <div class="sb-group @(_openGroups.Contains("Gestao") ? "open" : "")">
-            <button class="sb-group-hd" @onclick='() => ToggleGroup("Gestao")'>
+            <button class="sb-group-hd" onclick="toggleGroup(this)">
               Gestão
               <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
@@ -293,7 +293,7 @@
 
           <!-- Super Admin -->
           <div class="sb-group @(_openGroups.Contains("SuperAdmin") ? "open" : "")">
-            <button class="sb-group-hd gold" @onclick='() => ToggleGroup("SuperAdmin")'>
+            <button class="sb-group-hd gold" onclick="toggleGroup(this)">
               Super Admin
               <svg class="sb-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
@@ -464,13 +464,6 @@
 
         if (grupo != null)
             _openGroups.Add(grupo);
-    }
-
-    private void ToggleGroup(string grupo)
-    {
-        if (!_openGroups.Remove(grupo))
-            _openGroups.Add(grupo);
-        StateHasChanged();
     }
 
     private async Task ToggleCollapse()
