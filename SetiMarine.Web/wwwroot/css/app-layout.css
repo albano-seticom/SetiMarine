@@ -1322,7 +1322,7 @@ svg {
     font-weight: 400;
 }
 
-.field input, .field select {
+.field input, .field select, .field textarea {
     width: 100%;
     padding: .85rem 0;
     background: transparent;
@@ -1337,13 +1337,19 @@ svg {
     transition: border-color .2s;
 }
 
-    .field input:focus, .field select:focus {
+    .field input:focus, .field select:focus, .field textarea:focus {
         border-bottom-color: var(--navy-800);
     }
 
-    .field input::placeholder {
+    .field input::placeholder, .field textarea::placeholder {
         color: var(--ink-300);
         font-weight: 300;
+    }
+
+    .field textarea {
+        resize: vertical;
+        min-height: 72px;
+        line-height: 1.5;
     }
 
 .auth-footer {
