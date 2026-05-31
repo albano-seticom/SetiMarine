@@ -14,14 +14,23 @@
 
     <div class="sb-logo">
       <a href="/dashboard" class="sb-logo-left">
-        <img src="/images/marina/Logo_Setimarine_horizontal.png" alt="SetiMarine" class="sb-logo-h" />
-        <img src="/images/marina/Logo_Setimarine.png" alt="" class="sb-logo-icon-img" aria-hidden="true" />
+        @if (_collapsed)
+        {
+            <img src="/images/marina/Logo_Setimarine.png" alt="SetiMarine" class="sb-logo-icon-img" style="display:block;" />
+        }
+        else
+        {
+            <img src="/images/marina/Logo_Setimarine_horizontal.png" alt="SetiMarine" class="sb-logo-h" />
+        }
       </a>
-      <button class="sb-collapse-btn" @onclick="ToggleCollapse" title="Recolher menu">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-          <path d="M7 1L3 5l4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-        </svg>
-      </button>
+      @if (!_collapsed)
+      {
+          <button class="sb-collapse-btn" @onclick="ToggleCollapse" title="Recolher menu">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+              <path d="M7 1L3 5l4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </button>
+      }
     </div>
 
     <nav class="sb-nav">
@@ -249,7 +258,7 @@
     </nav>
 
     <div class="sb-footer">
-      <a href="/planos" class="sb-fbtn">
+      <a href="/assinatura" class="sb-fbtn">
         <span class="ic">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
@@ -366,6 +375,7 @@
     private async Task ToggleCollapse()
     {
         _collapsed = !_collapsed;
+        StateHasChanged();
         await JS.InvokeVoidAsync("eval",
             $"localStorage.setItem('sb-col','{(_collapsed ? "1" : "0")}')");
     }

@@ -590,9 +590,9 @@ else
         catch (Exception ex) { _erro = ex.Message; }
     }
 
-    private void SemanaAnterior() { _seg = _seg.AddDays(-7); _ = CarregarAsync(); }
-    private void ProximaSemana()  { _seg = _seg.AddDays(7);  _ = CarregarAsync(); }
-    private void SemanaHoje()     { _seg = InicioSemana(DateTime.Today); _ = CarregarAsync(); }
+    private async Task SemanaAnterior() { _seg = _seg.AddDays(-7); await CarregarAsync(); }
+    private async Task ProximaSemana()  { _seg = _seg.AddDays(7);  await CarregarAsync(); }
+    private async Task SemanaHoje()     { _seg = InicioSemana(DateTime.Today); await CarregarAsync(); }
 
     private static DateTime InicioSemana(DateTime dt)
     {
