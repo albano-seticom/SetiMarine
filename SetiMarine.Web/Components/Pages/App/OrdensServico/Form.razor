@@ -36,7 +36,7 @@ else
             <div class="form-row">
                 <div class="field">
                     <label>Embarcação *</label>
-                    <select @bind="_embarcacaoIdStr">
+                    <select value="@_embarcacaoIdStr" @onchange="e => _embarcacaoIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Selecione...</option>
                         @foreach (var e in _embarcacoes)
                         { <option value="@e.Id">@e.Nome @(e.Cliente != null ? $"({e.Cliente.Nome})" : "")</option> }
@@ -63,7 +63,7 @@ else
             <div class="form-row">
                 <div class="field">
                     <label>Responsável</label>
-                    <select @bind="_responsavelIdStr">
+                    <select value="@_responsavelIdStr" @onchange="e => _responsavelIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Não atribuído (terceiro)</option>
                         @foreach (var u in _colaboradores)
                         { <option value="@u.Id">@u.Nome — @(u.Perfil == PerfilUsuario.Admin ? "Gerente" : "Operacional")</option> }
@@ -90,7 +90,7 @@ else
                 <div class="form-row" style="grid-template-columns:1fr;">
                     <div class="field">
                         <label>Status atual</label>
-                        <select @bind="_statusStr">
+                        <select value="@_statusStr" @onchange="e => _statusStr = e.Value?.ToString() ?? string.Empty">
                             <option value="Pendente">Pendente</option>
                             <option value="EmExecucao">Em Execução</option>
                             <option value="Finalizado">Finalizado</option>

@@ -37,7 +37,7 @@ else
             <div class="form-row">
                 <div class="field">
                     <label>Cliente *</label>
-                    <select @bind="_clienteIdStr">
+                    <select value="@_clienteIdStr" @onchange="e => _clienteIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Selecione...</option>
                         @foreach (var c in _clientes)
                         { <option value="@c.Id">@c.Nome</option> }
@@ -45,7 +45,7 @@ else
                 </div>
                 <div class="field">
                     <label>Embarcação *</label>
-                    <select @bind="_embarcacaoIdStr">
+                    <select value="@_embarcacaoIdStr" @onchange="e => _embarcacaoIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Selecione...</option>
                         @foreach (var e in _embarcacoes)
                         { <option value="@e.Id">@e.Nome @(e.Cliente != null ? $"({e.Cliente.Nome})" : "")</option> }
@@ -56,7 +56,7 @@ else
             <div class="form-row">
                 <div class="field">
                     <label>Vaga *</label>
-                    <select @bind="_vagaIdStr">
+                    <select value="@_vagaIdStr" @onchange="e => _vagaIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Selecione...</option>
                         @foreach (var v in _vagas)
                         { <option value="@v.Id">@v.Codigo @(v.Corredor != null ? $"— {v.Corredor.Nome}" : "")</option> }
@@ -64,7 +64,7 @@ else
                 </div>
                 <div class="field">
                     <label>Tipo de Contrato</label>
-                    <select @bind="_tipoStr">
+                    <select value="@_tipoStr" @onchange="e => _tipoStr = e.Value?.ToString() ?? string.Empty">
                         <option value="Mensalista">Mensalista</option>
                         <option value="Diaria">Diária</option>
                         <option value="Visitante">Visitante</option>

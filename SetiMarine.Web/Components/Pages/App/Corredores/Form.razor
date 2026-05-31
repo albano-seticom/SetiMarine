@@ -36,7 +36,7 @@ else
             <div class="form-row" style="grid-template-columns:1fr 1fr;">
                 <div class="field">
                     <label>Seção</label>
-                    <select @bind="_secaoIdStr">
+                    <select value="@_secaoIdStr" @onchange="e => _secaoIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Sem seção</option>
                         @foreach (var s in _secoes)
                         { <option value="@s.Id">@s.Nome</option> }

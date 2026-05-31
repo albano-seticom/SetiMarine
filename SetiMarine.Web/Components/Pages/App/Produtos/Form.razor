@@ -41,7 +41,7 @@ else
                 </div>
                 <div class="field">
                     <label>Categoria</label>
-                    <select @bind="_categoriaStr">
+                    <select value="@_categoriaStr" @onchange="e => _categoriaStr = e.Value?.ToString() ?? string.Empty">
                         <option value="Acessorio">Acessório</option>
                         <option value="Combustivel">Combustível</option>
                         <option value="Lubrificante">Lubrificante</option>

@@ -47,7 +47,7 @@ else
             <div class="form-row">
                 <div class="field">
                     <label>Produto *</label>
-                    <select @bind="_produtoIdStr" @bind:after="AtualizarPreco">
+                    <select value="@_produtoIdStr" @onchange="e => { _produtoIdStr = e.Value?.ToString() ?? string.Empty; AtualizarPreco(); }">
                         <option value="">Selecione...</option>
                         @foreach (var p in _produtos.Where(p => _tipo != "Aluguel" || p.Alugavel))
                         {
@@ -94,7 +94,7 @@ else
             <div class="form-row">
                 <div class="field">
                     <label>Cliente</label>
-                    <select @bind="_clienteIdStr">
+                    <select value="@_clienteIdStr" @onchange="e => _clienteIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Não identificado</option>
                         @foreach (var c in _clientes)
                         { <option value="@c.Id">@c.Nome</option> }

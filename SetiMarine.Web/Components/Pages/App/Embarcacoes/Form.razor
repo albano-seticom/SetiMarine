@@ -41,7 +41,7 @@ else
                 </div>
                 <div class="field">
                     <label>Tipo</label>
-                    <select @bind="_tipoStr">
+                    <select value="@_tipoStr" @onchange="e => _tipoStr = e.Value?.ToString() ?? string.Empty">
                         <option value="Lancha">Lancha</option>
                         <option value="Veleiro">Veleiro</option>
                         <option value="Escuna">Escuna</option>
@@ -54,7 +54,7 @@ else
             <div class="form-row">
                 <div class="field">
                     <label>Proprietário *</label>
-                    <select @bind="_clienteIdStr">
+                    <select value="@_clienteIdStr" @onchange="e => _clienteIdStr = e.Value?.ToString() ?? string.Empty">
                         <option value="">Selecione...</option>
                         @foreach (var c in _clientes)
                         {
