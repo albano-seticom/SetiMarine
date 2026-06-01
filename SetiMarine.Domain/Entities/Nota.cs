@@ -30,6 +30,10 @@ public class Nota
     public decimal ValorISS { get; set; }
     public decimal ValorTotal { get; set; }
 
+    // Retorno da SEFAZ após emissão
+    public int? CodigoSefaz { get; set; }
+    public string? MensagemSefaz { get; set; }
+
     public string? Observacoes { get; set; }
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 

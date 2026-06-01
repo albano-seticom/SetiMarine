@@ -5,6 +5,7 @@
 @using SetiMarine.Domain.Entities
 @inject EmpresaService EmpService
 @inject UsuarioService UsuService
+@inject ConfiguracaoMarinaService CfgService
 @inject UsuarioContextService UserCtx
 
 <PageTitle>Minha Empresa — SetiMarine</PageTitle>
@@ -100,6 +101,53 @@ else if (_empresa != null)
                     </div>
                 </div>
 
+                @if (_cfg != null)
+                {
+                <div class="form-section" style="border-top:2px solid var(--navy-700);padding-top:1.25rem;">
+                    <div class="form-section-title" style="color:var(--navy-700);">SetiFiscal — Emissão de Notas</div>
+
+                    <div class="form-row" style="grid-template-columns:1fr;">
+                        <div class="field">
+                            <label>URL do SetiFiscal</label>
+                            <InputText @bind-Value="_cfg.SetiFiscalBaseUrl" placeholder="https://setifiscal.seticom.com.br" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="field">
+                            <label>API Key</label>
+                            <InputText @bind-Value="_cfg.SetiFiscalApiKey" placeholder="sf_live_..." type="password" />
+                        </div>
+                        <div class="field">
+                            <label>EmpresaId (SetiFiscal)</label>
+                            <InputText @bind-Value="_setiFiscalEmpresaIdStr" placeholder="GUID da empresa no SetiFiscal" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="field">
+                            <label>Código de serviço padrão (LC 116)</label>
+                            <InputText @bind-Value="_cfg.CodigoServicoDefault" placeholder="Ex: 17.11" />
+                        </div>
+                        <div class="field">
+                            <label>Código NBS padrão</label>
+                            <InputText @bind-Value="_cfg.CodigoNbsDefault" placeholder="Ex: 1.1711.00.00" />
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_erroCfg))
+                    {
+                        <div style="margin-bottom:.75rem;padding:.7rem .9rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erroCfg</div>
+                    }
+                    @if (_sucessoCfg)
+                    {
+                        <div style="margin-bottom:.75rem;padding:.7rem .9rem;background:rgba(74,138,92,.08);border:1px solid rgba(74,138,92,.22);color:var(--s-free);font-size:.82rem;border-radius:2px;">Configuração fiscal salva.</div>
+                    }
+                    <div>
+                        <button type="button" @onclick="SalvarCfgAsync" class="btn btn-ghost" disabled="@_salvandoCfg" style="font-size:.82rem;">
+                            @(_salvandoCfg ? "Salvando..." : "Salvar configuração fiscal")
+                        </button>
+                    </div>
+                </div>
+                }
+
                 @if (_erro != null)
                 {
                     <div style="margin-bottom:1.25rem;padding:.85rem 1rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
@@ -176,11 +224,16 @@ else if (_empresa != null)
 
 @code {
     private Empresa? _empresa;
+    private SetiMarine.Domain.Entities.ConfiguracaoMarina? _cfg;
+    private string _setiFiscalEmpresaIdStr = string.Empty;
     private int _totalUsuarios;
     private bool _carregando = true;
     private bool _salvando;
     private bool _sucesso;
     private string? _erro;
+    private bool _salvandoCfg;
+    private bool _sucessoCfg;
+    private string? _erroCfg;
 
     protected override async Task OnInitializedAsync()
     {
@@ -188,6 +241,8 @@ else if (_empresa != null)
         _empresa       = await EmpService.ObterAsync(UserCtx.EmpresaId);
         var usuarios   = await UsuService.ListarPorEmpresaAsync(UserCtx.EmpresaId);
         _totalUsuarios = usuarios.Count;
+        _cfg           = await CfgService.ObterAsync(UserCtx.EmpresaId);
+        _setiFiscalEmpresaIdStr = _cfg.SetiFiscalEmpresaId?.ToString() ?? string.Empty;
         _carregando    = false;
     }
 
@@ -204,5 +259,33 @@ else if (_empresa != null)
         }
         catch (Exception ex) { _erro = ex.Message; }
         finally { _salvando = false; }
+    }
+
+    private async Task SalvarCfgAsync()
+    {
+        if (_cfg == null) return;
+        _salvandoCfg = true;
+        _sucessoCfg  = false;
+        _erroCfg     = null;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(_setiFiscalEmpresaIdStr))
+            {
+                if (!Guid.TryParse(_setiFiscalEmpresaIdStr, out var guid))
+                {
+                    _erroCfg = "EmpresaId inválido — deve ser um GUID no formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+                    return;
+                }
+                _cfg.SetiFiscalEmpresaId = guid;
+            }
+            else
+            {
+                _cfg.SetiFiscalEmpresaId = null;
+            }
+            await CfgService.SalvarAsync(_cfg);
+            _sucessoCfg = true;
+        }
+        catch (Exception ex) { _erroCfg = ex.Message; }
+        finally { _salvandoCfg = false; }
     }
 }

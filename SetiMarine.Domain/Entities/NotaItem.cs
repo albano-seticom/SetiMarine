@@ -28,4 +28,8 @@ public class NotaItem
     public decimal ValorCOFINS { get; set; }
     public decimal AliquotaISS { get; set; }
     public decimal ValorISS { get; set; }
+
+    // Códigos para NFS-e
+    public string? CodigoServico { get; set; }
+    public string? CodigoNbs { get; set; }
 }

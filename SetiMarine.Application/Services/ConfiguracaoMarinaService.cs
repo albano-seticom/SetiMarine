@@ -32,8 +32,13 @@ public class ConfiguracaoMarinaService(ISetiMarineDbContext ctx)
         }
         else
         {
-            existente.CaixaAutomatico = cfg.CaixaAutomatico;
-            existente.AtualizadoEm   = DateTime.UtcNow;
+            existente.CaixaAutomatico     = cfg.CaixaAutomatico;
+            existente.SetiFiscalBaseUrl   = cfg.SetiFiscalBaseUrl;
+            existente.SetiFiscalApiKey    = cfg.SetiFiscalApiKey;
+            existente.SetiFiscalEmpresaId = cfg.SetiFiscalEmpresaId;
+            existente.CodigoServicoDefault = cfg.CodigoServicoDefault;
+            existente.CodigoNbsDefault    = cfg.CodigoNbsDefault;
+            existente.AtualizadoEm        = DateTime.UtcNow;
         }
 
         await ctx.SaveChangesAsync();

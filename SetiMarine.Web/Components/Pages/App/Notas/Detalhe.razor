@@ -5,6 +5,7 @@
 @using SetiMarine.Domain.Entities
 @using SetiMarine.Domain.Enums
 @inject NotaService NotaSvc
+@inject SetiFiscalService FiscalSvc
 @inject UsuarioContextService UserCtx
 @inject NavigationManager Nav
 
@@ -18,6 +19,7 @@
         @if (_nota != null)
         {
             <span class="badge @BadgeStatus(_nota.Status)" style="font-size:.72rem;margin-left:.25rem;">@LabelStatus(_nota.Status)</span>
+            <span style="font-size:.72rem;color:var(--ink-400);margin-left:.1rem;">(@LabelTipo(_nota.Tipo))</span>
         }
     </div>
     @if (_nota != null)
@@ -25,18 +27,18 @@
         <div class="page-head-actions" style="display:flex;gap:.5rem;">
             @if (_nota.Status == StatusNota.Rascunho)
             {
-                <button type="button" @onclick='() => AlterarStatusAsync(StatusNota.Emitida)'
-                        style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--s-free);border:1px solid var(--s-free);color:#fff;">
-                    ✓ Emitir
+                <button type="button" @onclick="EmitirAsync" disabled="@_processando"
+                        style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--s-free);border:1px solid var(--s-free);color:#fff;opacity:@(_processando?"0.6":"1");">
+                    @if (_processando) { <text>Emitindo...</text> } else { <text>✓ Emitir</text> }
                 </button>
                 <button type="button" @onclick='() => AlterarStatusAsync(StatusNota.Cancelada)'
                         style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:transparent;border:1px solid var(--s-maint);color:var(--s-maint);">
-                    Cancelar
+                    Cancelar rascunho
                 </button>
             }
             @if (_nota.Status == StatusNota.Emitida)
             {
-                <button type="button" @onclick='() => AlterarStatusAsync(StatusNota.Cancelada)'
+                <button type="button" @onclick="AbrirModalCancelamento"
                         style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:transparent;border:1px solid var(--s-maint);color:var(--s-maint);">
                     Cancelar Nota
                 </button>
@@ -44,6 +46,16 @@
         </div>
     }
 </div>
+
+@* ── Banner de erro/sucesso ─────────────────────────────────────── *@
+@if (!string.IsNullOrEmpty(_mensagem))
+{
+    <div style="margin-bottom:1rem;padding:.75rem 1rem;border-radius:6px;font-size:.83rem;
+                background:@(_mensagemOk?"#d1fae5":"#fee2e2");color:@(_mensagemOk?"#065f46":"#991b1b");
+                border:1px solid @(_mensagemOk?"#6ee7b7":"#fca5a5");">
+        @_mensagem
+    </div>
+}
 
 @if (_carregando)
 {
@@ -85,10 +97,19 @@ else
                         <div style="font-size:.88rem;">@_nota.DataSaida.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
                     </div>
                 }
+                @if (_nota.CodigoSefaz.HasValue)
+                {
+                    <div style="grid-column:1/-1;">
+                        <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Retorno SEFAZ</div>
+                        <div style="font-size:.8rem;font-family:monospace;color:@(_nota.Status == StatusNota.Emitida ? "#065f46" : "#991b1b");">
+                            [@_nota.CodigoSefaz] @_nota.MensagemSefaz
+                        </div>
+                    </div>
+                }
                 @if (!string.IsNullOrEmpty(_nota.ChaveNFe))
                 {
                     <div style="grid-column:1/-1;">
-                        <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Chave NFe</div>
+                        <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Chave de Acesso</div>
                         <div style="font-size:.72rem;font-family:monospace;word-break:break-all;color:var(--ink-600);">@_nota.ChaveNFe</div>
                     </div>
                 }
@@ -100,6 +121,10 @@ else
             <div style="margin-bottom:.6rem;">
                 <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Cliente</div>
                 <div style="font-weight:600;font-size:.9rem;">@(_nota.Cliente?.Nome ?? "—")</div>
+                @if (!string.IsNullOrEmpty(_nota.Cliente?.CpfCnpj))
+                {
+                    <div style="font-size:.78rem;color:var(--ink-400);font-family:monospace;">@_nota.Cliente.CpfCnpj</div>
+                }
             </div>
             @if (_nota.PedidoId.HasValue)
             {
@@ -196,36 +221,31 @@ else
                 @if (_nota.ValorICMS > 0)
                 {
                     <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
-                        <span>ICMS</span>
-                        <span>@_nota.ValorICMS.ToString("C2")</span>
+                        <span>ICMS</span><span>@_nota.ValorICMS.ToString("C2")</span>
                     </div>
                 }
                 @if (_nota.ValorIPI > 0)
                 {
                     <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
-                        <span>IPI</span>
-                        <span>@_nota.ValorIPI.ToString("C2")</span>
+                        <span>IPI</span><span>@_nota.ValorIPI.ToString("C2")</span>
                     </div>
                 }
                 @if (_nota.ValorPIS > 0)
                 {
                     <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
-                        <span>PIS</span>
-                        <span>@_nota.ValorPIS.ToString("C2")</span>
+                        <span>PIS</span><span>@_nota.ValorPIS.ToString("C2")</span>
                     </div>
                 }
                 @if (_nota.ValorCOFINS > 0)
                 {
                     <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
-                        <span>COFINS</span>
-                        <span>@_nota.ValorCOFINS.ToString("C2")</span>
+                        <span>COFINS</span><span>@_nota.ValorCOFINS.ToString("C2")</span>
                     </div>
                 }
                 @if (_nota.ValorISS > 0)
                 {
                     <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
-                        <span>ISS</span>
-                        <span>@_nota.ValorISS.ToString("C2")</span>
+                        <span>ISS</span><span>@_nota.ValorISS.ToString("C2")</span>
                     </div>
                 }
                 <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--navy-700);border-top:2px solid var(--line);padding-top:.5rem;margin-top:.3rem;">
@@ -237,17 +257,119 @@ else
     </div>
 }
 
+@* ── Modal cancelamento ─────────────────────────────────────────── *@
+@if (_modalCancelamento)
+{
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;"
+         @onclick="FecharModalCancelamento">
+        <div style="background:#fff;border-radius:8px;padding:1.5rem;width:440px;max-width:95vw;"
+             @onclick:stopPropagation>
+            <div style="font-size:.9rem;font-weight:700;margin-bottom:1rem;color:var(--navy-700);">Cancelar Nota Fiscal</div>
+            <p style="font-size:.82rem;color:var(--ink-500);margin-bottom:1rem;">
+                O cancelamento é enviado diretamente para a SEFAZ. NF-e: prazo de 24h após emissão. Informe a justificativa (mínimo 15 caracteres).
+            </p>
+            <textarea @bind="_justificativaCancelamento" rows="3"
+                      placeholder="Ex: Erro nos dados do cliente — venda cancelada"
+                      style="width:100%;padding:.5rem .75rem;border:1px solid var(--line);border-radius:4px;font-size:.83rem;resize:vertical;"></textarea>
+            <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem;">
+                <button type="button" @onclick="FecharModalCancelamento" class="btn btn-ghost btn-sm">Voltar</button>
+                <button type="button" @onclick="CancelarNotaAsync" disabled="@(_processando || _justificativaCancelamento.Length < 15)"
+                        style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--s-maint);border:1px solid var(--s-maint);color:#fff;opacity:@(_processando?"0.6":"1");">
+                    @if (_processando) { <text>Cancelando...</text> } else { <text>Confirmar cancelamento</text> }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public int Id { get; set; }
 
     private Nota? _nota;
     private bool  _carregando = true;
+    private bool  _processando;
+    private string _mensagem     = string.Empty;
+    private bool   _mensagemOk;
+    private bool   _modalCancelamento;
+    private string _justificativaCancelamento = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         await UserCtx.InitAsync();
         _nota       = await NotaSvc.ObterPorIdAsync(Id, UserCtx.EmpresaId);
         _carregando = false;
+    }
+
+    private async Task EmitirAsync()
+    {
+        if (_nota == null || _processando) return;
+        _processando = true;
+        _mensagem    = string.Empty;
+        try
+        {
+            var resultado = await FiscalSvc.EmitirAsync(_nota.Id, UserCtx.EmpresaId);
+            _nota = await NotaSvc.ObterPorIdAsync(_nota.Id, UserCtx.EmpresaId);
+            if (resultado.Sucesso)
+            {
+                _mensagemOk = true;
+                _mensagem   = $"Nota emitida com sucesso! Chave: {resultado.ChaveAcesso}";
+            }
+            else
+            {
+                _mensagemOk = false;
+                _mensagem   = $"Falha na emissão: {resultado.Erro}";
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            _mensagemOk = false;
+            _mensagem   = ex.Message;
+        }
+        finally
+        {
+            _processando = false;
+        }
+    }
+
+    private void AbrirModalCancelamento()
+    {
+        _justificativaCancelamento = string.Empty;
+        _modalCancelamento         = true;
+    }
+
+    private void FecharModalCancelamento() => _modalCancelamento = false;
+
+    private async Task CancelarNotaAsync()
+    {
+        if (_nota == null || _processando) return;
+        _processando = true;
+        _mensagem    = string.Empty;
+        try
+        {
+            var resultado = await FiscalSvc.CancelarAsync(_nota.Id, UserCtx.EmpresaId, _justificativaCancelamento);
+            _nota = await NotaSvc.ObterPorIdAsync(_nota.Id, UserCtx.EmpresaId);
+            _modalCancelamento = false;
+            if (resultado.Sucesso)
+            {
+                _mensagemOk = true;
+                _mensagem   = "Nota cancelada com sucesso na SEFAZ.";
+            }
+            else
+            {
+                _mensagemOk = false;
+                _mensagem   = $"Falha no cancelamento: {resultado.Erro}";
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            _mensagemOk = false;
+            _mensagem   = ex.Message;
+            _modalCancelamento = false;
+        }
+        finally
+        {
+            _processando = false;
+        }
     }
 
     private async Task AlterarStatusAsync(StatusNota novoStatus)
@@ -269,5 +391,12 @@ else
         StatusNota.Emitida   => "Emitida",
         StatusNota.Cancelada => "Cancelada",
         _                    => "Rascunho",
+    };
+
+    private static string LabelTipo(TipoNota t) => t switch
+    {
+        TipoNota.NFSe => "NFS-e",
+        TipoNota.NFCe => "NFC-e",
+        _             => "NF-e",
     };
 }

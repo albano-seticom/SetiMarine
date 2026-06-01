@@ -56,6 +56,8 @@ builder.Services.AddScoped<EstoqueService>();
 builder.Services.AddScoped<CaixaService>();
 builder.Services.AddScoped<ConfiguracaoMarinaService>();
 builder.Services.AddScoped<NotaService>();
+builder.Services.AddHttpClient("setifiscal");
+builder.Services.AddScoped<SetiFiscalService>();
 
 var app = builder.Build();
 

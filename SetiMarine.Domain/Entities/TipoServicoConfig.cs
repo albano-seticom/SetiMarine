@@ -14,6 +14,11 @@ public class TipoServicoConfig
     public decimal? DuracaoHoras { get; set; }
     public int? ChecklistTemplateId { get; set; }
     public ChecklistTemplate? ChecklistTemplate { get; set; }
+
+    // Códigos fiscais para NFS-e
+    public string? CodigoServico { get; set; }
+    public string? CodigoNbs { get; set; }
+
     public bool Ativo { get; set; } = true;
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 }
