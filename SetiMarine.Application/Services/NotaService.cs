@@ -27,10 +27,11 @@ public class NotaService(ISetiMarineDbContext ctx)
             .Include(n => n.Itens).ThenInclude(i => i.Produto)
             .FirstOrDefaultAsync(n => n.Id == id && n.EmpresaId == empresaId);
 
-    public async Task<int> ProximoNumeroAsync(int empresaId, string serie = "1")
+    // Cada tipo de nota tem sua própria sequência numérica independente
+    public async Task<int> ProximoNumeroAsync(int empresaId, TipoNota tipo, string serie = "1")
     {
         var ultimo = await ctx.Notas
-            .Where(n => n.EmpresaId == empresaId && n.Serie == serie)
+            .Where(n => n.EmpresaId == empresaId && n.Tipo == tipo && n.Serie == serie)
             .MaxAsync(n => (int?)n.Numero) ?? 0;
         return ultimo + 1;
     }
@@ -41,7 +42,7 @@ public class NotaService(ISetiMarineDbContext ctx)
         nota.DataEmissao = nota.DataEmissao == default ? DateTime.UtcNow : nota.DataEmissao;
 
         if (nota.Numero == 0)
-            nota.Numero = await ProximoNumeroAsync(nota.EmpresaId, nota.Serie);
+            nota.Numero = await ProximoNumeroAsync(nota.EmpresaId, nota.Tipo, nota.Serie);
 
         RecalcularTotais(nota, itens);
         nota.Itens = itens;

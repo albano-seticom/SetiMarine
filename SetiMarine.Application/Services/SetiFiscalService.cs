@@ -41,6 +41,12 @@ public class SetiFiscalService(ISetiMarineDbContext ctx, IHttpClientFactory http
             nota.Status        = StatusNota.Emitida;
             nota.CodigoSefaz   = resultado.CodigoSefaz;
             nota.MensagemSefaz = resultado.MensagemSefaz;
+
+            // Sobrescreve o número do rascunho com o número oficial retornado pelo SetiFiscal/SEFAZ
+            var numeroOficial = resultado.NumeroNfse ?? resultado.NumeroNota;
+            if (int.TryParse(numeroOficial, out var num) && num > 0)
+                nota.Numero = num;
+
             await ctx.SaveChangesAsync();
         }
         else
