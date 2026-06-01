@@ -81,32 +81,57 @@ public class NotaService(ISetiMarineDbContext ctx)
         await ctx.SaveChangesAsync();
     }
 
-    public async Task<Nota> GerarDePedidoAsync(int pedidoId, int empresaId)
+    public async Task<List<Nota>> ListarPorPedidoAsync(int pedidoId, int empresaId)
+        => await ctx.Notas
+            .Where(n => n.PedidoId == pedidoId && n.EmpresaId == empresaId)
+            .ToListAsync();
+
+    public async Task<Nota> GerarDePedidoAsync(int pedidoId, int empresaId, TipoNota tipo = TipoNota.NFe)
     {
         var pedido = await ctx.Pedidos
             .Include(p => p.Cliente)
             .Include(p => p.Itens).ThenInclude(i => i.Produto).ThenInclude(pr => pr!.Aux)
+            .Include(p => p.Servicos)
             .FirstOrDefaultAsync(p => p.Id == pedidoId && p.EmpresaId == empresaId)
             ?? throw new InvalidOperationException("Pedido não encontrado.");
 
-        var itens = pedido.Itens.Select(i => new NotaItem
-        {
-            ProdutoId     = i.ProdutoId,
-            Descricao     = i.Produto?.Nome ?? "",
-            Quantidade    = i.Quantidade,
-            ValorUnitario = i.PrecoUnitario,
-            ValorTotal    = i.ValorTotal,
-            Cfop          = i.Cfop ?? i.Produto?.Aux?.Cfop,
-            Ncm           = i.Ncm  ?? i.Produto?.Aux?.Ncm,
-            CstIcms       = i.CstIcms ?? i.Produto?.Aux?.CstIcms,
-            AliquotaICMS  = i.AliquotaICMS  ?? i.Produto?.Aux?.AliquotaICMS  ?? 0,
-            AliquotaIPI   = i.AliquotaIPI   ?? i.Produto?.Aux?.AliquotaIPI   ?? 0,
-            AliquotaPIS   = i.AliquotaPIS   ?? i.Produto?.Aux?.AliquotaPIS   ?? 0,
-            AliquotaCOFINS = i.AliquotaCOFINS ?? i.Produto?.Aux?.AliquotaCOFINS ?? 0,
-            AliquotaISS   = i.AliquotaISS   ?? i.Produto?.Aux?.AliquotaISS   ?? 0,
-        }).ToList();
+        List<NotaItem> itens;
 
-        // Calcular valores de impostos por item
+        if (tipo == TipoNota.NFSe)
+        {
+            // NFS-e: gerada a partir dos serviços do pedido
+            itens = pedido.Servicos
+                .Where(s => !string.IsNullOrWhiteSpace(s.Descricao))
+                .Select(s => new NotaItem
+                {
+                    Descricao     = s.Descricao,
+                    Quantidade    = 1,
+                    ValorUnitario = s.Valor ?? 0,
+                    ValorTotal    = s.Valor ?? 0,
+                    AliquotaISS   = 0,
+                }).ToList();
+        }
+        else
+        {
+            // NF-e / NFC-e: gerada a partir dos itens de produto
+            itens = pedido.Itens.Select(i => new NotaItem
+            {
+                ProdutoId      = i.ProdutoId,
+                Descricao      = i.Produto?.Nome ?? "",
+                Quantidade     = i.Quantidade,
+                ValorUnitario  = i.PrecoUnitario,
+                ValorTotal     = i.ValorTotal,
+                Cfop           = i.Cfop           ?? i.Produto?.Aux?.Cfop,
+                Ncm            = i.Ncm            ?? i.Produto?.Aux?.Ncm,
+                CstIcms        = i.CstIcms        ?? i.Produto?.Aux?.CstIcms,
+                AliquotaICMS   = i.AliquotaICMS   ?? i.Produto?.Aux?.AliquotaICMS   ?? 0,
+                AliquotaIPI    = i.AliquotaIPI    ?? i.Produto?.Aux?.AliquotaIPI    ?? 0,
+                AliquotaPIS    = i.AliquotaPIS    ?? i.Produto?.Aux?.AliquotaPIS    ?? 0,
+                AliquotaCOFINS = i.AliquotaCOFINS ?? i.Produto?.Aux?.AliquotaCOFINS ?? 0,
+                AliquotaISS    = i.AliquotaISS    ?? i.Produto?.Aux?.AliquotaISS    ?? 0,
+            }).ToList();
+        }
+
         foreach (var item in itens)
         {
             item.ValorICMS   = item.ValorTotal * (item.AliquotaICMS   / 100);
@@ -118,10 +143,11 @@ public class NotaService(ISetiMarineDbContext ctx)
 
         var nota = new Nota
         {
-            EmpresaId = empresaId,
-            PedidoId  = pedidoId,
-            ClienteId = pedido.ClienteId,
-            Status    = StatusNota.Rascunho,
+            EmpresaId   = empresaId,
+            PedidoId    = pedidoId,
+            ClienteId   = pedido.ClienteId,
+            Tipo        = tipo,
+            Status      = StatusNota.Rascunho,
             DataEmissao = DateTime.UtcNow,
         };
 

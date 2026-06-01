@@ -8,6 +8,7 @@
 @inject PedidoService PedidoSvc
 @inject CaixaService CaixaSvc
 @inject ConfiguracaoMarinaService CfgSvc
+@inject NotaService NotaSvc
 @inject UsuarioContextService UserCtx
 @inject NavigationManager Nav
 
@@ -449,6 +450,41 @@ else
                     <div style="padding:.6rem .85rem;background:rgba(164,68,54,.08);border:1px solid rgba(164,68,54,.22);color:var(--s-maint);font-size:.82rem;border-radius:2px;">@_erro</div>
                 }
 
+                @* ── Botões de nota fiscal (só em pedidos existentes) ── *@
+                @if (!_isNovo)
+                {
+                    <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;padding:.3rem 0;border-top:1px solid var(--line);">
+                        <span style="font-size:.66rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-300);flex-shrink:0;">Nota fiscal:</span>
+                        @foreach (var tipoNota in new[] { TipoNota.NFe, TipoNota.NFSe, TipoNota.NFCe })
+                        {
+                            var notaExistente = _notasDoPedido.FirstOrDefault(n => n.Tipo == tipoNota);
+                            var label = tipoNota switch { TipoNota.NFe => "NF-e", TipoNota.NFSe => "NFS-e", _ => "NFC-e" };
+                            @if (notaExistente != null)
+                            {
+                                <a href="/notas/@notaExistente.Id"
+                                   style="display:inline-flex;align-items:center;gap:.25rem;padding:.2rem .6rem;font-size:.72rem;font-weight:600;border-radius:3px;border:1px solid var(--line);color:var(--ink-500);text-decoration:none;background:rgba(0,0,0,.02);">
+                                    @label
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--s-free)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                </a>
+                            }
+                            else
+                            {
+                                <button type="button" @onclick="() => GerarNotaAsync(tipoNota)" disabled="@_gerandoNota"
+                                        style="padding:.2rem .6rem;font-size:.72rem;font-weight:600;border-radius:3px;border:1px solid var(--line);color:var(--navy-700);background:transparent;cursor:pointer;transition:.12s;">
+                                    + @label
+                                </button>
+                            }
+                        }
+                        @if (_gerandoNota)
+                        {
+                            <span style="font-size:.7rem;color:var(--ink-300);display:flex;align-items:center;gap:.3rem;">
+                                <div style="width:10px;height:10px;border:1.5px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+                                Gerando...
+                            </span>
+                        }
+                    </div>
+                }
+
                 @* ── Linha de ação ── *@
                 <div style="display:flex;align-items:center;gap:.5rem;justify-content:flex-end;padding-bottom:.1rem;">
                     <a href="/pedidos" class="btn btn-ghost">Cancelar</a>
@@ -589,8 +625,10 @@ else
     private bool _carregando = true;
     private bool _salvando;
     private bool _salvo;
+    private bool _gerandoNota;
     private int  _servicosConcluidos;
     private string? _erro;
+    private List<Nota> _notasDoPedido = new();
 
     // Pagamento
     private string  _formaPagamentoStr = "Dinheiro";
@@ -704,6 +742,7 @@ else
             .ToList();
 
             AtualizarEmbarcacoes();
+            _notasDoPedido = await NotaSvc.ListarPorPedidoAsync(Id!.Value, UserCtx.EmpresaId);
         }
         else
         {
@@ -881,6 +920,19 @@ else
         }
         catch (Exception ex) { _erro = ex.InnerException?.Message ?? ex.Message; }
         finally { _salvando = false; }
+    }
+
+    private async Task GerarNotaAsync(TipoNota tipo)
+    {
+        _gerandoNota = true;
+        _erro        = null;
+        try
+        {
+            var nota = await NotaSvc.GerarDePedidoAsync(Id!.Value, UserCtx.EmpresaId, tipo);
+            _notasDoPedido.Add(nota);
+        }
+        catch (Exception ex) { _erro = ex.InnerException?.Message ?? ex.Message; }
+        finally { _gerandoNota = false; }
     }
 
     private void AbrirModalPagamento()

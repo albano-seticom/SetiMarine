@@ -16,6 +16,7 @@ public class Nota
     public int Numero { get; set; }
     public string Serie { get; set; } = "1";
     public string? ChaveNFe { get; set; }
+    public TipoNota   Tipo   { get; set; } = TipoNota.NFe;
     public StatusNota Status { get; set; } = StatusNota.Rascunho;
 
     public DateTime DataEmissao { get; set; } = DateTime.UtcNow;
