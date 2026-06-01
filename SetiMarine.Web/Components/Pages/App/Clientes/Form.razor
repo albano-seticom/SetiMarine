@@ -59,10 +59,56 @@ else
                 </div>
             </div>
 
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Endereço</div>
+
+            <div class="form-row" style="grid-template-columns:140px 1fr;">
+                <div class="field">
+                    <label>CEP</label>
+                    <InputText @bind-Value="_cliente.Cep" placeholder="00000-000" maxlength="9" />
+                </div>
+                <div class="field">
+                    <label>Logradouro</label>
+                    <InputText @bind-Value="_cliente.Logradouro" placeholder="Rua / Avenida / Rodovia" />
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns:120px 1fr 1fr;">
+                <div class="field">
+                    <label>Número</label>
+                    <InputText @bind-Value="_cliente.NumeroEnd" placeholder="S/N" />
+                </div>
+                <div class="field">
+                    <label>Complemento</label>
+                    <InputText @bind-Value="_cliente.Complemento" placeholder="Apto, sala, bloco..." />
+                </div>
+                <div class="field">
+                    <label>Bairro</label>
+                    <InputText @bind-Value="_cliente.Bairro" placeholder="Bairro" />
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns:1fr 140px 60px;">
+                <div class="field">
+                    <label>Município</label>
+                    <InputText @bind-Value="_cliente.Municipio" placeholder="Nome do município" />
+                </div>
+                <div class="field">
+                    <label>Cód. IBGE</label>
+                    <InputNumber @bind-Value="_cliente.CodigoMunicipio" placeholder="0000000" />
+                </div>
+                <div class="field">
+                    <label>UF</label>
+                    <InputText @bind-Value="_cliente.Uf" placeholder="SP" maxlength="2" style="text-transform:uppercase;" />
+                </div>
+            </div>
+
             <div class="form-row" style="grid-template-columns:1fr;">
                 <div class="field">
-                    <label>Endereço</label>
-                    <InputText @bind-Value="_cliente.Endereco" placeholder="Rua, número, bairro, cidade" />
+                    <label>Inscrição Estadual (IE)</label>
+                    <InputText @bind-Value="_cliente.Ie" placeholder="Deixe em branco se não contribuinte" />
                 </div>
             </div>
         </div>
