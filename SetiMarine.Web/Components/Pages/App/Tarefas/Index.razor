@@ -179,7 +179,7 @@ else
     private async Task ToggleConcluidoAsync(PedidoServico s)
     {
         s.Concluido = !s.Concluido;
-        await PedidoSvc.AtualizarConcluidoAsync(s.Id, s.Concluido);
+        await PedidoSvc.AtualizarConcluidoAsync(s.Id, s.Concluido, UserCtx.EmpresaId);
         StateHasChanged();
     }
 

@@ -158,7 +158,8 @@ public class PedidoService(ISetiMarineDbContext ctx)
         }
         else
         {
-            var existente = await ctx.TiposServicoConfig.FindAsync(tipo.Id)
+            var existente = await ctx.TiposServicoConfig
+                    .FirstOrDefaultAsync(t => t.Id == tipo.Id && t.EmpresaId == tipo.EmpresaId)
                 ?? throw new InvalidOperationException("Tipo não encontrado.");
             existente.Nome         = tipo.Nome;
             existente.ValorPadrao  = tipo.ValorPadrao;
@@ -194,9 +195,10 @@ public class PedidoService(ISetiMarineDbContext ctx)
         return await q.OrderBy(s => s.Concluido).ThenByDescending(s => s.Id).ToListAsync();
     }
 
-    public async Task AtualizarConcluidoAsync(int servicoId, bool concluido)
+    public async Task AtualizarConcluidoAsync(int servicoId, bool concluido, int empresaId)
     {
-        var s = await ctx.PedidoServicos.FindAsync(servicoId);
+        var s = await ctx.PedidoServicos
+            .FirstOrDefaultAsync(ps => ps.Id == servicoId && ps.Pedido!.EmpresaId == empresaId);
         if (s != null)
         {
             s.Concluido = concluido;
