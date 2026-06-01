@@ -455,10 +455,18 @@ else
                 {
                     <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;padding:.3rem 0;border-top:1px solid var(--line);">
                         <span style="font-size:.66rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-300);flex-shrink:0;">Nota fiscal:</span>
+                        @{
+                            // NF-e e NFC-e são mutuamente exclusivas (ambas cobrem produtos)
+                            var temNfe  = _notasDoPedido.Any(n => n.Tipo == TipoNota.NFe);
+                            var temNfce = _notasDoPedido.Any(n => n.Tipo == TipoNota.NFCe);
+                        }
                         @foreach (var tipoNota in new[] { TipoNota.NFe, TipoNota.NFSe, TipoNota.NFCe })
                         {
                             var notaExistente = _notasDoPedido.FirstOrDefault(n => n.Tipo == tipoNota);
                             var label = tipoNota switch { TipoNota.NFe => "NF-e", TipoNota.NFSe => "NFS-e", _ => "NFC-e" };
+                            // Oculta o botão de NF-e se já existe NFC-e (e vice-versa)
+                            var bloqueada = (tipoNota == TipoNota.NFe && temNfce) ||
+                                            (tipoNota == TipoNota.NFCe && temNfe);
                             @if (notaExistente != null)
                             {
                                 <a href="/notas/@notaExistente.Id"
@@ -467,7 +475,7 @@ else
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--s-free)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                 </a>
                             }
-                            else
+                            else if (!bloqueada)
                             {
                                 <button type="button" @onclick="() => GerarNotaAsync(tipoNota)" disabled="@_gerandoNota"
                                         style="padding:.2rem .6rem;font-size:.72rem;font-weight:600;border-radius:3px;border:1px solid var(--line);color:var(--navy-700);background:transparent;cursor:pointer;transition:.12s;">
