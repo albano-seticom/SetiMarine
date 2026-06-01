@@ -51,6 +51,7 @@ else
             <thead>
                 <tr>
                     <th>Nº / Série</th>
+                    <th style="width:70px;">Tipo</th>
                     <th>Data Emissão</th>
                     <th>Cliente</th>
                     <th>Pedido</th>
@@ -68,6 +69,12 @@ else
                         <td>
                             <strong style="font-weight:600;font-family:monospace;">@n.Numero</strong>
                             <span style="color:var(--ink-400);font-size:.75rem;margin-left:.3rem;">série @n.Serie</span>
+                        </td>
+                        <td>
+                            <span style="display:inline-block;padding:.15rem .45rem;border-radius:3px;font-size:.68rem;font-weight:700;letter-spacing:.06em;
+                                         background:@BadgeTipoBg(n.Tipo);color:@BadgeTipoColor(n.Tipo);">
+                                @LabelTipo(n.Tipo)
+                            </span>
                         </td>
                         <td style="color:var(--ink-500);font-size:.82rem;">@n.DataEmissao.ToLocalTime().ToString("dd/MM/yyyy")</td>
                         <td>@(n.Cliente?.Nome ?? "—")</td>
@@ -169,5 +176,26 @@ else
         StatusNota.Emitida   => "Emitida",
         StatusNota.Cancelada => "Cancelada",
         _                    => "Rascunho",
+    };
+
+    private static string LabelTipo(TipoNota t) => t switch
+    {
+        TipoNota.NFSe => "NFS-e",
+        TipoNota.NFCe => "NFC-e",
+        _             => "NF-e",
+    };
+
+    private static string BadgeTipoBg(TipoNota t) => t switch
+    {
+        TipoNota.NFSe => "rgba(59,130,246,.12)",
+        TipoNota.NFCe => "rgba(168,85,247,.12)",
+        _             => "rgba(15,52,96,.10)",
+    };
+
+    private static string BadgeTipoColor(TipoNota t) => t switch
+    {
+        TipoNota.NFSe => "#1d4ed8",
+        TipoNota.NFCe => "#7c3aed",
+        _             => "var(--navy-700)",
     };
 }
