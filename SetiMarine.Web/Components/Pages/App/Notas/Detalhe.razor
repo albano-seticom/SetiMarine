@@ -1,0 +1,273 @@
+@page "/notas/{Id:int}"
+@layout AppLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using SetiMarine.Application.Services
+@using SetiMarine.Domain.Entities
+@using SetiMarine.Domain.Enums
+@inject NotaService NotaSvc
+@inject UsuarioContextService UserCtx
+@inject NavigationManager Nav
+
+<PageTitle>Nota @(_nota?.Numero.ToString() ?? "—") — SetiMarine</PageTitle>
+
+<div class="page-head">
+    <div style="display:flex;align-items:baseline;gap:.5rem;">
+        <a href="/notas" style="font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);text-decoration:none;border-bottom:1px solid var(--line);white-space:nowrap;">Notas Fiscais</a>
+        <span style="color:var(--ink-300);font-size:.8rem;">/</span>
+        <h1 style="margin:0;">@(_nota != null ? $"Nota {_nota.Numero:D6}" : "Carregando...")</h1>
+        @if (_nota != null)
+        {
+            <span class="badge @BadgeStatus(_nota.Status)" style="font-size:.72rem;margin-left:.25rem;">@LabelStatus(_nota.Status)</span>
+        }
+    </div>
+    @if (_nota != null)
+    {
+        <div class="page-head-actions" style="display:flex;gap:.5rem;">
+            @if (_nota.Status == StatusNota.Rascunho)
+            {
+                <button type="button" @onclick='() => AlterarStatusAsync(StatusNota.Emitida)'
+                        style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--s-free);border:1px solid var(--s-free);color:#fff;">
+                    ✓ Emitir
+                </button>
+                <button type="button" @onclick='() => AlterarStatusAsync(StatusNota.Cancelada)'
+                        style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:transparent;border:1px solid var(--s-maint);color:var(--s-maint);">
+                    Cancelar
+                </button>
+            }
+            @if (_nota.Status == StatusNota.Emitida)
+            {
+                <button type="button" @onclick='() => AlterarStatusAsync(StatusNota.Cancelada)'
+                        style="padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:600;cursor:pointer;background:transparent;border:1px solid var(--s-maint);color:var(--s-maint);">
+                    Cancelar Nota
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@if (_carregando)
+{
+    <div style="padding:3rem 0;display:flex;align-items:center;gap:.75rem;color:var(--ink-300);">
+        <div style="width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--navy-700);border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;">Carregando</span>
+    </div>
+}
+else if (_nota == null)
+{
+    <div style="padding:4rem 1rem;text-align:center;color:var(--ink-300);">
+        <p style="font-size:.8rem;">Nota fiscal não encontrada.</p>
+        <a href="/notas" class="btn btn-ghost btn-sm" style="margin-top:1rem;">← Voltar</a>
+    </div>
+}
+else
+{
+    @* ── Cabeçalho ─────────────────────────────────────────────────── *@
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1rem 1.25rem;">
+            <div style="font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.75rem;font-weight:600;">Identificação</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;">
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Número</div>
+                    <div style="font-weight:700;font-family:monospace;font-size:1.05rem;color:var(--navy-700);">@_nota.Numero.ToString("D6")</div>
+                </div>
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Série</div>
+                    <div style="font-weight:600;font-family:monospace;">@_nota.Serie</div>
+                </div>
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Emissão</div>
+                    <div style="font-size:.88rem;">@_nota.DataEmissao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+                @if (_nota.DataSaida.HasValue)
+                {
+                    <div>
+                        <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Saída</div>
+                        <div style="font-size:.88rem;">@_nota.DataSaida.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_nota.ChaveNFe))
+                {
+                    <div style="grid-column:1/-1;">
+                        <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Chave NFe</div>
+                        <div style="font-size:.72rem;font-family:monospace;word-break:break-all;color:var(--ink-600);">@_nota.ChaveNFe</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1rem 1.25rem;">
+            <div style="font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.75rem;font-weight:600;">Destinatário</div>
+            <div style="margin-bottom:.6rem;">
+                <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Cliente</div>
+                <div style="font-weight:600;font-size:.9rem;">@(_nota.Cliente?.Nome ?? "—")</div>
+            </div>
+            @if (_nota.PedidoId.HasValue)
+            {
+                <div style="margin-bottom:.6rem;">
+                    <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Pedido vinculado</div>
+                    <a href="/pedidos/@_nota.PedidoId" style="color:var(--navy-700);font-weight:600;font-size:.88rem;">
+                        Pedido #@_nota.PedidoId
+                    </a>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(_nota.Observacoes))
+            {
+                <div>
+                    <div style="font-size:.68rem;color:var(--ink-400);margin-bottom:.15rem;">Observações</div>
+                    <div style="font-size:.82rem;color:var(--ink-600);">@_nota.Observacoes</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── Itens ──────────────────────────────────────────────────────── *@
+    <div style="margin-bottom:1.25rem;">
+        <div style="font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.5rem;font-weight:600;">Itens da Nota</div>
+        @if (!_nota.Itens.Any())
+        {
+            <div style="padding:2rem;text-align:center;color:var(--ink-300);border:1px dashed var(--line);border-radius:6px;font-size:.82rem;">
+                Nenhum item nesta nota.
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th style="width:60px;text-align:right;">Qtd</th>
+                            <th style="width:110px;text-align:right;">R$ Unit.</th>
+                            <th style="width:110px;text-align:right;">Total</th>
+                            <th style="width:70px;text-align:center;">CFOP</th>
+                            <th style="width:80px;text-align:center;">NCM</th>
+                            <th style="width:80px;text-align:center;">CST ICMS</th>
+                            <th style="width:80px;text-align:right;">ICMS</th>
+                            <th style="width:80px;text-align:right;">IPI</th>
+                            <th style="width:80px;text-align:right;">ISS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _nota.Itens)
+                        {
+                            <tr>
+                                <td style="font-weight:500;">@item.Descricao</td>
+                                <td style="text-align:right;font-size:.82rem;">@item.Quantidade.ToString("G29")</td>
+                                <td style="text-align:right;font-size:.82rem;">@item.ValorUnitario.ToString("C2")</td>
+                                <td style="text-align:right;font-weight:600;color:var(--navy-700);">@item.ValorTotal.ToString("C2")</td>
+                                <td style="text-align:center;font-family:monospace;font-size:.76rem;color:var(--ink-500);">@(item.Cfop ?? "—")</td>
+                                <td style="text-align:center;font-family:monospace;font-size:.76rem;color:var(--ink-500);">@(item.Ncm ?? "—")</td>
+                                <td style="text-align:center;font-family:monospace;font-size:.76rem;color:var(--ink-500);">@(item.CstIcms ?? "—")</td>
+                                <td style="text-align:right;font-size:.78rem;color:var(--ink-500);">
+                                    @if (item.ValorICMS > 0)
+                                    { <text>@item.ValorICMS.ToString("C2")<br /><span style="font-size:.68rem;color:var(--ink-300);">@item.AliquotaICMS %</span></text> }
+                                    else { <span style="color:var(--ink-200);">—</span> }
+                                </td>
+                                <td style="text-align:right;font-size:.78rem;color:var(--ink-500);">
+                                    @if (item.ValorIPI > 0)
+                                    { <text>@item.ValorIPI.ToString("C2")<br /><span style="font-size:.68rem;color:var(--ink-300);">@item.AliquotaIPI %</span></text> }
+                                    else { <span style="color:var(--ink-200);">—</span> }
+                                </td>
+                                <td style="text-align:right;font-size:.78rem;color:var(--ink-500);">
+                                    @if (item.ValorISS > 0)
+                                    { <text>@item.ValorISS.ToString("C2")<br /><span style="font-size:.68rem;color:var(--ink-300);">@item.AliquotaISS %</span></text> }
+                                    else { <span style="color:var(--ink-200);">—</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    @* ── Totais ─────────────────────────────────────────────────────── *@
+    <div style="display:flex;justify-content:flex-end;">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1rem 1.5rem;min-width:280px;">
+            <div style="font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-400);margin-bottom:.75rem;font-weight:600;">Totais</div>
+            <div style="display:grid;gap:.3rem;">
+                @if (_nota.ValorProdutos != _nota.ValorTotal)
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
+                        <span>Produtos</span>
+                        <span>@_nota.ValorProdutos.ToString("C2")</span>
+                    </div>
+                }
+                @if (_nota.ValorICMS > 0)
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
+                        <span>ICMS</span>
+                        <span>@_nota.ValorICMS.ToString("C2")</span>
+                    </div>
+                }
+                @if (_nota.ValorIPI > 0)
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
+                        <span>IPI</span>
+                        <span>@_nota.ValorIPI.ToString("C2")</span>
+                    </div>
+                }
+                @if (_nota.ValorPIS > 0)
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
+                        <span>PIS</span>
+                        <span>@_nota.ValorPIS.ToString("C2")</span>
+                    </div>
+                }
+                @if (_nota.ValorCOFINS > 0)
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
+                        <span>COFINS</span>
+                        <span>@_nota.ValorCOFINS.ToString("C2")</span>
+                    </div>
+                }
+                @if (_nota.ValorISS > 0)
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink-500);">
+                        <span>ISS</span>
+                        <span>@_nota.ValorISS.ToString("C2")</span>
+                    </div>
+                }
+                <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--navy-700);border-top:2px solid var(--line);padding-top:.5rem;margin-top:.3rem;">
+                    <span>Total</span>
+                    <span>@_nota.ValorTotal.ToString("C2")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Nota? _nota;
+    private bool  _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserCtx.InitAsync();
+        _nota       = await NotaSvc.ObterPorIdAsync(Id, UserCtx.EmpresaId);
+        _carregando = false;
+    }
+
+    private async Task AlterarStatusAsync(StatusNota novoStatus)
+    {
+        if (_nota == null) return;
+        await NotaSvc.AlterarStatusAsync(_nota.Id, UserCtx.EmpresaId, novoStatus);
+        _nota.Status = novoStatus;
+    }
+
+    private static string BadgeStatus(StatusNota s) => s switch
+    {
+        StatusNota.Emitida   => "badge-free",
+        StatusNota.Cancelada => "badge-maint",
+        _                    => "badge-occ",
+    };
+
+    private static string LabelStatus(StatusNota s) => s switch
+    {
+        StatusNota.Emitida   => "Emitida",
+        StatusNota.Cancelada => "Cancelada",
+        _                    => "Rascunho",
+    };
+}
