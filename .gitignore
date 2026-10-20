@@ -2,4 +2,12 @@ bin/
 obj/
 .vs/
 *.user
+appsettings.json
 appsettings.Development.json
+appsettings.Production.json
+CLAUDE.md
+Claude.txt
+.claude/
+*.bak
+*.tmp
+__pycache__/
